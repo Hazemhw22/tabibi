@@ -5,7 +5,7 @@ import { useTransition, useState, useMemo, useEffect } from "react";
 import {
   Plus, Search, X, Users, Loader2,
   User, Calendar, TrendingUp, TrendingDown,
-  FileText, CheckCircle, Clock, XCircle, Trash2,
+  FileText, CheckCircle, Clock, XCircle, Trash2, Pencil, Check,
   Phone, AlertTriangle, Stethoscope, Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -217,15 +217,57 @@ export default function PatientsView({
     } finally { setSavingApt(false); }
   };
 
-  const deleteTransaction = async (id: string) => {
-    if (!confirm("حذف هذه المعاملة؟")) return;
+  /* confirm-delete modal */
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteTransaction = async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
     const isClinic = selectedPatient?.source === "clinic";
-    const res = await fetch(
-      isClinic ? `/api/clinic/transactions/${id}` : `/api/doctor/transactions/${id}`,
-      { method: "DELETE" }
-    );
-    if (res.ok) { toast.success("تم الحذف"); router.refresh(); }
-    else toast.error("حدث خطأ");
+    try {
+      const res = await fetch(
+        isClinic ? `/api/clinic/transactions/${confirmDeleteId}` : `/api/doctor/transactions/${confirmDeleteId}`,
+        { method: "DELETE" }
+      );
+      if (res.ok) { toast.success("تم الحذف"); setConfirmDeleteId(null); router.refresh(); }
+      else toast.error("حدث خطأ");
+    } finally { setDeleting(false); }
+  };
+
+  /* edit transaction */
+  type EditState = { id: string; description: string; amount: string; notes: string };
+  const [editTx, setEditTx] = useState<EditState | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (t: TransactionRow) =>
+    setEditTx({ id: t.id, description: t.description, amount: String(t.amount), notes: t.notes ?? "" });
+
+  const saveEdit = async () => {
+    if (!editTx) return;
+    const amount = Number(editTx.amount);
+    if (!editTx.description.trim() || !amount || amount <= 0) {
+      toast.error("الوصف والمبلغ مطلوبان");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const isClinic = selectedPatient?.source === "clinic";
+      const url = isClinic
+        ? `/api/clinic/transactions/${editTx.id}`
+        : `/api/doctor/transactions/${editTx.id}`;
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: editTx.description.trim(),
+          amount,
+          notes: editTx.notes.trim() || null,
+        }),
+      });
+      if (res.ok) { toast.success("تم التعديل ✓"); setEditTx(null); router.refresh(); }
+      else { const d = await res.json(); toast.error(d.error || "حدث خطأ"); }
+    } finally { setSavingEdit(false); }
   };
 
   /* ── Derived data ──────────────────────────────────────────────── */
@@ -608,38 +650,108 @@ export default function PatientsView({
                             <th className="px-4 py-3 font-medium">البيان</th>
                             <th className="px-4 py-3 text-center font-medium text-red-500">مدين</th>
                             <th className="px-4 py-3 text-center font-medium text-green-600">دائن</th>
-                            <th className="w-8 px-4 py-3" />
+                            <th className="w-20 px-4 py-3" />
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                          {selectedPatient.transactions.map((t) => (
-                            <tr key={t.id} className="hover:bg-gray-50/50">
-                              <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-400">
-                                {format(new Date(t.date), "dd/MM/yyyy")}
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  {t.type === "SERVICE"
-                                    ? <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
-                                    : <TrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
-                                  <span className="font-medium text-gray-900">{t.description}</span>
-                                </div>
-                                {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400">{t.notes}</p>}
-                              </td>
-                              <td className="px-4 py-3 text-center font-bold text-red-600">
-                                {t.type === "SERVICE" ? `₪${t.amount.toFixed(0)}` : "—"}
-                              </td>
-                              <td className="px-4 py-3 text-center font-bold text-green-600">
-                                {t.type === "PAYMENT" ? `₪${t.amount.toFixed(0)}` : "—"}
-                              </td>
-                              <td className="px-4 py-3">
-                                <button onClick={() => deleteTransaction(t.id)}
-                                  className="text-gray-200 hover:text-red-400 transition-colors">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                          {selectedPatient.transactions.map((t) => {
+                            const isEditing = editTx?.id === t.id;
+                            return (
+                              <tr key={t.id} className={cn("transition-colors", isEditing ? "bg-blue-50/40" : "hover:bg-gray-50/50")}>
+                                {isEditing ? (
+                                  /* ── Inline edit row ── */
+                                  <>
+                                    <td className="px-4 py-2 text-xs text-gray-400 whitespace-nowrap">
+                                      {format(new Date(t.date), "dd/MM/yyyy")}
+                                    </td>
+                                    <td className="px-4 py-2" colSpan={2}>
+                                      <div className="flex flex-col gap-1.5">
+                                        <input
+                                          value={editTx.description}
+                                          onChange={(e) => setEditTx((p) => p && ({ ...p, description: e.target.value }))}
+                                          className="h-8 w-full rounded-lg border border-blue-300 px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                          placeholder="الوصف"
+                                        />
+                                        <input
+                                          value={editTx.notes}
+                                          onChange={(e) => setEditTx((p) => p && ({ ...p, notes: e.target.value }))}
+                                          className="h-7 w-full rounded-lg border border-gray-200 px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-300"
+                                          placeholder="ملاحظات (اختياري)"
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      <div className="flex gap-1">
+                                        <span className="flex items-center rounded-lg border border-gray-200 bg-gray-100 px-2 text-xs text-gray-600">₪</span>
+                                        <input
+                                          type="number"
+                                          value={editTx.amount}
+                                          onChange={(e) => setEditTx((p) => p && ({ ...p, amount: e.target.value }))}
+                                          className="h-8 w-20 rounded-lg border border-blue-300 px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      <div className="flex items-center gap-1">
+                                        <button onClick={saveEdit} disabled={savingEdit}
+                                          className="rounded-lg bg-blue-600 p-1.5 text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                                          title="حفظ">
+                                          {savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                                        </button>
+                                        <button onClick={() => setEditTx(null)}
+                                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                                          title="إلغاء">
+                                          <X className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </>
+                                ) : (
+                                  /* ── Normal row ── */
+                                  <>
+                                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-400">
+                                      {format(new Date(t.date), "dd/MM/yyyy")}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        {t.type === "SERVICE"
+                                          ? <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                                          : <TrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
+                                        <span className="font-medium text-gray-900">{t.description}</span>
+                                      </div>
+                                      {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400">{t.notes}</p>}
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-bold text-red-600">
+                                      {t.type === "SERVICE" ? `₪${t.amount.toFixed(0)}` : "—"}
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-bold text-green-600">
+                                      {t.type === "PAYMENT" ? `₪${t.amount.toFixed(0)}` : "—"}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={() => startEdit(t)}
+                                          title="تعديل"
+                                          className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                          تعديل
+                                        </button>
+                                        <button
+                                          onClick={() => setConfirmDeleteId(t.id)}
+                                          title="حذف"
+                                          className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-100"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                          حذف
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -776,6 +888,50 @@ export default function PatientsView({
                 <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>إلغاء</Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ CONFIRM DELETE MODAL ════════════════════════════════ */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-3 border-b border-gray-100 bg-red-50 px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">تأكيد الحذف</p>
+                <p className="text-xs text-gray-500">هذه العملية لا يمكن التراجع عنها</p>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-700">
+                هل أنت متأكد من حذف هذه المعاملة؟ لن تتمكن من استرجاعها لاحقاً.
+              </p>
+            </div>
+            {/* Actions */}
+            <div className="flex gap-3 border-t border-gray-100 px-5 py-4">
+              <button
+                type="button"
+                onClick={deleteTransaction}
+                disabled={deleting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {deleting ? "جاري الحذف..." : "نعم، احذف"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+              >
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}

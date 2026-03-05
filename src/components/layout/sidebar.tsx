@@ -3,14 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
   Calendar,
   Settings,
-  LogOut,
   Stethoscope,
   Menu,
   X,
@@ -20,8 +19,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
 
 interface NavItem {
   label: string;
@@ -59,19 +56,18 @@ interface SidebarContentProps {
   roleLabel: string;
   pathname: string;
   onLinkClick: () => void;
-  session: { user?: { name?: string | null; email?: string | null } } | null;
 }
 
-function SidebarContent({ nav, roleLabel, pathname, onLinkClick, session }: SidebarContentProps) {
+function SidebarContent({ nav, roleLabel, pathname, onLinkClick }: SidebarContentProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-800">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-gray-800 px-5">
         <Image
           src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
           alt="Tabibi"
-          width={120}
-          height={36}
+          width={100}
+          height={30}
           className="shrink-0"
         />
         <p className="text-xs text-gray-400">{roleLabel}</p>
@@ -111,28 +107,9 @@ function SidebarContent({ nav, roleLabel, pathname, onLinkClick, session }: Side
         })}
       </nav>
 
-      {/* User Section */}
-      <div className="p-3 border-t border-gray-800">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/60 mb-2">
-          <Avatar className="h-8 w-8 shrink-0">
-            <AvatarFallback className="bg-blue-600 text-white text-xs">
-              {getInitials(session?.user?.name || "U")}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
-              {session?.user?.name}
-            </p>
-            <p className="text-xs text-gray-400 truncate">{session?.user?.email}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2 w-full text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-all"
-        >
-          <LogOut className="h-4 w-4" />
-          تسجيل الخروج
-        </button>
+      {/* Copyright */}
+      <div className="shrink-0 border-t border-gray-800 px-5 py-3 text-center">
+        <p className="text-[11px] text-gray-500">© {new Date().getFullYear()} طبيبي. جميع الحقوق محفوظة.</p>
       </div>
     </div>
   );
@@ -169,7 +146,6 @@ export default function Sidebar() {
           roleLabel={roleLabel}
           pathname={pathname}
           onLinkClick={() => setMobileOpen(false)}
-          session={session}
         />
       </aside>
 
@@ -211,7 +187,6 @@ export default function Sidebar() {
           roleLabel={roleLabel}
           pathname={pathname}
           onLinkClick={() => setMobileOpen(false)}
-          session={session}
         />
       </aside>
     </>

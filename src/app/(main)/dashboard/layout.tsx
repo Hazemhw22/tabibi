@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import Sidebar from "@/components/layout/sidebar";
+import DashboardHeader from "@/components/layout/dashboard-header";
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +21,10 @@ export default async function DashboardLayout({
   return (
     <div className="fixed inset-0 flex bg-gray-50 z-50 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <DashboardHeader />
+        <main className="flex-1 overflow-y-auto">{children}</main>
+      </div>
     </div>
   );
 }
