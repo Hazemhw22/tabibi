@@ -7,8 +7,9 @@ import { Calendar, Clock, User, CheckCircle, XCircle, Plus, ChevronLeft } from "
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ClinicAppointmentStatus } from "@prisma/client";
 import DoctorActions from "../doctor-actions";
+
+type ClinicAppointmentStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "success" | "destructive" | "secondary" | "warning" | "outline" }> = {
   SCHEDULED: { label: "مجدول", variant: "default" },
