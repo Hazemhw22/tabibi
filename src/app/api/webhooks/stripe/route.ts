@@ -3,11 +3,17 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-02-25.clover",
-});
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  return new Stripe(key, { apiVersion: "2026-02-25.clover" });
+}
 
 export async function POST(req: Request) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
+  }
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get("stripe-signature");

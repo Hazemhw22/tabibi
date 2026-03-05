@@ -3,12 +3,18 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-02-25.clover",
-});
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  return new Stripe(key, { apiVersion: "2026-02-25.clover" });
+}
 
 export async function POST(req: Request) {
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.json({ error: "الدفع غير مُهيأ" }, { status: 503 });
+    }
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
