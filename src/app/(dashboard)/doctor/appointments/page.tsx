@@ -47,8 +47,9 @@ export default async function DoctorAppointmentsPage({
     orderBy: [{ date: "desc" }, { time: "asc" }],
   });
 
+  type AppointmentItem = (typeof appointments)[number];
   const today = appointments.filter(
-    (a) => format(new Date(a.date), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+    (a: AppointmentItem) => format(new Date(a.date), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
   );
 
   return (
