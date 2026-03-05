@@ -1,10 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ArrowRight, Phone, Mail, MapPin, Calendar, Droplets, AlertTriangle } from "lucide-react";
+import { ArrowRight, Phone, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInYears } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import PatientTabs from "./patient-tabs";
 
 export default async function PatientDetailPage({
@@ -46,90 +45,58 @@ export default async function PatientDetailPage({
         <ArrowRight className="h-4 w-4" /> قائمة المرضى
       </Link>
 
-      {/* Patient Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-5">
-          {/* Avatar */}
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center text-4xl font-bold text-blue-600 shrink-0">
+      {/* تفاصيل رئيسية أفقية + 3 بطاقات ملخص */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div className="h-14 w-14 shrink-0 rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center text-xl font-bold text-blue-600">
             {patient.name.charAt(0)}
           </div>
-
-          {/* Info */}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  {patient.fileNumber && (
-                    <Badge variant="secondary">ملف #{patient.fileNumber}</Badge>
-                  )}
-                  {patient.gender && (
-                    <Badge variant="outline">
-                      {patient.gender === "male" ? "ذكر" : "أنثى"}
-                    </Badge>
-                  )}
-                  {age !== null && (
-                    <Badge variant="outline">{age} سنة</Badge>
-                  )}
-                  {patient.bloodType && (
-                    <Badge variant="default" className="gap-1">
-                      <Droplets className="h-3 w-3" />{patient.bloodType}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Balance */}
-              <div className={`text-left px-5 py-3 rounded-xl border-2 ${
-                balance < 0 ? "border-red-200 bg-red-50"
-                : balance > 0 ? "border-green-200 bg-green-50"
-                : "border-gray-200 bg-gray-50"
-              }`}>
-                <div className="text-xs text-gray-500 mb-0.5">الرصيد الحالي</div>
-                <div className={`text-2xl font-bold ${
-                  balance < 0 ? "text-red-600" : balance > 0 ? "text-green-600" : "text-gray-500"
-                }`}>
-                  {balance >= 0 ? "+" : ""}₪{balance.toFixed(0)}
-                </div>
-                <div className="text-xs mt-0.5 text-gray-400">
-                  {balance < 0 ? "مديون" : balance > 0 ? "له رصيد" : "مسدَّد"}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-500">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-gray-900">{patient.name}</h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">
+              {patient.allergies ? (
+                <span className="flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                  {patient.allergies}
+                </span>
+              ) : (
+                <span className="text-gray-400">—</span>
+              )}
               {patient.phone && (
-                <div className="flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5" />
-                  <span dir="ltr">{patient.phone}</span>
-                </div>
+                <span className="flex items-center gap-1" dir="ltr">
+                  <Phone className="h-3.5 w-3.5 text-gray-400" />
+                  {patient.phone}
+                </span>
               )}
-              {patient.email && (
-                <div className="flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span>{patient.email}</span>
-                </div>
-              )}
-              {patient.address && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span>{patient.address}</span>
-                </div>
-              )}
-              {patient.dateOfBirth && (
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>{format(new Date(patient.dateOfBirth), "dd/MM/yyyy")}</span>
-                </div>
-              )}
+              {age !== null && <span>العمر: {age} سنة</span>}
+              {patient.fileNumber && <span>ملف #{patient.fileNumber}</span>}
             </div>
-
-            {patient.allergies && (
-              <div className="mt-3 flex items-start gap-2 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span><strong>تنبيه:</strong> {patient.allergies}</span>
-              </div>
-            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+            <div className="text-xs text-gray-500 mb-0.5">آخر زيارة</div>
+            <div className="text-sm font-medium text-gray-900">
+              {patient.clinicAppointments?.length
+                ? format(new Date(patient.clinicAppointments[0].date), "d MMM yyyy")
+                : "—"}
+            </div>
+          </div>
+          <div
+            className={`rounded-xl border px-4 py-3 ${
+              balance < 0 ? "border-red-200 bg-red-50/80" : balance > 0 ? "border-green-200 bg-green-50/80" : "border-gray-100 bg-gray-50/80"
+            }`}
+          >
+            <div className="text-xs text-gray-500 mb-0.5">الرصيد</div>
+            <div className={`text-sm font-bold ${balance < 0 ? "text-red-600" : balance > 0 ? "text-green-600" : "text-gray-700"}`}>
+              {balance >= 0 ? "+" : ""}₪{balance.toFixed(0)}
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+            <div className="text-xs text-gray-500 mb-0.5">ملاحظات / تنبيهات</div>
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {patient.notes || patient.allergies || "—"}
+            </div>
           </div>
         </div>
       </div>

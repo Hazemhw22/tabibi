@@ -24,7 +24,7 @@ interface Appointment {
 
 interface Patient {
   id: string; name: string; phone?: string | null; email?: string | null;
-  gender?: string | null; dateOfBirth?: Date | null; address?: string | null;
+  gender?: string | null; dateOfBirth?: Date | string | null; address?: string | null;
   bloodType?: string | null; allergies?: string | null; notes?: string | null;
   fileNumber?: string | null;
 }
@@ -161,27 +161,28 @@ export default function PatientTabs({ patient, transactions, appointments, balan
   };
 
   return (
-    <div>
-      {/* Tab Bar */}
-      <div className="flex border-b border-gray-200 bg-white rounded-t-xl overflow-x-auto">
+    <div className="flex rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      {/* Vertical Tab Bar */}
+      <nav className="flex shrink-0 flex-col w-48 border-l border-gray-200 bg-gray-50/80">
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+              "flex items-center gap-2 px-4 py-3.5 text-sm font-medium text-right transition-colors border-r-2",
               activeTab === tab.id
-                ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                ? "border-blue-600 text-blue-600 bg-blue-50/80"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100/80"
             )}
           >
-            <tab.icon className="h-4 w-4" />
+            <tab.icon className="h-4 w-4 shrink-0" />
             {tab.label}
           </button>
         ))}
-      </div>
+      </nav>
 
-      <div className="bg-white rounded-b-xl border border-t-0 border-gray-200 shadow-sm p-6">
+      <div className="flex-1 min-w-0 bg-white p-6 overflow-auto">
 
         {/* ===== TAB 1: INFO ===== */}
         {activeTab === "info" && (
