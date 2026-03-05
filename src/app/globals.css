@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-cairo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-cairo), "Cairo", "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* === Dark / Light theme support via [data-theme] on <html> === */
+html[data-theme="dark"] body {
+  background-color: #020617; /* slate-950 */
+  color: #e5e7eb; /* gray-200 */
+}
+
+html[data-theme="dark"] .bg-white {
+  background-color: #020617 !important;
+}
+
+html[data-theme="dark"] .bg-gray-50 {
+  background-color: #020617 !important;
+}
+
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200 {
+  border-color: #1f2937 !important; /* gray-800 */
+}
+
+html[data-theme="dark"] .text-gray-900 {
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] .text-gray-700 {
+  color: #d1d5db !important;
+}
+
+html[data-theme="dark"] .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+/* Navbar specific */
+html[data-theme="dark"] nav {
+  background-color: #020617 !important;
+  border-color: #1f2937 !important;
+}
+
+html[data-theme="dark"] nav a {
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] nav a:hover {
+  color: #38bdf8; /* sky-400 */
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* إخفاء شريط السحب الأفقي (يُستخدم مع عناصر السلايدر) */
+.scrollbar-hide {
+  -ms-overflow-style: none;      /* IE و Edge القديم */
+  scrollbar-width: none;         /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0 !important;           /* Chrome / Safari */
+  height: 0 !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Star rating */
+.star-filled { color: #f59e0b; }
+.star-empty { color: #d1d5db; }
