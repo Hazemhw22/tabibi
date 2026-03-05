@@ -44,8 +44,10 @@ export default async function PatientsPage({
   });
 
   // حساب الرصيد لكل مريض
-  const patientsWithBalance = patients.map((p) => {
-    const balance = p.transactions.reduce((sum, t) => {
+  type PatientItem = (typeof patients)[number];
+  type TxItem = (typeof patients)[number]["transactions"][number];
+  const patientsWithBalance = patients.map((p: PatientItem) => {
+    const balance = p.transactions.reduce((sum: number, t: TxItem) => {
       return t.type === "PAYMENT" ? sum + t.amount : sum - t.amount;
     }, 0);
     return { ...p, balance };
@@ -91,7 +93,7 @@ export default async function PatientsPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {patientsWithBalance.map((patient) => (
+          {patientsWithBalance.map((patient: PatientItem & { balance: number }) => (
             <Link key={patient.id} href={`/dashboard/doctor/patients/${patient.id}`}>
               <Card className="hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group h-full">
                 <CardContent className="p-5">
