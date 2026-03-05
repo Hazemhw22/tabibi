@@ -606,9 +606,9 @@ export default function PatientsView({
                           <tr>
                             <th className="px-4 py-3 font-medium">التاريخ</th>
                             <th className="px-4 py-3 font-medium">البيان</th>
-                            <th className="px-4 py-3 font-medium text-red-500">مدين</th>
-                            <th className="px-4 py-3 font-medium text-green-600">دائن</th>
-                            <th className="px-4 py-3" />
+                            <th className="px-4 py-3 text-center font-medium text-red-500">مدين</th>
+                            <th className="px-4 py-3 text-center font-medium text-green-600">دائن</th>
+                            <th className="w-8 px-4 py-3" />
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
