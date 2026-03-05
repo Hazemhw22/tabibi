@@ -6,11 +6,9 @@ import { format } from "date-fns";
 import {
   User, Wrench, History, CalendarPlus, Plus, Trash2,
   Loader2, TrendingDown, TrendingUp, CheckCircle, Clock,
-  XCircle, Pencil,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

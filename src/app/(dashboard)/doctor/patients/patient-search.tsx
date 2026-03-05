@@ -7,7 +7,7 @@ import { Search, X } from "lucide-react";
 export default function PatientSearch({ defaultValue }: { defaultValue?: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [value, setValue] = useState(defaultValue || "");
 
   const handleSearch = (v: string) => {

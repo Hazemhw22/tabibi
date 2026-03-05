@@ -16,7 +16,7 @@ interface Specialty {
 }
 
 export default function DoctorSetupPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +39,7 @@ export default function DoctorSetupPage() {
       })
       .catch(() => setSpecialties([]))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only
   }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -21,7 +21,7 @@ export async function PATCH(
     const updated = await prisma.clinicAppointment.update({ where: { id }, data: { status } });
 
     return NextResponse.json({ appointment: updated });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
   }
 }

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import {
   Users, Calendar, TrendingUp, Star,
-  Clock, CheckCircle, UserX, ChevronLeft, Plus,
+  CheckCircle, ChevronLeft, Plus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

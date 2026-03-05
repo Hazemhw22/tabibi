@@ -25,7 +25,7 @@ export async function DELETE(
 
     await prisma.clinicTransaction.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
   }
 }

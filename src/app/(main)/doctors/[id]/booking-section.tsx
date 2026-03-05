@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, CreditCard, Loader2, ChevronRight, ChevronLeft
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { DAYS_AR, formatCurrency } from "@/lib/utils";
+import { DAYS_AR } from "@/lib/utils";
 import { format, addDays, startOfToday, getDay } from "date-fns";
 
 interface TimeSlot {
@@ -49,7 +49,7 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
   const [selectedClinic, setSelectedClinic] = useState<string>(clinics[0]?.id || "");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"date" | "slot" | "confirm">("date");
+  const [, setStep] = useState<"date" | "slot" | "confirm">("date");
   const [dateOffset, setDateOffset] = useState(0);
 
   const dates = generateDates(21);

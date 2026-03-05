@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Users, Stethoscope, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Users, Stethoscope, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -12,7 +12,7 @@ export default async function AdminDashboard() {
   if (!session) redirect("/login");
   if (!["PLATFORM_ADMIN", "CLINIC_ADMIN"].includes(session.user.role)) redirect("/");
 
-  const [totalDoctors, pendingCount, totalUsers, totalApts, revenue, pendingDoctors, recentApts] = await Promise.all([
+  const [totalDoctors, pendingCount, totalUsers, , revenue, pendingDoctors, recentApts] = await Promise.all([
     prisma.doctor.count({ where: { status: "APPROVED" } }),
     prisma.doctor.count({ where: { status: "PENDING" } }),
     prisma.user.count({ where: { role: "PATIENT" } }),

@@ -12,12 +12,10 @@ import {
   Settings,
   LogOut,
   Stethoscope,
-  ChevronLeft,
   Menu,
   X,
   UserCheck,
   TrendingUp,
-  Bell,
   ShieldCheck,
   ClipboardList,
 } from "lucide-react";

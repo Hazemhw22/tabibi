@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import { Star, CheckCircle, Clock, XCircle, Pause } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import AdminDoctorActions from "../admin-doctor-actions";
 
 const STATUS_MAP: Record<string, { label: string; icon: React.ElementType; color: string }> = {

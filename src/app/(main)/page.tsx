@@ -155,7 +155,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {specialties.map((specialty) => (
+            {specialties.map((specialty: (typeof specialties)[number]) => (
               <Link
                 key={specialty.id}
                 href={`/doctors?specialtyId=${specialty.id}`}
@@ -198,7 +198,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {doctors.map((doctor) => (
+              {doctors.map((doctor: (typeof doctors)[number]) => (
                 <Link key={doctor.id} href={`/doctors/${doctor.id}`}>
                   <Card className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group">
                     <CardContent className="p-6">

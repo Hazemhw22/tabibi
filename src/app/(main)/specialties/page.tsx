@@ -2,7 +2,6 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
 import { Stethoscope, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 export default async function SpecialtiesPage() {
   const { data: specialties } = await supabaseAdmin

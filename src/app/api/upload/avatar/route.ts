@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     const { data: urlData } = supabaseAdmin.storage.from("avatars").getPublicUrl(path);
     return NextResponse.json({ url: urlData.publicUrl });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "فشل رفع الصورة" }, { status: 500 });
   }
 }

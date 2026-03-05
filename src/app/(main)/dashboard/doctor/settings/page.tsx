@@ -46,7 +46,7 @@ interface Specialty {
 }
 
 export default function DoctorSettingsPage() {
-  const { data: session } = useSession();
+  useSession();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -93,6 +93,7 @@ export default function DoctorSettingsPage() {
         }
       })
       .catch(() => setSpecialties([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only; selectedSpecialtyId set from response
   }, []);
 
   const addClinic = () => {

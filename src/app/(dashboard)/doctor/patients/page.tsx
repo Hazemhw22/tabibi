@@ -2,10 +2,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Search, Users, Phone, FileText, ChevronLeft } from "lucide-react";
+import { Plus, Users, Phone, FileText, ChevronLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import PatientSearch from "./patient-search";
 
