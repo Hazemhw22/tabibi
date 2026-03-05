@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { Bell, RefreshCw, User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { RefreshCw, User, Settings, LogOut, ChevronDown } from "lucide-react";
+import NotificationBell from "@/components/notifications/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
@@ -58,14 +59,7 @@ export default function DashboardHeader() {
       {/* ── Left — icons + user avatar + dropdown ────────────── */}
       <div className="flex items-center gap-1">
         {/* Notification */}
-        <button
-          type="button"
-          className="relative rounded-lg p-2.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
-          title="الإشعارات"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-red-500" />
-        </button>
+        <NotificationBell theme="dark" />
 
         {/* Refresh */}
         <button

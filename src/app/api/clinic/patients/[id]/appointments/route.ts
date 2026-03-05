@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const schema = z.object({
@@ -30,7 +31,7 @@ export async function POST(
 
     const { data: patient } = await supabaseAdmin
       .from("ClinicPatient")
-      .select("id, doctorId")
+      .select("id, doctorId, userId, name")
       .eq("id", id)
       .single();
     if (!patient || patient.doctorId !== doctor.id)
@@ -57,6 +58,28 @@ export async function POST(
     if (error) {
       console.error("ClinicAppointment insert error:", error);
       return NextResponse.json({ error: "فشل إضافة الموعد" }, { status: 500 });
+    }
+
+    const formattedDate = new Date(data.date).toLocaleDateString("ar-SA");
+
+    /* إشعار للطبيب دائماً */
+    await createNotification({
+      userId: session.user.id,
+      title: "موعد مُضاف",
+      message: `تم تسجيل موعد "${data.title}" للمريض ${patient.name ?? ""} بتاريخ ${formattedDate} الساعة ${data.time}`,
+      type: "appointment",
+      link: `/dashboard/doctor/patients?id=${id}&source=clinic`,
+    });
+
+    /* إشعار للمريض إن كان مرتبطاً بحساب */
+    if (patient?.userId) {
+      await createNotification({
+        userId: patient.userId,
+        title: "موعد جديد في العيادة",
+        message: `تم إضافة موعد "${data.title}" بتاريخ ${formattedDate} الساعة ${data.time}`,
+        type: "appointment",
+        link: "/dashboard/patient/appointments",
+      });
     }
 
     return NextResponse.json({ appointment }, { status: 201 });

@@ -21,7 +21,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">1. القبول</h2>
           <p className="text-sm leading-relaxed">
-            باستخدامك منصة HealthBook فإنك توافق على هذه الشروط. إن كنت لا توافق عليها، يرجى عدم استخدام الخدمة.
+            باستخدامك منصة طبيبي فإنك توافق على هذه الشروط. إن كنت لا توافق عليها، يرجى عدم استخدام الخدمة.
           </p>
         </section>
         <section>

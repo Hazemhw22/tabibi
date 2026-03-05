@@ -12,11 +12,11 @@ import {
   User,
   LogOut,
   Settings,
-  Bell,
   ChevronDown,
   Moon,
   Sun,
 } from "lucide-react";
+import NotificationBell from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
@@ -116,11 +116,7 @@ export default function Navbar() {
             </Button>
             {session ? (
               <div className="flex items-center gap-3">
-                <Link href="/notifications">
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                  </Button>
-                </Link>
+                <NotificationBell theme="light" />
                 <div className="relative">
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendSms, buildTransactionSmsMessage } from "@/lib/sms";
 import { sendTransactionEmail } from "@/lib/email";
+import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
 
 const schema = z.object({
@@ -20,33 +21,38 @@ export async function POST(
   try {
     const session = await auth();
     if (!session)
-      return NextResponse.json(
-        { error: "جلسة منتهية أو غير صالحة. سجّل الدخول مرة أخرى." },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "جلسة منتهية. سجّل الدخول مرة أخرى." }, { status: 401 });
     if (session.user.role !== "DOCTOR")
       return NextResponse.json({ error: "غير مصرح لهذا الإجراء" }, { status: 403 });
 
     const { id } = await params;
+
+    /* ── جلب Doctor record ─────────────────────────────────── */
     const { data: doctor } = await supabaseAdmin
       .from("Doctor")
       .select("id")
       .eq("userId", session.user.id)
       .single();
-    if (!doctor) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    if (!doctor) return NextResponse.json({ error: "الطبيب غير موجود" }, { status: 404 });
 
+    /* ── جلب المريض — نقبل doctorId = Doctor.id أو doctorId = userId
+         (لأن بعض السجلات القديمة خُزّنت بـ userId بدل Doctor.id) ─── */
     const { data: patient } = await supabaseAdmin
       .from("ClinicPatient")
       .select("id, doctorId, phone, email, userId, name")
       .eq("id", id)
+      .or(`doctorId.eq.${doctor.id},doctorId.eq.${session.user.id}`)
       .single();
-    if (!patient || patient.doctorId !== doctor.id)
-      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
 
+    if (!patient)
+      return NextResponse.json({ error: "المريض غير موجود أو غير مصرح" }, { status: 403 });
+
+    /* ── Parse body ─────────────────────────────────────────── */
     const body = await req.json();
     const data = schema.parse(body);
 
-    const { data: transaction, error } = await supabaseAdmin
+    /* ── Insert transaction ─────────────────────────────────── */
+    const { data: transaction, error: txError } = await supabaseAdmin
       .from("ClinicTransaction")
       .insert({
         clinicPatientId: id,
@@ -60,34 +66,32 @@ export async function POST(
       .select("id, type, description, amount, date, notes")
       .single();
 
-    if (error) {
-      console.error("ClinicTransaction insert error:", error);
+    if (txError) {
+      console.error("ClinicTransaction insert error:", txError);
       return NextResponse.json({ error: "فشل إضافة المعاملة" }, { status: 500 });
     }
 
+    /* ── SMS ───────────────────────────────────────────────── */
     let smsSent: boolean | null = null;
-    const phone = patient?.phone ?? (patient as { phone?: string })?.phone;
-    if (phone) {
+    if (patient.phone) {
       const msg = buildTransactionSmsMessage({
         type: data.type,
         amount: data.amount,
         description: data.description,
         doctorName: session.user.name ?? undefined,
       });
-      smsSent = await sendSms(phone, msg);
-    } else {
-      console.warn("[SMS] لا يوجد رقم هاتف للمريض (ClinicPatient.id =", id, ")");
+      smsSent = await sendSms(patient.phone, msg);
     }
 
-    // إرسال بريد إذا كان للمريض بريد إلكتروني (من ClinicPatient أو من User المرتبط)
-    let email: string | null = patient?.email ?? null;
-    if (!email && patient?.userId) {
-      const { data: patientUser } = await supabaseAdmin
+    /* ── Email ─────────────────────────────────────────────── */
+    let email: string | null = patient.email ?? null;
+    if (!email && patient.userId) {
+      const { data: userRow } = await supabaseAdmin
         .from("User")
         .select("email")
         .eq("id", patient.userId)
         .maybeSingle();
-      email = patientUser?.email ?? null;
+      email = userRow?.email ?? null;
     }
     if (email) {
       await sendTransactionEmail({
@@ -97,9 +101,19 @@ export async function POST(
         description: data.description,
         doctorName: session.user.name,
       });
-    } else {
-      console.warn("[EMAIL] لا يوجد بريد إلكتروني للمريض (ClinicPatient.id =", id, ")");
     }
+
+    /* ── Notification للطبيب دائماً + للمريض إن كان له حساب ─ */
+    await notifyClinicTransaction({
+      doctorUserId: session.user.id,
+      patientUserId: patient.userId ?? null,
+      patientName: patient.name ?? null,
+      type: data.type,
+      description: data.description,
+      amount: data.amount,
+      doctorName: session.user.name,
+      patientId: id,
+    });
 
     return NextResponse.json({ transaction, smsSent }, { status: 201 });
   } catch (err) {

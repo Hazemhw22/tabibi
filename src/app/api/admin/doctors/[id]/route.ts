@@ -49,7 +49,7 @@ export async function PATCH(
       await supabaseAdmin.from("Notification").insert({
         userId: doctor.userId,
         title: "تم قبول حسابك!",
-        message: "مبروك! تم قبول حسابك كطبيب على منصة HealthBook. يمكنك الآن استقبال المرضى.",
+        message: "مبروك! تم قبول حسابك كطبيب على منصة طبيبي. يمكنك الآن استقبال المرضى.",
         type: "doctor_approved",
         link: "/dashboard/doctor",
       });

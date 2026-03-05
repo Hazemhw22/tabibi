@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { notifyAppointmentBooked } from "@/lib/notifications";
 import { z } from "zod";
 
 const appointmentSchema = z.object({
@@ -81,6 +82,28 @@ export async function POST(req: Request) {
       status: "UNPAID",
       method: "clinic",
     });
+
+    /* إشعارات للطبيب والمريض */
+    const { data: doctorUser } = await supabaseAdmin
+      .from("Doctor")
+      .select("userId, user:User(name)")
+      .eq("id", data.doctorId)
+      .single();
+    const doctorUserId = doctorUser?.userId;
+    const doctorName   = (doctorUser?.user as { name?: string } | null)?.name ?? "الطبيب";
+    const patientName  = session.user.name ?? "المريض";
+    const formattedDate = new Date(data.appointmentDate).toLocaleDateString("ar-SA");
+
+    if (doctorUserId) {
+      await notifyAppointmentBooked({
+        doctorUserId,
+        patientUserId: patientId,
+        patientName,
+        doctorName,
+        date: formattedDate,
+        appointmentId: appointment.id,
+      });
+    }
 
     return NextResponse.json(
       { appointmentId: appointment.id, message: "تم تأكيد الموعد. الدفع عند الوصول للعيادة." },
