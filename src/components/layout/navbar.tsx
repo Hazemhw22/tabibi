@@ -30,14 +30,15 @@ export default function Navbar() {
 
   const role = session?.user?.role;
 
-  // تهيئة الثيم من localStorage / النظام
+  // تهيئة الثيم من localStorage / النظام (مؤجل لتجنب setState متزامن في الـ effect)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem("tabibi-theme");
     const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
     const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
-    setTheme(initial);
     document.documentElement.dataset.theme = initial;
+    const id = setTimeout(() => setTheme(initial), 0);
+    return () => clearTimeout(id);
   }, []);
 
   const toggleTheme = () => {

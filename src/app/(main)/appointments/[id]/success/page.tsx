@@ -30,8 +30,18 @@ export default async function SuccessPage({
     redirect("/dashboard/patient");
   }
 
-  const doctor = (appointment as any).doctor;
-  const clinic = (appointment as any).clinic;
+  type AppointmentWithRelations = typeof appointment & {
+    doctor?: {
+      user?: { name?: string };
+      User?: { name?: string };
+      specialty?: { nameAr?: string };
+      Specialty?: { nameAr?: string };
+    };
+    clinic?: { name?: string };
+  };
+  const apt = appointment as AppointmentWithRelations;
+  const doctor = apt.doctor;
+  const clinic = apt.clinic;
 
   return (
     <div className="max-w-lg mx-auto px-4 py-16 text-center">

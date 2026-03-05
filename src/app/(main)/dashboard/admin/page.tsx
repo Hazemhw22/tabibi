@@ -91,7 +91,7 @@ export default async function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {(doctorsList ?? []).map((d: any) => (
+              {((doctorsList ?? []) as { id: string; user?: { name?: string; email?: string }; specialty?: { nameAr?: string }; status?: string; subscriptionPlan?: string; createdAt?: string }[]).map((d) => (
                 <tr key={d.id} className="border-b border-gray-50 last:border-0">
                   <td className="py-3">
                     <p className="font-medium text-gray-900">{d.user?.name ?? "—"}</p>
@@ -151,7 +151,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {pendingDoctors.map((doctor: any) => (
+                {(pendingDoctors as { id: string; user?: { name?: string }; specialty?: { nameAr?: string }; createdAt?: string; subscriptionPlan?: string }[]).map((doctor) => (
                   <div
                     key={doctor.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
@@ -183,7 +183,7 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
-              {(recentAppointments ?? []).map((apt: any) => (
+              {((recentAppointments ?? []) as { id: string; appointmentDate?: string; status?: string; patient?: { name?: string }; doctor?: { user?: { name?: string }; specialty?: { nameAr?: string } } }[]).map((apt) => (
                 <div
                   key={apt.id}
                   className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0"

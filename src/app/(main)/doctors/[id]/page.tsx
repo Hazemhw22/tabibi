@@ -36,10 +36,14 @@ async function getDoctor(id: string) {
       .limit(10),
   ]);
 
-  const user = (doctor as any).user ?? (doctor as any).User;
-  const specialty = (doctor as any).specialty ?? (doctor as any).Specialty;
-  const clinics = (doctor as any).clinics ?? [];
-  const reviewsList = (reviews ?? []).map((r: any) => ({
+  type ClinicItem = { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean };
+  type DoctorRow = { user?: { name?: string }; User?: { name?: string }; specialty?: { nameAr?: string }; Specialty?: { nameAr?: string }; clinics?: ClinicItem[] };
+  const d = doctor as DoctorRow;
+  const user = d.user ?? d.User;
+  const specialty = d.specialty ?? d.Specialty;
+  const clinics: ClinicItem[] = d.clinics ?? [];
+  type ReviewRow = { id: string; rating?: number; comment?: string | null; patient?: { name?: string }; Patient?: { name?: string } };
+  const reviewsList = ((reviews ?? []) as ReviewRow[]).map((r) => ({
     id: r.id,
     rating: r.rating,
     comment: r.comment,
@@ -239,7 +243,7 @@ export default async function DoctorProfilePage({
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
-                {doctor.reviews.map((review: { id: string; rating: number; comment?: string; patient: { name?: string } }) => (
+                {doctor.reviews.map((review: { id: string; rating?: number; comment?: string | null; patient: { name: string } }) => (
                   <div key={review.id} className="p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -254,7 +258,7 @@ export default async function DoctorProfilePage({
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star
                             key={s}
-                            className={`h-3.5 w-3.5 ${s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                            className={`h-3.5 w-3.5 ${s <= (review.rating ?? 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                           />
                         ))}
                       </div>

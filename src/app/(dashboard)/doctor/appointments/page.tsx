@@ -7,6 +7,7 @@ import { Calendar, Clock, User, CheckCircle, XCircle, Plus, ChevronLeft } from "
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { ClinicAppointmentStatus } from "@prisma/client";
 import DoctorActions from "../doctor-actions";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "success" | "destructive" | "secondary" | "warning" | "outline" }> = {
@@ -35,7 +36,7 @@ export default async function DoctorAppointmentsPage({
       doctorId: doctor.id,
       // status في Prisma من نوع enum، بينما يأتي من الـ query كسلسلة نصية،
       // لذلك نقوم بعمل cast لتجاوز خطأ TypeScript مع الحفاظ على نفس السلوك.
-      ...(status && { status: status as any }),
+      ...(status && { status: status as ClinicAppointmentStatus }),
       ...(filterDate && {
         date: {
           gte: new Date(filterDate.setHours(0, 0, 0, 0)),

@@ -2,6 +2,7 @@
  * إنشاء .env.local تلقائياً من .env.example إذا لم يكن موجوداً.
  * يُشغّل قبل npm run dev.
  */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require("fs");
 const path = require("path");
 

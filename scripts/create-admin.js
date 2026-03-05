@@ -3,6 +3,7 @@
  * التشغيل: node scripts/create-admin.js
  * تأكد من وجود .env.local مع NEXT_PUBLIC_SUPABASE_URL و SUPABASE_SERVICE_ROLE_KEY
  */
+/* eslint-disable @typescript-eslint/no-require-imports */
 require("dotenv").config({ path: ".env.local" });
 const { createClient } = require("@supabase/supabase-js");
 

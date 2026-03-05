@@ -265,7 +265,7 @@ export default async function DoctorDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {todayAppointments.map((apt: any) => (
+                  {(todayAppointments as { id: string; startTime: string; endTime: string; status: string; fee?: number; patient?: { name?: string; phone?: string; email?: string }; doctor?: { user?: { name?: string }; specialty?: { nameAr?: string } } }[]).map((apt) => (
                     <div
                       key={apt.id}
                       className={`flex flex-wrap items-center gap-4 p-4 rounded-xl border transition-colors ${

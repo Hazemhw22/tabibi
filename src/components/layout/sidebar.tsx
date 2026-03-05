@@ -56,29 +56,16 @@ const patientNav: NavItem[] = [
   { label: "الإعدادات", href: "/dashboard/patient/settings", icon: Settings },
 ];
 
-export default function Sidebar() {
-  const { data: session } = useSession();
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+interface SidebarContentProps {
+  nav: NavItem[];
+  roleLabel: string;
+  pathname: string;
+  onLinkClick: () => void;
+  session: { user?: { name?: string | null; email?: string | null } } | null;
+}
 
-  const role = session?.user?.role;
-  const nav =
-    role === "DOCTOR"
-      ? doctorNav
-      : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
-        ? adminNav
-        : patientNav;
-
-  const roleLabel =
-    role === "DOCTOR"
-      ? "طبيب"
-      : role === "PLATFORM_ADMIN"
-        ? "مشرف المنصة"
-        : role === "CLINIC_ADMIN"
-          ? "مشرف عيادة"
-          : "مريض";
-
-  const SidebarContent = () => (
+function SidebarContent({ nav, roleLabel, pathname, onLinkClick, session }: SidebarContentProps) {
+  return (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-800">
@@ -106,7 +93,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={onLinkClick}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
@@ -151,12 +138,41 @@ export default function Sidebar() {
       </div>
     </div>
   );
+}
+
+export default function Sidebar() {
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const role = session?.user?.role;
+  const nav =
+    role === "DOCTOR"
+      ? doctorNav
+      : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
+        ? adminNav
+        : patientNav;
+
+  const roleLabel =
+    role === "DOCTOR"
+      ? "طبيب"
+      : role === "PLATFORM_ADMIN"
+        ? "مشرف المنصة"
+        : role === "CLINIC_ADMIN"
+          ? "مشرف عيادة"
+          : "مريض";
 
   return (
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-60 bg-gray-900 border-l border-gray-800 min-h-screen shrink-0">
-        <SidebarContent />
+        <SidebarContent
+          nav={nav}
+          roleLabel={roleLabel}
+          pathname={pathname}
+          onLinkClick={() => setMobileOpen(false)}
+          session={session}
+        />
       </aside>
 
       {/* Mobile Header */}
@@ -192,7 +208,13 @@ export default function Sidebar() {
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <SidebarContent />
+        <SidebarContent
+          nav={nav}
+          roleLabel={roleLabel}
+          pathname={pathname}
+          onLinkClick={() => setMobileOpen(false)}
+          session={session}
+        />
       </aside>
     </>
   );

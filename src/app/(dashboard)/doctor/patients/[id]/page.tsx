@@ -30,7 +30,8 @@ export default async function PatientDetailPage({
   if (!patient || patient.doctorId !== doctor.id) notFound();
 
   // حساب الرصيد الكلي
-  const balance = patient.transactions.reduce((sum, t) => {
+  type TxItem = (typeof patient.transactions)[number];
+  const balance = patient.transactions.reduce((sum: number, t: TxItem) => {
     return t.type === "PAYMENT" ? sum + t.amount : sum - t.amount;
   }, 0);
 

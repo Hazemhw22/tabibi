@@ -45,7 +45,7 @@ async function getDoctors(params: SearchParams) {
   if (params.search && data) {
     const q = params.search.toLowerCase();
     return data.filter(
-      (d: any) =>
+      (d: { user?: { name?: string }; specialty?: { nameAr?: string } }) =>
         d.user?.name?.toLowerCase().includes(q) ||
         d.specialty?.nameAr?.toLowerCase().includes(q)
     );
@@ -99,7 +99,7 @@ export default async function DoctorsPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {doctors.map((doctor: any) => (
+              {doctors.map((doctor: { id: string; user?: { name?: string }; specialty?: { nameAr?: string }; consultationFee?: number; rating?: number; experienceYears?: number; clinics?: { address?: string }[]; reviews?: { length?: number }[] }) => (
                 <Link key={doctor.id} href={`/doctors/${doctor.id}`}>
                   <Card className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group h-full">
                     <CardContent className="p-5">
