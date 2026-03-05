@@ -33,7 +33,7 @@ export default async function DoctorPatientsPage() {
   const clinicPatients = _cpErr ? [] : (clinicPatientsRaw ?? []);
 
   const byPatient = new Map<string, { name?: string; email?: string; phone?: string; count: number }>();
-  appointments?.forEach((a: { patientId: string; patient?: { name?: string; email?: string; phone?: string } }) => {
+  (appointments ?? []).forEach((a) => {
     const id = a.patientId;
     const current = byPatient.get(id) || {
       name: (a.patient as { name?: string })?.name,

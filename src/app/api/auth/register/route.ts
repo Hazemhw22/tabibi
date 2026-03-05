@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "بيانات غير صالحة", details: error.errors },
+        { error: "بيانات غير صالحة", details: error.issues },
         { status: 400 }
       );
     }

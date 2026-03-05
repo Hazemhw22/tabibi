@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-01-27.acacia",
+  apiVersion: "2026-02-25.clover",
 });
 
 export async function POST(req: Request) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.CheckoutSession;
+        const session = event.data.object as Stripe.CheckoutSessionCompletedEvent["data"]["object"];
         const appointmentId = session.metadata?.appointmentId;
 
         if (!appointmentId) break;
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       }
 
       case "checkout.session.expired": {
-        const session = event.data.object as Stripe.CheckoutSession;
+        const session = event.data.object as Stripe.CheckoutSessionExpiredEvent["data"]["object"];
         const appointmentId = session.metadata?.appointmentId;
 
         if (!appointmentId) break;

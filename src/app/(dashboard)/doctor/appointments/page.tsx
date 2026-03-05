@@ -33,7 +33,9 @@ export default async function DoctorAppointmentsPage({
   const appointments = await prisma.clinicAppointment.findMany({
     where: {
       doctorId: doctor.id,
-      ...(status && { status }),
+      // status في Prisma من نوع enum، بينما يأتي من الـ query كسلسلة نصية،
+      // لذلك نقوم بعمل cast لتجاوز خطأ TypeScript مع الحفاظ على نفس السلوك.
+      ...(status && { status: status as any }),
       ...(filterDate && {
         date: {
           gte: new Date(filterDate.setHours(0, 0, 0, 0)),

@@ -14,13 +14,19 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
-    const { status, subscriptionPlan } = body;
+    const { status, subscriptionPlan } = body as {
+      status?: string;
+      subscriptionPlan?: string;
+    };
 
-    const updates = {};
-    if (["APPROVED", "REJECTED", "SUSPENDED"].includes(status)) {
+    const updates: { status?: string; subscriptionPlan?: string } = {};
+    if (status && ["APPROVED", "REJECTED", "SUSPENDED"].includes(status)) {
       updates.status = status;
     }
-    if (["basic", "premium", "enterprise"].includes(subscriptionPlan)) {
+    if (
+      subscriptionPlan &&
+      ["basic", "premium", "enterprise"].includes(subscriptionPlan)
+    ) {
       updates.subscriptionPlan = subscriptionPlan;
     }
 

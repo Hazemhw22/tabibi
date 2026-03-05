@@ -54,8 +54,14 @@ export default async function PatientReviewsPage() {
           ) : (
             <div className="space-y-4">
               {list.map((r: Record<string, unknown>) => {
-                const doctor = r.doctor as { User?: { name?: string }; Specialty?: { nameAr?: string }; user?: { name?: string }; specialty?: { nameAr?: string } };
+                const doctor = r.doctor as {
+                  User?: { name?: string };
+                  Specialty?: { nameAr?: string };
+                  user?: { name?: string };
+                  specialty?: { nameAr?: string };
+                };
                 const apt = r.appointment as { appointmentDate?: string } | undefined;
+                const comment = typeof r.comment === "string" ? r.comment : null;
                 return (
                   <div key={r.id as string} className="p-4 border rounded-xl bg-gray-50/50">
                     <div className="flex items-start justify-between gap-3">
@@ -72,14 +78,16 @@ export default async function PatientReviewsPage() {
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-4 w-4 ${i < Number(r.rating) ? "fill-current" : "text-gray-200"}`}
+                            className={`h-4 w-4 ${i < Number(r.rating ?? 0) ? "fill-current" : "text-gray-200"}`}
                           />
                         ))}
-                        <span className="text-sm font-medium text-gray-700 mr-1">{r.rating}/5</span>
+                        <span className="text-sm font-medium text-gray-700 mr-1">
+                          {Number(r.rating ?? 0)}/5
+                        </span>
                       </div>
                     </div>
-                    {r.comment && (
-                      <p className="text-sm text-gray-600 mt-3 border-t pt-3">{String(r.comment)}</p>
+                    {comment && (
+                      <p className="text-sm text-gray-600 mt-3 border-t pt-3">{comment}</p>
                     )}
                     <p className="text-xs text-gray-400 mt-2">
                       {r.createdAt ? format(new Date(r.createdAt as string), "d MMM yyyy", { locale: ar }) : ""}

@@ -101,22 +101,42 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
-              {recentApts.map((apt) => (
-                <div key={apt.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+              {recentApts.map((apt: (typeof recentApts)[number]) => (
+                <div
+                  key={apt.id}
+                  className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0"
+                >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{apt.patient.name}</p>
-                    <p className="text-xs text-gray-500">د. {apt.doctor.user.name} • {apt.doctor.specialty.nameAr}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {apt.patient.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      د. {apt.doctor.user.name} • {apt.doctor.specialty.nameAr}
+                    </p>
                   </div>
                   <div className="text-left mr-3">
-                    <p className="text-xs text-gray-400">{format(new Date(apt.appointmentDate), "dd/MM")}</p>
-                    <Badge variant={
-                      apt.status === "CONFIRMED" ? "default"
-                      : apt.status === "COMPLETED" ? "success"
-                      : apt.status === "CANCELLED" ? "destructive" : "secondary"
-                    } className="text-xs mt-0.5">
-                      {apt.status === "CONFIRMED" ? "مؤكد"
-                        : apt.status === "COMPLETED" ? "منجز"
-                        : apt.status === "CANCELLED" ? "ملغي" : "مسودة"}
+                    <p className="text-xs text-gray-400">
+                      {format(new Date(apt.appointmentDate), "dd/MM")}
+                    </p>
+                    <Badge
+                      variant={
+                        apt.status === "CONFIRMED"
+                          ? "default"
+                          : apt.status === "COMPLETED"
+                          ? "success"
+                          : apt.status === "CANCELLED"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                      className="text-xs mt-0.5"
+                    >
+                      {apt.status === "CONFIRMED"
+                        ? "مؤكد"
+                        : apt.status === "COMPLETED"
+                        ? "منجز"
+                        : apt.status === "CANCELLED"
+                        ? "ملغي"
+                        : "مسودة"}
                     </Badge>
                   </div>
                 </div>

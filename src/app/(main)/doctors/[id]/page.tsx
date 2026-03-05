@@ -72,13 +72,14 @@ export default async function DoctorProfilePage({
 
   if (!doctor) notFound();
 
+  type SlotItem = { id?: string; dayOfWeek: number; startTime?: string; endTime?: string; isActive?: boolean };
   const timeSlotsByDay = (doctor.timeSlots ?? []).reduce(
-    (acc: Record<number, typeof doctor.timeSlots>, slot: { dayOfWeek: number }) => {
+    (acc: Record<number, SlotItem[]>, slot: SlotItem) => {
       if (!acc[slot.dayOfWeek]) acc[slot.dayOfWeek] = [];
       acc[slot.dayOfWeek].push(slot);
       return acc;
     },
-    {}
+    {} as Record<number, SlotItem[]>
   );
 
   return (
