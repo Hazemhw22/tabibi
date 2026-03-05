@@ -77,7 +77,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               <div className="space-y-2">
-                {pendingDoctors.map((doc) => (
+                {pendingDoctors.map((doc: (typeof pendingDoctors)[number]) => (
                   <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-base font-bold text-blue-600 shrink-0">
                       {doc.user.name?.charAt(0)}
