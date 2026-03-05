@@ -1,10 +1,10 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type NotificationType =
-  | "payment"      // دفعة واردة
-  | "service"      // خدمة جديدة / دين
-  | "appointment"  // موعد جديد
-  | "appointment_update" // تحديث حالة موعد
+  | "payment"
+  | "service"
+  | "appointment"
+  | "appointment_update"
   | "info";
 
 interface CreateNotificationParams {
@@ -17,20 +17,61 @@ interface CreateNotificationParams {
 
 /**
  * Creates a notification for a user. Fire-and-forget — does not throw.
+ * Supabase client returns { error } instead of throwing; we must check it.
  */
 export async function createNotification(params: CreateNotificationParams) {
-  try {
-    await supabaseAdmin.from("Notification").insert({
-      userId: params.userId,
-      title: params.title,
-      message: params.message,
-      type: params.type,
-      link: params.link ?? null,
-      isRead: false,
-    });
-  } catch (err) {
-    console.error("[Notification] Failed to create notification:", err);
+  if (!params.userId?.trim()) {
+    console.error("[Notification] Skip: userId is empty");
+    return;
   }
+  try {
+    const payload = {
+      userId:  params.userId,
+      title:   params.title,
+      message: params.message,
+      type:    params.type,
+      link:    params.link ?? null,
+      isRead:  false,
+    };
+    const { error } = await supabaseAdmin.from("Notification").insert(payload);
+
+    if (error) {
+      console.error("[Notification] Insert failed:", error.message, "code:", error.code, "details:", error.details, "payload:", { ...payload, userId: payload.userId?.slice(0, 8) + "…" });
+    }
+  } catch (err) {
+    console.error("[Notification] Unexpected error:", err);
+  }
+}
+
+/**
+ * Finds a User.id by email or phone (for linking clinic patients to platform accounts).
+ */
+async function resolvePatientUserId(
+  userId: string | null | undefined,
+  email: string | null | undefined,
+  phone: string | null | undefined,
+): Promise<string | null> {
+  if (userId) return userId;
+
+  if (email) {
+    const { data } = await supabaseAdmin
+      .from("User")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+
+  if (phone) {
+    const { data } = await supabaseAdmin
+      .from("User")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+
+  return null;
 }
 
 /**
@@ -42,7 +83,6 @@ export async function notifyAppointmentBooked({
   patientName,
   doctorName,
   date,
-  appointmentId,
 }: {
   doctorUserId: string;
   patientUserId: string;
@@ -53,92 +93,88 @@ export async function notifyAppointmentBooked({
 }) {
   await Promise.all([
     createNotification({
-      userId: doctorUserId,
-      title: "موعد جديد",
+      userId:  doctorUserId,
+      title:   "موعد جديد",
       message: `${patientName} حجز موعداً بتاريخ ${date}`,
-      type: "appointment",
-      link: `/dashboard/doctor/appointments`,
+      type:    "appointment",
+      link:    "/dashboard/doctor/appointments",
     }),
     createNotification({
-      userId: patientUserId,
-      title: "تم تأكيد موعدك",
+      userId:  patientUserId,
+      title:   "تم تأكيد موعدك",
       message: `موعدك مع ${doctorName} بتاريخ ${date} تم تسجيله`,
-      type: "appointment",
-      link: `/dashboard/patient/appointments`,
+      type:    "appointment",
+      link:    "/dashboard/patient/appointments",
     }),
   ]);
 }
 
 /**
- * Notifies both the doctor and the patient about a new transaction.
+ * Notifies both the doctor and the patient (resolved by userId / email / phone)
+ * about a new transaction.
  */
 export async function notifyClinicTransaction({
   doctorUserId,
   patientUserId,
+  patientEmail,
+  patientPhone,
   patientName,
   type,
   description,
   amount,
   doctorName,
   patientId,
+  patientSource = "clinic",
 }: {
   doctorUserId: string;
-  patientUserId: string | null;
+  patientUserId: string | null | undefined;
+  patientEmail?: string | null;
+  patientPhone?: string | null;
   patientName?: string | null;
   type: "SERVICE" | "PAYMENT";
   description: string;
   amount: number;
   doctorName?: string | null;
   patientId?: string;
+  patientSource?: "clinic" | "platform";
 }) {
   const tasks: Promise<void>[] = [];
+  const patientLink = patientId
+    ? `/dashboard/doctor/patients?id=${patientId}&source=${patientSource}`
+    : "/dashboard/doctor/patients";
 
-  /* ── إشعار للطبيب دائماً ────────────────────────────────── */
-  if (type === "PAYMENT") {
+  /* ── إشعار للطبيب دائماً ─────────────────────────────────── */
+  tasks.push(
+    createNotification({
+      userId:  doctorUserId,
+      title:   type === "PAYMENT" ? "تم تسجيل دفعة" : "خدمة طبية مُسجَّلة",
+      message: type === "PAYMENT"
+        ? `دفعة ₪${amount.toFixed(0)} من ${patientName ?? "مريض"} — ${description}`
+        : `تمت إضافة "${description}" ₪${amount.toFixed(0)} للمريض ${patientName ?? ""}`,
+      type: type === "PAYMENT" ? "payment" : "service",
+      link: patientLink,
+    })
+  );
+
+  /* ── إشعار للمريض — يُحلَّل userId من الإيميل/الهاتف إن لم يُوجد ── */
+  const resolvedPatientId = await resolvePatientUserId(
+    patientUserId,
+    patientEmail,
+    patientPhone,
+  );
+
+  if (resolvedPatientId) {
     tasks.push(
       createNotification({
-        userId: doctorUserId,
-        title: "تم تسجيل دفعة",
-        message: `دفعة بمبلغ ₪${amount.toFixed(0)} من ${patientName ?? "مريض"} — ${description}`,
-        type: "payment",
-        link: patientId ? `/dashboard/doctor/patients?id=${patientId}&source=clinic` : "/dashboard/doctor/patients",
+        userId:  resolvedPatientId,
+        title:   type === "PAYMENT" ? "تم تسجيل دفعتك" : "خدمة طبية مضافة",
+        message: type === "PAYMENT"
+          ? `تم تسجيل دفعة ₪${amount.toFixed(0)} — ${description}${doctorName ? ` · د. ${doctorName}` : ""}`
+          : `تمت إضافة خدمة "${description}" ₪${amount.toFixed(0)}${doctorName ? ` · د. ${doctorName}` : ""}`,
+        type: type === "PAYMENT" ? "payment" : "service",
+        link: "/dashboard/patient/transactions",
       })
     );
-  } else {
-    tasks.push(
-      createNotification({
-        userId: doctorUserId,
-        title: "خدمة طبية مُسجَّلة",
-        message: `تمت إضافة "${description}" بقيمة ₪${amount.toFixed(0)} للمريض ${patientName ?? ""}`,
-        type: "service",
-        link: patientId ? `/dashboard/doctor/patients?id=${patientId}&source=clinic` : "/dashboard/doctor/patients",
-      })
-    );
-  }
-
-  /* ── إشعار للمريض إن كان له حساب ───────────────────────── */
-  if (patientUserId) {
-    if (type === "PAYMENT") {
-      tasks.push(
-        createNotification({
-          userId: patientUserId,
-          title: "تم تسجيل دفعتك",
-          message: `تم تسجيل دفعة بمبلغ ₪${amount.toFixed(0)} — ${description}${doctorName ? ` · د. ${doctorName}` : ""}`,
-          type: "payment",
-          link: "/dashboard/patient/transactions",
-        })
-      );
-    } else {
-      tasks.push(
-        createNotification({
-          userId: patientUserId,
-          title: "خدمة طبية مضافة",
-          message: `تمت إضافة خدمة "${description}" بقيمة ₪${amount.toFixed(0)}${doctorName ? ` · د. ${doctorName}` : ""}`,
-          type: "service",
-          link: "/dashboard/patient/transactions",
-        })
-      );
-    }
   }
 
   await Promise.all(tasks);

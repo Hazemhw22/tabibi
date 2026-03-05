@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendSms, buildTransactionSmsMessage } from "@/lib/sms";
 import { sendTransactionEmail } from "@/lib/email";
+import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
 
 const schema = z.object({
@@ -91,7 +92,7 @@ export async function POST(
     let smsSent: boolean | null = null;
     const { data: patientUser } = await supabaseAdmin
       .from("User")
-      .select("phone, email")
+      .select("id, name, phone, email")
       .eq("id", patientId)
       .single();
     const phone = patientUser?.phone ?? (patientUser as { phone?: string })?.phone;
@@ -118,6 +119,21 @@ export async function POST(
         doctorName: session.user.name,
       });
     }
+
+    /* ── إشعار للطبيب والمريض ───────────────────────────────── */
+    await notifyClinicTransaction({
+      doctorUserId:   session.user.id,
+      patientUserId: patientId,
+      patientEmail:  patientUser?.email ?? null,
+      patientPhone:  patientUser?.phone ?? null,
+      patientName:   patientUser?.name ?? null,
+      type:          data.type,
+      description:   data.description,
+      amount:        data.amount,
+      doctorName:    session.user.name,
+      patientId,
+      patientSource: "platform",
+    });
 
     return NextResponse.json({ ...row, smsSent }, { status: 201 });
   } catch (e) {

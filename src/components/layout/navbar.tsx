@@ -218,7 +218,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile theme + menu buttons */}
+          {/* Mobile theme + notifications + menu buttons */}
           <div className="md:hidden flex items-center gap-1">
             <button
               onClick={toggleTheme}
@@ -231,6 +231,7 @@ export default function Navbar() {
                 <Moon className="h-5 w-5" />
               )}
             </button>
+            {session && <NotificationBell theme="light" />}
             <button
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
               onClick={() => setMenuOpen(!menuOpen)}

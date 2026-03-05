@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const registerSchema = z.object({
@@ -74,6 +75,19 @@ export async function POST(req: Request) {
         });
       }
     }
+
+    /* ── إشعار ترحيب ─────────────────────────────────────────── */
+    const welcomeMsg = data.role === "DOCTOR"
+      ? "مرحباً بك في منصة طبيبي! سيتم مراجعة حسابك والرد عليك قريباً."
+      : "مرحباً بك في منصة طبيبي! يمكنك الآن حجز مواعيدك ومتابعة معاملاتك.";
+
+    await createNotification({
+      userId:  userId,
+      title:   "مرحباً بك في طبيبي 👋",
+      message: welcomeMsg,
+      type:    "info",
+      link:    data.role === "DOCTOR" ? "/dashboard/doctor" : "/dashboard/patient",
+    });
 
     return NextResponse.json(
       { message: "تم إنشاء الحساب بنجاح", userId },

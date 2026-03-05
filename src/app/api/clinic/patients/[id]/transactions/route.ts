@@ -103,17 +103,23 @@ export async function POST(
       });
     }
 
-    /* ── Notification للطبيب دائماً + للمريض إن كان له حساب ─ */
-    await notifyClinicTransaction({
-      doctorUserId: session.user.id,
+    /* ── Notification للطبيب دائماً + للمريض (يُحلَّل من email/phone إن لم يكن userId) ─ */
+    if (!session.user.id) {
+      console.error("[Transactions] Cannot notify: session.user.id is missing");
+    } else {
+      await notifyClinicTransaction({
+      doctorUserId:  session.user.id,
       patientUserId: patient.userId ?? null,
-      patientName: patient.name ?? null,
-      type: data.type,
-      description: data.description,
-      amount: data.amount,
-      doctorName: session.user.name,
-      patientId: id,
+      patientEmail:  patient.email ?? null,
+      patientPhone:  patient.phone ?? null,
+      patientName:   patient.name ?? null,
+      type:          data.type,
+      description:   data.description,
+      amount:        data.amount,
+      doctorName:    session.user.name,
+      patientId:     id,
     });
+    }
 
     return NextResponse.json({ transaction, smsSent }, { status: 201 });
   } catch (err) {
