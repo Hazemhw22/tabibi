@@ -53,8 +53,10 @@ export default async function DoctorHomePage() {
     }),
   ]);
 
-  const statsMap = Object.fromEntries(stats.map((s) => [s.status, s._count]));
-  const upcomingToday = todayApts.filter((a) => a.status === "SCHEDULED");
+  type StatItem = (typeof stats)[number];
+  type TodayAptItem = (typeof todayApts)[number];
+  const statsMap = Object.fromEntries(stats.map((s: StatItem) => [s.status, s._count]));
+  const upcomingToday = todayApts.filter((a: TodayAptItem) => a.status === "SCHEDULED");
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -122,7 +124,7 @@ export default async function DoctorHomePage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {todayApts.map((apt) => (
+                  {todayApts.map((apt: TodayAptItem) => (
                     <div key={apt.id}
                       className={`flex items-center gap-4 p-3.5 rounded-xl border transition-colors ${
                         apt.status === "COMPLETED" ? "bg-green-50 border-green-100"
