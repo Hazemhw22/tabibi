@@ -8,6 +8,7 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+// AUTH_SECRET مطلوب في الإنتاج — بدونه سيعيد /api/auth/session 500 (راجع docs/auth-session-500.md)
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
@@ -56,9 +57,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+      if (session?.user && token) {
+        (session.user as { id?: string; role?: string }).id = token.id as string;
+        (session.user as { id?: string; role?: string }).role = token.role as string;
       }
       return session;
     },

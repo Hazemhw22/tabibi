@@ -19,8 +19,13 @@ export async function POST(
 ) {
   try {
     const session = await auth();
-    if (!session || session.user.role !== "DOCTOR")
-      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    if (!session)
+      return NextResponse.json(
+        { error: "جلسة منتهية أو غير صالحة. سجّل الدخول مرة أخرى." },
+        { status: 401 }
+      );
+    if (session.user.role !== "DOCTOR")
+      return NextResponse.json({ error: "غير مصرح لهذا الإجراء" }, { status: 403 });
 
     const { id } = await params;
     const { data: doctor } = await supabaseAdmin
