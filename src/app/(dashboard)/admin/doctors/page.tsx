@@ -49,7 +49,7 @@ export default async function AdminDoctorsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {doctors.map((doc) => {
+            {doctors.map((doc: (typeof doctors)[number]) => {
               const cfg = STATUS_MAP[doc.status];
               const Icon = cfg.icon;
               return (
