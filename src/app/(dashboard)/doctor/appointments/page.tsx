@@ -72,7 +72,7 @@ export default async function DoctorAppointmentsPage({
               </span>
             </div>
             <div className="space-y-2">
-              {today.map((apt) => {
+              {today.map((apt: AppointmentItem) => {
                 const cfg = STATUS_MAP[apt.status];
                 return (
                   <div key={apt.id} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-blue-100">
@@ -117,7 +117,7 @@ export default async function DoctorAppointmentsPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {appointments.map((apt) => {
+                {appointments.map((apt: AppointmentItem) => {
                   const cfg = STATUS_MAP[apt.status];
                   return (
                     <tr key={apt.id} className="hover:bg-gray-50">
