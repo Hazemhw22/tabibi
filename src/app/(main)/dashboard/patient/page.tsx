@@ -185,21 +185,16 @@ export default async function PatientDashboard() {
       new Date(a.appointmentDate) >= new Date()
   );
 
-  // مجموع الدفعات = المدفوعات من المواعيد المدفوعة + الدفعات التي يضيفها الطبيب يدوياً (Clinic/Platform)
-  const totalPaidFromAppointments = list
-    .filter((a: { paymentStatus?: string }) => a.paymentStatus === "PAID")
-    .reduce((sum: number, a: { fee: number }) => sum + (a.fee ?? 0), 0);
+  // مجموع الدفعات = الدفعات اليدوية فقط (التي يضيفها الطبيب) — بدون مدفوعات المواعيد
   const totalPaidFromManual = txRows
     .filter((t) => t.type === "PAYMENT")
     .reduce((sum, t) => sum + (t.amount ?? 0), 0);
-  const totalPaid = totalPaidFromAppointments + totalPaidFromManual;
-  const totalDebts = list
-    .filter(
-      (a: { paymentStatus?: string; status: string }) =>
-        a.paymentStatus === "UNPAID" &&
-        ["DRAFT", "CONFIRMED"].includes(a.status)
-    )
-    .reduce((sum: number, a: { fee: number }) => sum + (a.fee ?? 0), 0);
+
+  // مجموع الديون = إجمالي الخدمات - إجمالي الدفعات (من المعاملات فقط، بدون المواعيد)
+  const totalServices = txRows
+    .filter((t) => t.type === "SERVICE")
+    .reduce((sum, t) => sum + (t.amount ?? 0), 0);
+  const totalDebts = Math.max(0, totalServices - totalPaidFromManual);
 
   const latestAppointments = list.slice(0, 5);
 
@@ -227,7 +222,7 @@ export default async function PatientDashboard() {
           { label: "مواعيد قادمة", value: upcoming.length, color: "bg-indigo-50 text-indigo-600" },
           { label: "مواعيد منجزة", value: statsMap["COMPLETED"] || 0, color: "bg-green-50 text-green-600" },
           { label: "مواعيد ملغاة", value: statsMap["CANCELLED"] || 0, color: "bg-red-50 text-red-600" },
-          { label: "مجموع الدفعات", value: `₪${totalPaid.toFixed(0)}`, color: "bg-emerald-50 text-emerald-600", icon: CreditCard },
+          { label: "مجموع الدفعات", value: `₪${totalPaidFromManual.toFixed(0)}`, color: "bg-emerald-50 text-emerald-600", icon: CreditCard },
           { label: "مجموع الديون", value: `₪${totalDebts.toFixed(0)}`, color: "bg-amber-50 text-amber-600", icon: Wallet },
         ].map((stat, i) => (
           <Card key={i}>
