@@ -27,6 +27,7 @@ export type PatientListItem = {
   id: string;
   name: string;
   phone?: string | null;
+  whatsapp?: string | null;
   email?: string | null;
   fileNumber?: string | null;
   source: "clinic" | "platform";
@@ -37,6 +38,7 @@ export type SelectedPatient = {
   id: string;
   name: string;
   phone?: string | null;
+  whatsapp?: string | null;
   email?: string | null;
   fileNumber?: string | null;
   gender?: string | null;
