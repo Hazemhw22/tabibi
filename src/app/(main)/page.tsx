@@ -33,6 +33,34 @@ async function getSpecialties() {
   });
 }
 
+type DoctorRow = {
+  id: string;
+  rating?: number;
+  totalReviews?: number;
+  consultationFee?: number;
+  experienceYears?: number;
+  whatsapp?: string | null;
+  user?: { name?: string; phone?: string } | { name?: string; phone?: string }[];
+  specialty?: { nameAr?: string } | { nameAr?: string }[];
+  clinics?: { address?: string; phone?: string }[];
+};
+
+function normalizeDoctor(d: DoctorRow) {
+  const user = Array.isArray(d.user) ? d.user[0] : d.user;
+  const specialty = Array.isArray(d.specialty) ? d.specialty[0] : d.specialty;
+  return {
+    id: d.id,
+    rating: d.rating,
+    totalReviews: d.totalReviews,
+    consultationFee: d.consultationFee,
+    experienceYears: d.experienceYears,
+    whatsapp: d.whatsapp,
+    user,
+    specialty,
+    clinics: d.clinics ?? [],
+  };
+}
+
 async function getFeaturedDoctors() {
   const { data } = await supabaseAdmin
     .from("Doctor")
@@ -43,7 +71,8 @@ async function getFeaturedDoctors() {
     .eq("status", "APPROVED")
     .order("rating", { ascending: false })
     .limit(6);
-  return data ?? [];
+  const raw = (data ?? []) as DoctorRow[];
+  return raw.map(normalizeDoctor);
 }
 
 const SPECIALTY_ICONS: Record<string, string> = {
@@ -200,7 +229,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {doctors.map((doctor: { id: string; user?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; clinics?: { address?: string; phone?: string }[]; rating?: number; totalReviews?: number; consultationFee?: number; experienceYears?: number; whatsapp?: string | null }) => {
+              {doctors.map((doctor) => {
                 const contactNum = doctor.whatsapp || doctor.user?.phone || doctor.clinics?.[0]?.phone;
                 const waNum = contactNum ? contactNum.replace(/\D/g, "") : "";
                 return (
@@ -263,7 +292,8 @@ export default async function HomePage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
           </div>
         </section>

@@ -64,11 +64,12 @@ export async function PATCH(
 
     if (status === "APPROVED" && doctor?.userId && subscriptionPeriod && subscriptionPeriod in SUBSCRIPTION_PLANS) {
       const plan = SUBSCRIPTION_PLANS[subscriptionPeriod];
-      await supabaseAdmin.from("SubscriptionPayment").insert({
+      const { error: payError } = await supabaseAdmin.from("SubscriptionPayment").insert({
         doctorId: id,
         amount: plan.amount,
         period: subscriptionPeriod,
-      }).catch((e) => console.error("SubscriptionPayment insert:", e));
+      });
+      if (payError) console.error("SubscriptionPayment insert:", payError);
 
       await supabaseAdmin.from("Notification").insert({
         userId: doctor.userId,
