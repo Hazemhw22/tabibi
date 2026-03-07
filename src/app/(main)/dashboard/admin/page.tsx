@@ -141,7 +141,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {(pendingDoctors as { id: string; user?: { name?: string }; specialty?: { nameAr?: string }; createdAt?: string; subscriptionPlan?: string }[]).map((doctor) => (
+                {(pendingDoctors as { id: string; user?: { name?: string }; specialty?: { nameAr?: string }; createdAt?: string; subscriptionPlan?: string; subscriptionPeriod?: string | null }[]).map((doctor) => (
                   <div
                     key={doctor.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
