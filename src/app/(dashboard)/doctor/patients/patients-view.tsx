@@ -19,6 +19,7 @@ type PatientListItem = {
   id: string;
   name: string;
   phone?: string | null;
+  whatsapp?: string | null;
   fileNumber?: string | null;
   createdAt: Date;
   _count: { clinicAppointments: number; transactions: number };

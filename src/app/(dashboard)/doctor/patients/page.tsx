@@ -24,6 +24,7 @@ export default async function PatientsPage({
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { phone: { contains: q } },
+          { whatsapp: { contains: q } },
           { fileNumber: { contains: q } },
         ],
       }),
@@ -48,6 +49,7 @@ export default async function PatientsPage({
       id: p.id,
       name: p.name,
       phone: p.phone,
+      whatsapp: p.whatsapp,
       fileNumber: p.fileNumber,
       createdAt: p.createdAt,
       _count: p._count,
