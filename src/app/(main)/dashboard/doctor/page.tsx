@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Plus,
   Receipt,
+  CreditCard,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,7 @@ export default async function DoctorDashboard() {
 
   const { data: doctor } = await supabaseAdmin
     .from("Doctor")
-    .select(`*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*)`)
+    .select(`*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*), subscriptionPeriod, subscriptionEndDate`)
     .eq("userId", session.user.id)
     .single();
 
@@ -328,6 +329,40 @@ export default async function DoctorDashboard() {
 
         {/* Sidebar Stats */}
         <div className="space-y-4">
+          {/* بطاقة الاشتراك */}
+          {doctor.subscriptionPeriod && doctor.subscriptionEndDate && (
+            <Card className="border-blue-200 bg-blue-50/30">
+              <CardHeader>
+                <CardTitle className="text-sm text-gray-700">الاشتراك</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">النوع:</span>
+                  <span className="font-semibold">
+                    {doctor.subscriptionPeriod === "monthly" ? "شهري ₪80" : doctor.subscriptionPeriod === "half_year" ? "نصف سنة ₪400" : "سنة ₪800"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">ينتهي:</span>
+                  <span className="font-semibold">{format(new Date(doctor.subscriptionEndDate), "dd/MM/yyyy", { locale: ar })}</span>
+                </div>
+                {(() => {
+                  const end = new Date(doctor.subscriptionEndDate);
+                  const now = new Date();
+                  const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <div className="flex justify-between text-sm pt-1 border-t border-blue-100">
+                      <span className="text-gray-600">المتبقي:</span>
+                      <span className={daysLeft <= 7 ? "font-bold text-amber-600" : "font-semibold text-green-600"}>
+                        {daysLeft > 0 ? `${daysLeft} يوم` : "منتهي"}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-sm text-gray-700">إحصائيات المواعيد</CardTitle>

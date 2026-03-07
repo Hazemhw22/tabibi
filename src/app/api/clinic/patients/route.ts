@@ -6,6 +6,7 @@ import { z } from "zod";
 const schema = z.object({
   name: z.string().min(1),
   phone: z.string().optional(),
+  whatsapp: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   gender: z.string().optional(),
   dateOfBirth: z.string().optional(),
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
         doctorId: doctor.id,
         name: data.name,
         phone: data.phone || null,
+        whatsapp: data.whatsapp || null,
         email: data.email || null,
         gender: data.gender || null,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
@@ -83,7 +85,7 @@ export async function GET(req: Request) {
 
     let query = supabaseAdmin
       .from("ClinicPatient")
-      .select("id, name, phone, email, fileNumber, createdAt")
+      .select("id, name, phone, whatsapp, email, fileNumber, createdAt")
       .eq("doctorId", doctor.id)
       .eq("isActive", true)
       .order("createdAt", { ascending: false });

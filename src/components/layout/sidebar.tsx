@@ -36,11 +36,9 @@ const doctorNav: NavItem[] = [
 ];
 
 const adminNav: NavItem[] = [
-  { label: "الرئيسية", href: "/dashboard/admin", icon: LayoutDashboard },
+  { label: "لوحة تحكم", href: "/dashboard/admin", icon: LayoutDashboard },
   { label: "الأطباء", href: "/dashboard/admin/doctors", icon: Stethoscope },
-  { label: "المستخدمون", href: "/dashboard/admin/users", icon: Users },
-  { label: "المواعيد", href: "/dashboard/admin/appointments", icon: Calendar },
-  { label: "التقارير", href: "/dashboard/admin/reports", icon: ClipboardList },
+  { label: "الاشتراكات", href: "/dashboard/admin/subscriptions", icon: TrendingUp },
   { label: "الإعدادات", href: "/dashboard/admin/settings", icon: ShieldCheck },
 ];
 
@@ -62,15 +60,15 @@ function SidebarContent({ nav, roleLabel, pathname, onLinkClick }: SidebarConten
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-gray-800 px-5">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-gray-800 px-4 py-3">
         <Image
           src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
           alt="Tabibi"
-          width={100}
-          height={30}
-          className="shrink-0"
+          width={160}
+          height={40}
+          className="h-9 w-auto shrink-0 max-w-[140px]"
         />
-        <p className="text-xs text-gray-400">{roleLabel}</p>
+        <p className="text-xs text-gray-400 truncate">{roleLabel}</p>
       </div>
 
       {/* Navigation */}
@@ -151,12 +149,13 @@ export default function Sidebar() {
 
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 right-0 left-0 z-40 bg-gray-900 border-b border-gray-800 px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-white font-bold text-sm">
+        <div className="flex items-center gap-2 text-white font-bold text-sm min-w-0">
           <Image
             src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
             alt="Tabibi"
-            width={110}
-            height={32}
+            width={160}
+            height={40}
+            className="h-9 w-auto max-w-[140px]"
           />
         </div>
         <button

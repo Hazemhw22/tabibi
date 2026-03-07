@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+type Specialty = { id: string; name: string; nameAr: string };
+
 const registerSchema = z.object({
   name: z.string().min(3, "الاسم يجب أن يكون 3 أحرف على الأقل"),
   email: z.string().email("البريد الإلكتروني غير صالح"),
@@ -20,9 +22,17 @@ const registerSchema = z.object({
   password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
   confirmPassword: z.string(),
   role: z.enum(["PATIENT", "DOCTOR"]),
+  specialtyId: z.string().optional(),
+  whatsapp: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "كلمتا المرور غير متطابقتين",
   path: ["confirmPassword"],
+}).refine((data) => data.role !== "DOCTOR" || (data.specialtyId && data.specialtyId.length > 0), {
+  message: "يجب اختيار التخصص الطبي",
+  path: ["specialtyId"],
+}).refine((data) => data.role !== "DOCTOR" || (data.whatsapp && data.whatsapp.trim().length > 0), {
+  message: "يجب إدخال رقم الواتساب",
+  path: ["whatsapp"],
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -31,6 +41,14 @@ export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+
+  useEffect(() => {
+    fetch("/api/specialties")
+      .then((r) => r.json())
+      .then((d) => setSpecialties(Array.isArray(d) ? d : []))
+      .catch(() => setSpecialties([]));
+  }, []);
 
   const {
     register,

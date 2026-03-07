@@ -10,12 +10,22 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   font-family: var(--font-cairo), "Cairo", "Segoe UI", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+/* تحسين اللمس على الشاشات الصغيرة - منع تكبير iOS عند التركيز على الحقول */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
 }
 
 /* === Dark / Light theme support via [data-theme] on <html> === */

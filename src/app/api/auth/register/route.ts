@@ -9,6 +9,14 @@ const registerSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(6),
   role: z.enum(["PATIENT", "DOCTOR"]),
+  specialtyId: z.string().optional(),
+  whatsapp: z.string().optional(),
+}).refine((d) => d.role !== "DOCTOR" || (d.specialtyId && d.specialtyId.length > 0), {
+  message: "يجب اختيار التخصص",
+  path: ["specialtyId"],
+}).refine((d) => d.role !== "DOCTOR" || (d.whatsapp && d.whatsapp.trim().length > 0), {
+  message: "يجب إدخال رقم الواتساب",
+  path: ["whatsapp"],
 });
 
 export async function POST(req: Request) {
@@ -57,16 +65,12 @@ export async function POST(req: Request) {
 
     // 3. إذا كان طبيباً، إنشاء record في جدول Doctor
     if (data.role === "DOCTOR") {
-      const { data: specialty } = await supabaseAdmin
-        .from("Specialty")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (specialty) {
+      const specialtyId = data.specialtyId ?? (await supabaseAdmin.from("Specialty").select("id").limit(1).single()).data?.id;
+      if (specialtyId) {
         await supabaseAdmin.from("Doctor").insert({
           userId: userId,
-          specialtyId: specialty.id,
+          specialtyId,
+          whatsapp: (data.whatsapp ?? "").replace(/\D/g, "").slice(-9) ? `972${(data.whatsapp ?? "").replace(/\D/g, "").slice(-9)}` : null,
           status: "PENDING",
           experienceYears: 0,
           consultationFee: 0,

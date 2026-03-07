@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { notFound } from "next/navigation";
-import { Star, MapPin, Clock, Phone, Calendar } from "lucide-react";
+import { Star, MapPin, Clock, Phone, Calendar, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DAYS_AR } from "@/lib/utils";
@@ -11,8 +11,8 @@ async function getDoctor(id: string) {
   const { data: doctor, error } = await supabaseAdmin
     .from("Doctor")
     .select(`
-      id, consultationFee, rating, experienceYears, bio, status,
-      user:User(name),
+      id, consultationFee, rating, experienceYears, bio, status, whatsapp,
+      user:User(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain),
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive)
@@ -37,11 +37,12 @@ async function getDoctor(id: string) {
   ]);
 
   type ClinicItem = { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean };
-  type DoctorRow = { user?: { name?: string }; User?: { name?: string }; specialty?: { nameAr?: string }; Specialty?: { nameAr?: string }; clinics?: ClinicItem[] };
+  type DoctorRow = { whatsapp?: string | null; user?: { name?: string; phone?: string }; User?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; Specialty?: { nameAr?: string }; clinics?: ClinicItem[] };
   const d = doctor as DoctorRow;
   const user = d.user ?? d.User;
   const specialty = d.specialty ?? d.Specialty;
   const clinics: ClinicItem[] = d.clinics ?? [];
+  const contactNumber = d.whatsapp || user?.phone || clinics?.[0]?.phone;
   type ReviewRow = { id: string; rating?: number; comment?: string | null; patient?: { name?: string }; Patient?: { name?: string } };
   const reviewsList = ((reviews ?? []) as ReviewRow[]).map((r) => ({
     id: r.id,
@@ -57,6 +58,7 @@ async function getDoctor(id: string) {
     experienceYears: doctor.experienceYears ?? 0,
     bio: doctor.bio,
     status: doctor.status,
+    contactNumber: contactNumber ?? null,
     user: { name: user?.name ?? "" },
     specialty: { nameAr: specialty?.nameAr ?? "" },
     clinics,
@@ -87,12 +89,12 @@ export default async function DoctorProfilePage({
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row gap-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center text-5xl font-bold text-blue-600 shrink-0">
                   {doctor.user?.name?.charAt(0) || "D"}
                 </div>
@@ -108,15 +110,28 @@ export default async function DoctorProfilePage({
                         <Badge variant="success">متاح للحجز</Badge>
                       </div>
                     </div>
-                    <div className="text-left sm:text-right">
-                      <div className="text-2xl font-bold text-green-600">
-                        ₪{doctor.consultationFee}
+                    <div className="text-left sm:text-right flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                      {doctor.contactNumber && (
+                        <a
+                          href={`https://wa.me/${doctor.contactNumber.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 rounded-xl bg-green-100 px-4 py-2.5 text-green-700 font-medium hover:bg-green-200 transition-colors sm:justify-end"
+                        >
+                          <MessageCircle className="h-5 w-5" />
+                          تواصل عبر واتساب
+                        </a>
+                      )}
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-600">
+                          ₪{doctor.consultationFee}
+                        </div>
+                        <div className="text-xs text-gray-500">رسوم الاستشارة</div>
                       </div>
-                      <div className="text-xs text-gray-500">رسوم الاستشارة</div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-5">
                     <div className="flex items-center gap-2">
                       <div className="bg-yellow-50 p-1.5 rounded-lg">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

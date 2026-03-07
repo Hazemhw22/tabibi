@@ -6,25 +6,29 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const PLANS = [
-  { value: "basic", label: "أساسي" },
-  { value: "premium", label: "بريميوم" },
-  { value: "enterprise", label: "مؤسسة" },
+/** خطط الاشتراك: شهري 80، نصف سنة 400، سنة 800 شيكل */
+const SUBSCRIPTION_PLANS = [
+  { value: "monthly", label: "شهري ₪80", amount: 80 },
+  { value: "half_year", label: "نصف سنة ₪400", amount: 400 },
+  { value: "yearly", label: "سنة ₪800", amount: 800 },
 ] as const;
 
 export default function AdminDoctorActions({
   doctorId,
-  subscriptionPlan,
+  subscriptionPeriod,
   showSubscription,
+  isPending,
 }: {
   doctorId: string;
-  subscriptionPlan?: string | null;
+  subscriptionPeriod?: string | null;
   showSubscription?: boolean;
+  isPending?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState(subscriptionPeriod ?? "monthly");
 
-  const update = async (payload: { status?: string; subscriptionPlan?: string }) => {
+  const update = async (payload: { status?: string; subscriptionPeriod?: string }) => {
     const key = payload.status ?? "subscription";
     setLoading(key);
     try {
@@ -46,17 +50,35 @@ export default function AdminDoctorActions({
     }
   };
 
+  const handleApprove = () => {
+    update({ status: "APPROVED", subscriptionPeriod: selectedPlan });
+  };
+
   return (
     <div className="flex items-center gap-2 shrink-0 flex-wrap">
-      <Button
-        size="sm"
-        variant="success"
-        onClick={() => update({ status: "APPROVED" })}
-        disabled={!!loading}
-        className="text-xs h-8"
-      >
-        {loading === "APPROVED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
-      </Button>
+      {isPending && (
+        <>
+          <select
+            value={selectedPlan}
+            onChange={(e) => setSelectedPlan(e.target.value)}
+            disabled={!!loading}
+            className="text-xs h-8 rounded-md border border-gray-300 px-2 bg-white min-w-[120px]"
+          >
+            {SUBSCRIPTION_PLANS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            variant="success"
+            onClick={handleApprove}
+            disabled={!!loading}
+            className="text-xs h-8"
+          >
+            {loading === "APPROVED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+          </Button>
+        </>
+      )}
       <Button
         size="sm"
         variant="destructive"
@@ -66,14 +88,14 @@ export default function AdminDoctorActions({
       >
         {loading === "REJECTED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
       </Button>
-      {showSubscription && (
+      {showSubscription && !isPending && (
         <select
-          value={subscriptionPlan ?? "basic"}
-          onChange={(e) => update({ subscriptionPlan: e.target.value })}
+          value={subscriptionPeriod ?? "monthly"}
+          onChange={(e) => update({ subscriptionPeriod: e.target.value })}
           disabled={!!loading}
-          className="text-xs h-8 rounded-md border border-gray-300 px-2 bg-white"
+          className="text-xs h-8 rounded-md border border-gray-300 px-2 bg-white min-w-[120px]"
         >
-          {PLANS.map((p) => (
+          {SUBSCRIPTION_PLANS.map((p) => (
             <option key={p.value} value={p.value}>{p.label}</option>
           ))}
         </select>

@@ -114,29 +114,30 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
   };
 
   return (
-    <div className="sticky top-20 space-y-4">
+    <div className="space-y-4 lg:sticky lg:top-20">
       <Card className="border-2 border-blue-100">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 px-4 sm:p-6 sm:pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="h-4 w-4 text-blue-600" />
             احجز موعدك
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-5 px-4 sm:p-6 sm:pt-0">
           {/* Date Picker */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               اختر التاريخ
             </label>
-            <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center gap-0.5 sm:gap-1 mb-2">
               <button
+                type="button"
                 onClick={() => setDateOffset(Math.max(0, dateOffset - 7))}
                 disabled={dateOffset === 0}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="p-2 sm:p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
-              <div className="flex-1 grid grid-cols-7 gap-1">
+              <div className="flex-1 grid grid-cols-7 gap-0.5 sm:gap-1 min-w-0">
                 {visibleDates.map((date) => {
                   const daySlots = timeSlots.filter((s) => s.dayOfWeek === getDay(date));
                   const hasSlots = daySlots.length > 0;
@@ -145,10 +146,11 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
 
                   return (
                     <button
+                      type="button"
                       key={date.toISOString()}
                       onClick={() => hasSlots && handleDateSelect(date)}
                       disabled={!hasSlots}
-                      className={`flex flex-col items-center py-2 rounded-lg text-xs transition-all ${
+                      className={`flex flex-col items-center py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs transition-all touch-manipulation ${
                         isSelected
                           ? "bg-blue-600 text-white"
                           : hasSlots
@@ -167,9 +169,10 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
                 })}
               </div>
               <button
+                type="button"
                 onClick={() => setDateOffset(dateOffset + 7)}
                 disabled={dateOffset + 7 >= 21}
-                className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="p-2 sm:p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -303,9 +306,9 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
         <CardContent className="p-4">
           <h4 className="font-semibold text-green-800 text-sm mb-2">✅ سياسة الحجز</h4>
           <ul className="text-xs text-green-700 space-y-1">
-            <li>• الدفع الإلكتروني مطلوب لتأكيد الموعد</li>
-            <li>• يمكن الإلغاء قبل 24 ساعة</li>
-            <li>• ستصلك تأكيدات عبر البريد الإلكتروني</li>
+            <li>• الدفع في العيادة</li>
+            <li>• يمكنك إلغاء أي حجز قبل 24 ساعة من الموعد</li>
+            <li>• ستصلك تأكيدات عبر البريد الإلكتروني والواتساب</li>
           </ul>
         </CardContent>
       </Card>

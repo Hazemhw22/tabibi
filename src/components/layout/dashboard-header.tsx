@@ -51,7 +51,7 @@ export default function DashboardHeader() {
         : "/settings";
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-5">
+    <header className="flex h-14 sm:h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-3 sm:px-5">
 
       {/* ── Right — empty placeholder to keep justify-between ── */}
       <div />

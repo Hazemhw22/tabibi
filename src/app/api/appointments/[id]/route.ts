@@ -71,12 +71,27 @@ export async function PATCH(
 
     const { data: appointment, error: findErr } = await supabaseAdmin
       .from("Appointment")
-      .select("id, patientId, doctorId")
+      .select("id, patientId, doctorId, appointmentDate, startTime")
       .eq("id", id)
       .single();
 
     if (findErr || !appointment) {
       return NextResponse.json({ error: "الموعد غير موجود" }, { status: 404 });
+    }
+
+    if (session.user.role === "PATIENT") {
+      if (appointment.patientId !== session.user.id) {
+        return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+      }
+      if (statusUpper !== "CANCELLED") {
+        return NextResponse.json({ error: "المرضى يمكنهم فقط الإلغاء" }, { status: 400 });
+      }
+      /* المريض يمكنه الإلغاء فقط قبل 24 ساعة من الموعد */
+      const aptDateTime = new Date(`${(appointment as { appointmentDate: string }).appointmentDate}T${(appointment as { startTime: string }).startTime || "00:00"}`);
+      const minCancelTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      if (aptDateTime < minCancelTime) {
+        return NextResponse.json({ error: "لا يمكن الإلغاء قبل أقل من 24 ساعة من الموعد" }, { status: 400 });
+      }
     }
 
     if (session.user.role === "DOCTOR") {
@@ -91,14 +106,7 @@ export async function PATCH(
       if (!["COMPLETED", "NO_SHOW"].includes(statusUpper)) {
         return NextResponse.json({ error: "حالة غير مسموحة" }, { status: 400 });
       }
-    } else if (session.user.role === "PATIENT") {
-      if (appointment.patientId !== session.user.id) {
-        return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
-      }
-      if (statusUpper !== "CANCELLED") {
-        return NextResponse.json({ error: "المرضى يمكنهم فقط الإلغاء" }, { status: 400 });
-      }
-    } else {
+    } else if (session.user.role !== "PATIENT") {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 

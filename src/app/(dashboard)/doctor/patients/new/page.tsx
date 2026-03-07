@@ -12,7 +12,7 @@ export default function NewPatientPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    name: "", phone: "", email: "", gender: "",
+    name: "", whatsapp: "", email: "", gender: "",
     dateOfBirth: "", address: "", bloodType: "",
     allergies: "", notes: "", fileNumber: "",
   });
@@ -65,7 +65,7 @@ export default function NewPatientPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="رقم الهاتف" placeholder="0599xxxxxx" value={form.phone} onChange={(e) => set("phone", e.target.value)} dir="ltr" />
+              <Input label="رقم الواتساب" placeholder="0599xxxxxx (لإرسال الدفعات والديون)" value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} dir="ltr" />
               <Input label="البريد الإلكتروني" type="email" placeholder="example@email.com" value={form.email} onChange={(e) => set("email", e.target.value)} dir="ltr" />
             </div>
 

@@ -71,7 +71,7 @@ export default async function DoctorPatientsPage({
   /* ── Clinic patients ─────────────────────────────────────────── */
   const { data: clinicRaw } = await supabaseAdmin
     .from("ClinicPatient")
-    .select("id, name, phone, email, fileNumber")
+    .select("id, name, whatsapp, email, fileNumber")
     .eq("doctorId", doctor.id)
     .eq("isActive", true)
     .order("createdAt", { ascending: false });
@@ -79,7 +79,7 @@ export default async function DoctorPatientsPage({
   const clinicPatients: PatientListItem[] = (clinicRaw ?? []).map((p) => ({
     id: p.id,
     name: p.name ?? "—",
-    phone: p.phone ?? null,
+    whatsapp: (p as { whatsapp?: string | null }).whatsapp ?? null,
     email: p.email ?? null,
     fileNumber: p.fileNumber ?? null,
     source: "clinic",
@@ -156,7 +156,7 @@ export default async function DoctorPatientsPage({
           (s, t) => t.type === "PAYMENT" ? s + t.amount : s - t.amount, 0
         );
         selectedPatient = {
-          id: cp.id, name: cp.name ?? "—", phone: cp.phone, email: cp.email,
+          id: cp.id, name: cp.name ?? "—", whatsapp: (cp as { whatsapp?: string | null }).whatsapp ?? null, email: cp.email,
           fileNumber: cp.fileNumber, gender: cp.gender, dateOfBirth: cp.dateOfBirth,
           address: cp.address, bloodType: cp.bloodType, allergies: cp.allergies,
           notes: cp.notes, source: "clinic", appointments, transactions, balance,

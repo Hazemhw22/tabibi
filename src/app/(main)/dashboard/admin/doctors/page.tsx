@@ -15,7 +15,7 @@ export default async function AdminDoctorsPage() {
 
   const { data: doctors } = await supabaseAdmin
     .from("Doctor")
-    .select("id, userId, status, subscriptionPlan, createdAt, user:User(name, email), specialty:Specialty(nameAr)")
+    .select("id, userId, status, subscriptionPeriod, subscriptionEndDate, createdAt, user:User(name, email), specialty:Specialty(nameAr)")
     .order("createdAt", { ascending: false });
 
   const list = doctors ?? [];
@@ -47,7 +47,7 @@ export default async function AdminDoctorsPage() {
                     <p className="font-medium text-gray-900">{(d.user as { name?: string })?.name ?? "—"}</p>
                     <p className="text-sm text-gray-500">{(d.user as { email?: string })?.email} • {(d.specialty as { nameAr?: string })?.nameAr}</p>
                   </div>
-                  <AdminDoctorActions doctorId={d.id as string} subscriptionPlan={d.subscriptionPlan as string} />
+                  <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} isPending />
                 </div>
               ))}
             </div>
@@ -88,12 +88,12 @@ export default async function AdminDoctorsPage() {
                     </Badge>
                   </td>
                   <td className="py-3">
-                    {d.subscriptionPlan === "premium" ? "بريميوم" : d.subscriptionPlan === "enterprise" ? "مؤسسة" : "أساسي"}
+                    {d.subscriptionPeriod === "monthly" ? "شهري ₪80" : d.subscriptionPeriod === "half_year" ? "نصف سنة ₪400" : d.subscriptionPeriod === "yearly" ? "سنة ₪800" : "—"}
                   </td>
                   <td className="py-3 text-gray-500">{d.createdAt ? format(new Date(d.createdAt as string), "dd/MM/yyyy") : "—"}</td>
                   <td className="py-3">
-                    {d.status === "PENDING" && <AdminDoctorActions doctorId={d.id as string} subscriptionPlan={d.subscriptionPlan as string} />}
-                    {d.status === "APPROVED" && <AdminDoctorActions doctorId={d.id as string} subscriptionPlan={d.subscriptionPlan as string} showSubscription />}
+                    {d.status === "PENDING" && <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} isPending />}
+                    {d.status === "APPROVED" && <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} showSubscription />}
                   </td>
                 </tr>
               ))}

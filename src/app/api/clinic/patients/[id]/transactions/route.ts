@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { sendSms, buildTransactionSmsMessage } from "@/lib/sms";
+import { sendSms, sendWhatsApp, buildTransactionSmsMessage } from "@/lib/sms";
 import { sendTransactionEmail } from "@/lib/email";
 import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
@@ -39,7 +39,7 @@ export async function POST(
          (لأن بعض السجلات القديمة خُزّنت بـ userId بدل Doctor.id) ─── */
     const { data: patient } = await supabaseAdmin
       .from("ClinicPatient")
-      .select("id, doctorId, phone, email, userId, name")
+      .select("id, doctorId, phone, email, userId, name, whatsapp")
       .eq("id", id)
       .or(`doctorId.eq.${doctor.id},doctorId.eq.${session.user.id}`)
       .single();
@@ -71,15 +71,18 @@ export async function POST(
       return NextResponse.json({ error: "فشل إضافة المعاملة" }, { status: 500 });
     }
 
-    /* ── SMS ───────────────────────────────────────────────── */
+    /* ── WhatsApp / SMS ─────────────────────────────────────── */
+    const msg = buildTransactionSmsMessage({
+      type: data.type,
+      amount: data.amount,
+      description: data.description,
+      doctorName: session.user.name ?? undefined,
+    });
     let smsSent: boolean | null = null;
-    if (patient.phone) {
-      const msg = buildTransactionSmsMessage({
-        type: data.type,
-        amount: data.amount,
-        description: data.description,
-        doctorName: session.user.name ?? undefined,
-      });
+    const patientWhatsapp = (patient as { whatsapp?: string | null }).whatsapp;
+    if (patientWhatsapp) {
+      smsSent = await sendWhatsApp(patientWhatsapp, msg);
+    } else if (patient.phone) {
       smsSent = await sendSms(patient.phone, msg);
     }
 

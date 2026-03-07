@@ -59,7 +59,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
   };
 
   return (
-    <Card className="sticky top-20">
+    <Card className="lg:sticky lg:top-20">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <SlidersHorizontal className="h-4 w-4" />

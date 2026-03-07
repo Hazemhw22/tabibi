@@ -252,6 +252,7 @@ model ClinicPatient {
   userId      String?
   name        String
   phone       String?
+  whatsapp    String?   // رقم الواتساب لإرسال رسائل الدفعات والديون
   email       String?
   dateOfBirth DateTime?
   gender      String?   // male | female

@@ -40,6 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: meta?.name ?? "",
             image: meta?.image ?? null,
             role: meta?.role ?? "PATIENT",
+            phone: meta?.phone ?? "",
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -51,15 +52,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role?: string }).role;
-        token.id = user.id;
+        const u = user as { role?: string; id?: string; name?: string; phone?: string };
+        token.role = u.role;
+        token.id = u.id;
+        token.name = u.name;
+        token.phone = u.phone;
       }
       return token;
     },
     async session({ session, token }) {
       if (session?.user && token) {
-        (session.user as { id?: string; role?: string }).id = token.id as string;
-        (session.user as { id?: string; role?: string }).role = token.role as string;
+        const u = session.user as { id?: string; role?: string; name?: string; phone?: string };
+        u.id = token.id as string;
+        u.role = token.role as string;
+        u.name = (token.name as string) ?? session.user?.name ?? "";
+        u.phone = (token.phone as string) ?? "";
       }
       return session;
     },

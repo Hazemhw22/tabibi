@@ -12,8 +12,10 @@ import {
   Clock,
   MapPin,
   Users,
+  MessageCircle,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 async function getStats() {
   const [doctorsCount, appointmentsCount, specialtiesCount] = await Promise.all([
@@ -32,16 +34,16 @@ async function getSpecialties() {
 }
 
 async function getFeaturedDoctors() {
-  return await prisma.doctor.findMany({
-    where: { status: "APPROVED" },
-    include: {
-      user: true,
-      specialty: true,
-      clinics: { take: 1 },
-    },
-    orderBy: { rating: "desc" },
-    take: 6,
-  });
+  const { data } = await supabaseAdmin
+    .from("Doctor")
+    .select(`id, rating, totalReviews, consultationFee, experienceYears, whatsapp,
+      user:User(name, phone),
+      specialty:Specialty(nameAr),
+      clinics:Clinic(address, phone)`)
+    .eq("status", "APPROVED")
+    .order("rating", { ascending: false })
+    .limit(6);
+  return data ?? [];
 }
 
 const SPECIALTY_ICONS: Record<string, string> = {
@@ -73,20 +75,20 @@ export default async function HomePage() {
           <div className="absolute bottom-20 left-20 w-96 h-96 rounded-full bg-indigo-300 blur-3xl" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-28">
           <div className="text-center text-white">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6 border border-white/30">
               <MapPin className="h-4 w-4" />
               الخليل، فلسطين
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6">
               احجز موعدك مع
               <br />
               <span className="text-yellow-300">أفضل الأطباء</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-blue-100 mb-6 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-1">
               منصة Tabibi تربطك بأفضل الأطباء والعيادات في الخليل.
               احجز موعدك بسهولة وادفع بأمان.
             </p>
@@ -182,11 +184,11 @@ export default async function HomePage() {
 
       {/* Featured Doctors */}
       {doctors.length > 0 && (
-        <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-10">
+        <section className="py-10 sm:py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-10">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">أطباء مميزون</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">أطباء مميزون</h2>
                 <p className="text-gray-500">الأطباء الأعلى تقييماً على المنصة</p>
               </div>
               <Link href="/doctors">
@@ -198,22 +200,25 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {doctors.map((doctor: (typeof doctors)[number]) => (
-                <Link key={doctor.id} href={`/doctors/${doctor.id}`}>
-                  <Card className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group">
-                    <CardContent className="p-6">
+              {doctors.map((doctor: { id: string; user?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; clinics?: { address?: string; phone?: string }[]; rating?: number; totalReviews?: number; consultationFee?: number; experienceYears?: number; whatsapp?: string | null }) => {
+                const contactNum = doctor.whatsapp || doctor.user?.phone || doctor.clinics?.[0]?.phone;
+                const waNum = contactNum ? contactNum.replace(/\D/g, "") : "";
+                return (
+                <Card key={doctor.id} className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group">
+                  <CardContent className="p-6">
+                    <Link href={`/doctors/${doctor.id}`} className="block">
                       <div className="flex items-start gap-4">
                         <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600 shrink-0">
-                          {doctor.user.name?.charAt(0) || "D"}
+                          {doctor.user?.name?.charAt(0) || "D"}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                            د. {doctor.user.name}
+                            د. {doctor.user?.name}
                           </h3>
                           <p className="text-sm text-blue-600 font-medium">
-                            {doctor.specialty.nameAr}
+                            {doctor.specialty?.nameAr}
                           </p>
-                          {doctor.clinics[0] && (
+                          {doctor.clinics?.[0] && (
                             <div className="flex items-center gap-1 mt-1.5">
                               <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                               <p className="text-xs text-gray-500 truncate">
@@ -223,28 +228,41 @@ export default async function HomePage() {
                           )}
                         </div>
                       </div>
+                    </Link>
 
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-semibold text-gray-800">
-                            {doctor.rating.toFixed(1)}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            ({doctor.totalReviews})
-                          </span>
-                        </div>
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-semibold text-gray-800">
+                          {(doctor.rating ?? 0).toFixed(1)}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          ({doctor.totalReviews ?? 0})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {waNum.length >= 9 && (
+                          <a
+                            href={`https://wa.me/${waNum}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            title="تواصل عبر واتساب"
+                          >
+                            <MessageCircle className="h-5 w-5" />
+                          </a>
+                        )}
                         <div className="text-sm font-semibold text-green-600">
-                          ₪{doctor.consultationFee}
+                          ₪{doctor.consultationFee ?? 0}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           <Clock className="h-3.5 w-3.5" />
-                          {doctor.experienceYears} سنوات
+                          {(doctor.experienceYears ?? 0)} سنوات
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
@@ -252,10 +270,10 @@ export default async function HomePage() {
       )}
 
       {/* How it works */}
-      <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">كيف يعمل Tabibi؟</h2>
+      <section className="py-10 sm:py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">كيف يعمل Tabibi؟</h2>
             <p className="text-gray-500">احجز موعدك في 3 خطوات بسيطة</p>
           </div>
 
@@ -305,8 +323,8 @@ export default async function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-gray-900 text-white">
-        <div className="max-w-3xl mx-auto px-4 text-center">
+      <section className="py-10 sm:py-16 bg-gray-900 text-white">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 text-center">
           <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-5" />
           <h2 className="text-3xl font-bold mb-4">هل أنت طبيب؟</h2>
           <p className="text-gray-400 mb-8 text-lg leading-relaxed">

@@ -27,5 +27,11 @@ CREATE TABLE IF NOT EXISTS public."ClinicPatient" (
 CREATE INDEX IF NOT EXISTS idx_clinic_patient_doctor ON public."ClinicPatient"("doctorId");
 CREATE INDEX IF NOT EXISTS idx_clinic_patient_active ON public."ClinicPatient"("isActive");
 
--- تفعيل RLS وسماح الطبيب بالوصول (اختياري)
+-- تفعيل RLS
 ALTER TABLE public."ClinicPatient" ENABLE ROW LEVEL SECURITY;
+
+-- سياسة تسمح لـ service_role بجميع العمليات (مطلوب لأن API يستخدم supabaseAdmin)
+DROP POLICY IF EXISTS "service_role_clinic_patients" ON public."ClinicPatient";
+CREATE POLICY "service_role_clinic_patients"
+  ON public."ClinicPatient" FOR ALL TO service_role
+  USING (true) WITH CHECK (true);

@@ -11,10 +11,10 @@ import {
   Calendar,
   User,
   LogOut,
-  Settings,
   ChevronDown,
   Moon,
   Sun,
+  Settings,
 } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
@@ -65,15 +65,16 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-40 w-full bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-18 items-center justify-between">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl text-blue-600">
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl text-blue-600 shrink-0 min-w-0">
             <Image
-               src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
+              src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
               alt="Tabibi"
-              width={100}
-              height={18}
+              width={180}
+              height={40}
+              className="h-9 sm:h-10 w-auto max-w-[160px] sm:max-w-[180px]"
               priority
             />
           </Link>
@@ -170,14 +171,25 @@ export default function Navbar() {
                           <hr className="my-1 border-gray-100" />
                         </>
                       )}
-                      <Link
-                        href={getDashboardLink()}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <Calendar className="h-4 w-4" />
-                        لوحة التحكم
-                      </Link>
+                      {role === "PATIENT" ? (
+                        <Link
+                          href="/dashboard/patient/settings"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <Settings className="h-4 w-4" />
+                          الإعدادات
+                        </Link>
+                      ) : (
+                        <Link
+                          href={getDashboardLink()}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <Calendar className="h-4 w-4" />
+                          لوحة التحكم
+                        </Link>
+                      )}
                       <Link
                         href="/profile"
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -185,14 +197,6 @@ export default function Navbar() {
                       >
                         <User className="h-4 w-4" />
                         الملف الشخصي
-                      </Link>
-                      <Link
-                        href="/settings"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        الإعدادات
                       </Link>
                       <hr className="my-1 border-gray-100" />
                       <button
@@ -290,15 +294,24 @@ export default function Navbar() {
                   >
                     معاملاتي
                   </Link>
+                  <Link
+                    href="/dashboard/patient/settings"
+                    className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    الإعدادات
+                  </Link>
                 </>
               )}
-              <Link
-                href={getDashboardLink()}
-                className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-                onClick={() => setMenuOpen(false)}
-              >
-                لوحة التحكم
-              </Link>
+              {role !== "PATIENT" && (
+                <Link
+                  href={getDashboardLink()}
+                  className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  لوحة التحكم
+                </Link>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="block w-full text-right px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50"

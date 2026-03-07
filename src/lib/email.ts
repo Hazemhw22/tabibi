@@ -26,17 +26,30 @@ export async function sendTransactionEmail(options: {
       ? `تم تسجيل دفعة جديدة في ملفك`
       : `تم تسجيل خدمة طبية جديدة في ملفك`;
 
-  const body =
+  const bodyText =
     type === "PAYMENT"
-      ? `تم تسجيل دفعة قدرها ₪${amount} في ملفك عند ${friendlyDoctor}.<br/>الوصف: ${description || "-"}`
+      ? `تم تسجيل دفعة قدرها ₪${amount} في ملفك عند ${friendlyDoctor}. الوصف: ${description || "-"}`
       : `تم تسجيل خدمة طبية (${description}) بقيمة ₪${amount} في ملفك عند ${friendlyDoctor}.`;
+
+  const html = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; padding: 20px; direction: rtl;">
+  <p style="font-size: 16px; line-height: 1.6;">${bodyText}</p>
+  <p style="font-size: 12px; color: #666;">— Tabibi</p>
+</body>
+</html>`;
 
   try {
     await resend.emails.send({
       from: fromEmail,
       to,
       subject,
-      html: `<p>${body}</p>`,
+      html,
+      text: bodyText,
     });
     console.log("[EMAIL] تم إرسال بريد المعاملة إلى", to);
   } catch (err) {

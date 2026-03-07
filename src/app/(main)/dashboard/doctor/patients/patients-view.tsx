@@ -66,9 +66,18 @@ export default function PatientsView({
   const [addOpen,    setAddOpen]    = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [addForm, setAddForm] = useState({
-    name:"", phone:"", email:"", gender:"",
+    name:"", email:"", whatsapp:"", gender:"",
     dateOfBirth:"", address:"", bloodType:"",
     allergies:"", notes:"", fileNumber:"",
+  });
+
+  /* edit-patient modal (clinic patients only) */
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name:"", email:"", whatsapp:"", fileNumber:"",
+    gender:"", dateOfBirth:"", address:"", bloodType:"",
+    allergies:"", notes:"",
   });
 
   /* add service / payment */
@@ -100,6 +109,52 @@ export default function PatientsView({
   useEffect(() => { setActiveTab("info"); }, [selectedId]);
 
   const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }));
+  const setEdit = (k: string, v: string) => setEditForm((p) => ({ ...p, [k]: v }));
+
+  /* open edit modal with current patient data */
+  const openEdit = () => {
+    if (!selectedPatient || selectedPatient.source !== "clinic") return;
+    setEditForm({
+      name: selectedPatient.name,
+      email: selectedPatient.email ?? "",
+      whatsapp: selectedPatient.whatsapp ?? "",
+      fileNumber: selectedPatient.fileNumber ?? "",
+      gender: selectedPatient.gender ?? "",
+      dateOfBirth: selectedPatient.dateOfBirth ? (typeof selectedPatient.dateOfBirth === "string" ? selectedPatient.dateOfBirth.slice(0, 10) : format(new Date(selectedPatient.dateOfBirth), "yyyy-MM-dd")) : "",
+      address: selectedPatient.address ?? "",
+      bloodType: selectedPatient.bloodType ?? "",
+      allergies: selectedPatient.allergies ?? "",
+      notes: selectedPatient.notes ?? "",
+    });
+    setEditOpen(true);
+  };
+
+  /* ── Edit patient (clinic only) ────────────────────────────────── */
+  const handleEditPatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPatient || selectedPatient.source !== "clinic") return;
+    if (!editForm.name.trim()) { toast.error("الاسم مطلوب"); return; }
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/clinic/patients/${selectedPatient.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      if (res.ok) {
+        toast.success("تم تحديث بيانات المريض ✓");
+        setEditOpen(false);
+        router.refresh();
+      } else {
+        const d = await res.json();
+        toast.error(d.error || "حدث خطأ");
+      }
+    } catch {
+      toast.error("خطأ في الاتصال");
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   /* ── Client-side search filter ─────────────────────────────────── */
   const filtered = useMemo(() => {
@@ -108,7 +163,7 @@ export default function PatientsView({
     return initialPatients.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        (p.phone ?? "").includes(q) ||
+        (p.whatsapp ?? "").includes(q) ||
         (p.fileNumber ?? "").toLowerCase().includes(q),
     );
   }, [initialPatients, search]);
@@ -145,7 +200,7 @@ export default function PatientsView({
       if (res.ok) {
         toast.success("تم إضافة المريض ✓");
         setAddOpen(false);
-        setAddForm({ name:"",phone:"",email:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
+        setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
         router.refresh();
         openPatient({ id: data.patient.id, name: data.patient.name, source: "clinic", appointmentCount: 0 });
       } else { toast.error(data.error || "حدث خطأ"); }
@@ -351,7 +406,7 @@ export default function PatientsView({
                     </p>
                     <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400")}>
                       {p.source === "clinic"
-                        ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.phone ?? "—")
+                        ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.whatsapp ?? "—")
                         : `${p.appointmentCount} موعد · منصة`}
                     </p>
                   </div>
@@ -384,12 +439,31 @@ export default function PatientsView({
                     <Badge variant={selectedPatient.source === "clinic" ? "secondary" : "default"} className="text-xs">
                       {selectedPatient.source === "clinic" ? "عيادة" : "منصة"}
                     </Badge>
+                    {selectedPatient.source === "clinic" && (
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setEditForm({
+                          name: selectedPatient.name,
+                          email: selectedPatient.email ?? "",
+                          whatsapp: selectedPatient.whatsapp ?? "",
+                          fileNumber: selectedPatient.fileNumber ?? "",
+                          gender: selectedPatient.gender ?? "",
+                          dateOfBirth: selectedPatient.dateOfBirth ? format(new Date(selectedPatient.dateOfBirth), "yyyy-MM-dd") : "",
+                          address: selectedPatient.address ?? "",
+                          bloodType: selectedPatient.bloodType ?? "",
+                          allergies: selectedPatient.allergies ?? "",
+                          notes: selectedPatient.notes ?? "",
+                        });
+                        setEditOpen(true);
+                      }} className="gap-1">
+                        <Pencil className="h-3.5 w-3.5" /> تعديل
+                      </Button>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
                     {age != null && <span>العمر: {age} سنة</span>}
-                    {selectedPatient.phone && (
+                    {selectedPatient.whatsapp && (
                       <span className="flex items-center gap-1" dir="ltr">
-                        <Phone className="h-3.5 w-3.5 text-gray-400" />{selectedPatient.phone}
+                        <Phone className="h-3.5 w-3.5 text-gray-400" />{selectedPatient.whatsapp}
                       </span>
                     )}
                     {selectedPatient.allergies && (
@@ -453,7 +527,7 @@ export default function PatientsView({
                         { label: "فصيلة الدم",        value: selectedPatient.bloodType },
                         { label: "العنوان",            value: selectedPatient.address },
                         { label: "البريد الإلكتروني", value: selectedPatient.email },
-                        { label: "رقم الهاتف",        value: selectedPatient.phone },
+                        { label: "رقم الواتساب",      value: selectedPatient.whatsapp },
                       ] as { label: string; value: string | null | undefined }[]
                     ).filter((f) => f.value).map((field) => (
                       <div key={field.label} className="flex items-center justify-between px-5 py-3 text-sm">
@@ -461,7 +535,7 @@ export default function PatientsView({
                         <span className="font-medium text-gray-900">{field.value}</span>
                       </div>
                     ))}
-                    {!selectedPatient.fileNumber && !selectedPatient.phone && !selectedPatient.email && (
+                    {!selectedPatient.fileNumber && !selectedPatient.whatsapp && !selectedPatient.email && (
                       <div className="px-5 py-8 text-center text-sm text-gray-400">لا توجد بيانات إضافية</div>
                     )}
                   </div>
@@ -845,10 +919,8 @@ export default function PatientsView({
                 <Input label="الاسم الكامل *" placeholder="محمد أحمد" value={addForm.name} onChange={(e) => setAdd("name", e.target.value)} />
                 <Input label="رقم الملف" placeholder="001" value={addForm.fileNumber} onChange={(e) => setAdd("fileNumber", e.target.value)} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="رقم الهاتف" placeholder="0599xxxxxx" value={addForm.phone} onChange={(e) => setAdd("phone", e.target.value)} dir="ltr" />
-                <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
-              </div>
+              <Input label="رقم الواتساب" placeholder="0599xxxxxx (لإرسال الدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
+              <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">الجنس</label>
@@ -886,6 +958,67 @@ export default function PatientsView({
                   {addLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "إضافة المريض"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>إلغاء</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ EDIT PATIENT MODAL (clinic only) ═══════════════════════ */}
+      {editOpen && selectedPatient?.source === "clinic" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
+            <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">تعديل بيانات المريض</h2>
+              <button type="button" onClick={() => setEditOpen(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditPatient} className="space-y-4 p-5">
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="الاسم الكامل *" placeholder="محمد أحمد" value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
+                <Input label="رقم الملف" placeholder="001" value={editForm.fileNumber} onChange={(e) => setEditForm((p) => ({ ...p, fileNumber: e.target.value }))} />
+              </div>
+              <Input label="رقم الواتساب" placeholder="0599xxxxxx" value={editForm.whatsapp} onChange={(e) => setEditForm((p) => ({ ...p, whatsapp: e.target.value }))} dir="ltr" />
+              <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} dir="ltr" />
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">الجنس</label>
+                  <select value={editForm.gender} onChange={(e) => setEditForm((p) => ({ ...p, gender: e.target.value }))}
+                    className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">— اختر —</option>
+                    <option value="male">ذكر</option>
+                    <option value="female">أنثى</option>
+                  </select>
+                </div>
+                <Input label="تاريخ الميلاد" type="date" value={editForm.dateOfBirth} onChange={(e) => setEditForm((p) => ({ ...p, dateOfBirth: e.target.value }))} />
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">فصيلة الدم</label>
+                  <select value={editForm.bloodType} onChange={(e) => setEditForm((p) => ({ ...p, bloodType: e.target.value }))}
+                    className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">— اختر —</option>
+                    {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((b) => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+              </div>
+              <Input label="العنوان" placeholder="الخليل، حي البلد" value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">الحساسيات / التنبيهات</label>
+                <input placeholder="مثل: حساسية من البنسلين..." value={editForm.allergies} onChange={(e) => setEditForm((p) => ({ ...p, allergies: e.target.value }))}
+                  className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">ملاحظات / أدوية حالية</label>
+                <textarea value={editForm.notes} onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))} rows={2}
+                  placeholder="أي معلومات إضافية..."
+                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button type="submit" className="flex-1" disabled={editLoading}>
+                  {editLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "حفظ التعديلات"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>إلغاء</Button>
               </div>
             </form>
           </div>

@@ -104,7 +104,7 @@ export default function PatientsView({
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addLoading,   setAddLoading]   = useState(false);
   const [addForm, setAddForm] = useState({
-    name: "", phone: "", email: "", gender: "",
+    name: "", email: "", whatsapp: "", gender: "",
     dateOfBirth: "", address: "", bloodType: "",
     allergies: "", notes: "", fileNumber: "",
   });
@@ -144,7 +144,7 @@ export default function PatientsView({
     return initialPatients.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        (p.phone ?? "").includes(q) ||
+        (p.whatsapp ?? "").includes(q) ||
         (p.fileNumber ?? "").toLowerCase().includes(q),
     );
   }, [initialPatients, search]);
@@ -180,7 +180,7 @@ export default function PatientsView({
       if (res.ok) {
         toast.success("تم إضافة المريض بنجاح ✓");
         setAddModalOpen(false);
-        setAddForm({ name:"",phone:"",email:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
+        setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
         router.refresh();
         if (data.patient?.id) openPatient(data.patient.id);
       } else { toast.error(data.error || "حدث خطأ"); }
@@ -792,7 +792,7 @@ export default function PatientsView({
                 <Input label="رقم الملف" placeholder="001" value={addForm.fileNumber} onChange={(e) => setAdd("fileNumber", e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Input label="رقم الهاتف" placeholder="0599xxxxxx" value={addForm.phone} onChange={(e) => setAdd("phone", e.target.value)} dir="ltr" />
+                <Input label="رقم الواتساب" placeholder="0599xxxxxx (لإرسال الدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
                 <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
               </div>
               <div className="grid grid-cols-3 gap-4">

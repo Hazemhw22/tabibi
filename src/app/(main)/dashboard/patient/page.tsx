@@ -15,10 +15,13 @@ import {
   Wallet,
   CreditCard,
   Receipt,
+  MessageCircle,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 
 const STATUS_CONFIG = {
   DRAFT: { label: "مسودة", variant: "secondary" as const, icon: AlertCircle, color: "text-gray-500" },
@@ -141,10 +144,10 @@ export default async function PatientDashboard() {
   const { data: doctorsData } = await supabaseAdmin
     .from("Doctor")
     .select(
-      `id, consultationFee, rating, createdAt,
-       user:User(name),
+      `id, consultationFee, rating, createdAt, whatsapp,
+       user:User(name, phone),
        specialty:Specialty(nameAr),
-       clinics:Clinic(address),
+       clinics:Clinic(address, phone),
        reviews:Review(id)`
     )
     .eq("status", "APPROVED");
@@ -153,6 +156,7 @@ export default async function PatientDashboard() {
     consultationFee?: number | null;
     rating?: number | null;
     createdAt?: string | null;
+    whatsapp?: string | null;
     user?: { name?: string | null };
     specialty?: { nameAr?: string | null };
     clinics?: { address?: string | null }[];
@@ -199,16 +203,16 @@ export default async function PatientDashboard() {
   const latestAppointments = list.slice(0, 5);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
             مرحباً، {session.user.name} 👋
           </h1>
-          <p className="text-gray-500 mt-1">إدارة مواعيدك الطبية — حساب مريض</p>
+          <p className="text-sm text-gray-500 mt-1">إدارة مواعيدك الطبية — حساب مريض</p>
         </div>
-        <Link href="/doctors">
-          <Button className="gap-2">
+        <Link href="/doctors" className="w-full sm:w-auto shrink-0">
+          <Button className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             حجز موعد جديد
           </Button>
@@ -216,7 +220,7 @@ export default async function PatientDashboard() {
       </div>
 
       {/* Stats: مواعيد + مجموع الدفعات + مجموع الديون */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           { label: "إجمالي المواعيد", value: list.length, color: "bg-blue-50 text-blue-600" },
           { label: "مواعيد قادمة", value: upcoming.length, color: "bg-indigo-50 text-indigo-600" },
@@ -300,12 +304,12 @@ export default async function PatientDashboard() {
       {mostVisitedDoctors.length > 0 && (
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">الأطباء الأكثر زيارة</h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-1 sm:px-1 snap-x snap-mandatory scrollbar-hide">
             {mostVisitedDoctors.map((doctor) => (
               <Link
                 key={doctor.id}
                 href={`/doctors/${doctor.id}`}
-                className="snap-start shrink-0 w-60"
+                className="snap-start shrink-0 w-[260px] sm:w-60"
               >
                 <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
@@ -332,11 +336,24 @@ export default async function PatientDashboard() {
                           ({doctor.reviews?.length ?? 0} زيارة)
                         </span>
                       </span>
-                      {doctor.consultationFee != null && (
-                        <span className="font-semibold text-emerald-600">
-                          ₪{doctor.consultationFee}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {(doctor as { whatsapp?: string | null }).whatsapp && (
+                          <a
+                            href={`https://wa.me/${(doctor as { whatsapp?: string }).whatsapp!.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            title="تواصل عبر واتساب"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        )}
+                        {doctor.consultationFee != null && (
+                          <span className="font-semibold text-emerald-600">
+                            ₪{doctor.consultationFee}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -396,18 +413,35 @@ export default async function PatientDashboard() {
                         </td>
                         <td className="py-3 font-semibold text-gray-900">₪{Number(apt.fee)}</td>
                         <td className="py-3">
-                          {apt.status === "COMPLETED" && !hasReview && (
-                            <Link href={`/appointments/${apt.id}/review`}>
-                              <Button size="sm" variant="outline" className="gap-1 text-xs">
-                                <Star className="h-3 w-3" /> تقييم
-                              </Button>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link
+                              href={`/appointments/${apt.id}/success`}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                              title="عرض"
+                            >
+                              <Eye className="h-4 w-4" />
                             </Link>
-                          )}
-                          {apt.status === "DRAFT" && (
-                            <Link href={`/appointments/${apt.id}/payment`}>
-                              <Button size="sm" variant="default" className="text-xs">ادفع</Button>
-                            </Link>
-                          )}
+                            {apt.status === "CONFIRMED" && (
+                              <CancelAppointmentButton
+                                appointmentId={apt.id as string}
+                                appointmentDate={apt.appointmentDate as string}
+                                startTime={String(apt.startTime)}
+                                iconOnly
+                              />
+                            )}
+                            {apt.status === "COMPLETED" && !hasReview && (
+                              <Link href={`/appointments/${apt.id}/review`}>
+                                <Button size="sm" variant="outline" className="gap-1 text-xs">
+                                  <Star className="h-3 w-3" /> تقييم
+                                </Button>
+                              </Link>
+                            )}
+                            {apt.status === "DRAFT" && (
+                              <Link href={`/appointments/${apt.id}/payment`}>
+                                <Button size="sm" variant="default" className="text-xs">ادفع</Button>
+                              </Link>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -431,12 +465,12 @@ export default async function PatientDashboard() {
               عرض كل الأطباء
             </Link>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-1 sm:px-1 snap-x snap-mandatory scrollbar-hide">
             {suggestedDoctors.map((doctor) => (
               <Link
                 key={doctor.id}
                 href={`/doctors/${doctor.id}`}
-                className="snap-start shrink-0 w-64"
+                className="snap-start shrink-0 w-[260px] sm:w-64"
               >
                 <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
@@ -469,11 +503,24 @@ export default async function PatientDashboard() {
                           ({doctor.reviews?.length ?? 0} تقييم)
                         </span>
                       </span>
-                      {doctor.consultationFee != null && (
-                        <span className="font-semibold text-emerald-600">
-                          ₪{doctor.consultationFee}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {(doctor as { whatsapp?: string | null }).whatsapp && (
+                          <a
+                            href={`https://wa.me/${(doctor as { whatsapp?: string }).whatsapp!.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            title="تواصل عبر واتساب"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        )}
+                        {doctor.consultationFee != null && (
+                          <span className="font-semibold text-emerald-600">
+                            ₪{doctor.consultationFee}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -552,12 +599,12 @@ export default async function PatientDashboard() {
               عرض كل الأطباء
             </Link>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-1 sm:px-1 snap-x snap-mandatory scrollbar-hide">
             {topRatedDoctors.map((doctor) => (
               <Link
                 key={doctor.id}
                 href={`/doctors/${doctor.id}`}
-                className="snap-start shrink-0 w-64"
+                className="snap-start shrink-0 w-[260px] sm:w-64"
               >
                 <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
@@ -584,11 +631,24 @@ export default async function PatientDashboard() {
                           ({doctor.reviews?.length ?? 0} تقييم)
                         </span>
                       </span>
-                      {doctor.consultationFee != null && (
-                        <span className="font-semibold text-emerald-600">
-                          ₪{doctor.consultationFee}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {(doctor as { whatsapp?: string | null }).whatsapp && (
+                          <a
+                            href={`https://wa.me/${(doctor as { whatsapp?: string }).whatsapp!.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            title="تواصل عبر واتساب"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        )}
+                        {doctor.consultationFee != null && (
+                          <span className="font-semibold text-emerald-600">
+                            ₪{doctor.consultationFee}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

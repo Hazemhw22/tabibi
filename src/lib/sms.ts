@@ -90,3 +90,57 @@ export function buildTransactionSmsMessage(options: {
   }
   return `Tabibi: تم تسجيل خدمة (${description}) بقيمة ₪${amount} في ملفك لدى${name}.`.trim();
 }
+
+/**
+ * إرسال رسالة واتساب للمريض عبر Twilio WhatsApp API.
+ * يتطلب: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (مثل whatsapp:+14155238886)
+ * @returns true إذا تم الإرسال أو إذا الواتساب غير مضبوط، false عند فشل الإرسال.
+ */
+export async function sendWhatsApp(to: string, body: string): Promise<boolean> {
+  const normalized = normalizePhoneForSms(to);
+  if (!normalized) {
+    console.warn("[WhatsApp] رقم غير صالح، تم تخطي الإرسال. الرقم:", JSON.stringify(to));
+    return true;
+  }
+
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const fromWhatsApp = process.env.TWILIO_WHATSAPP_FROM; // e.g. whatsapp:+14155238886
+  if (!accountSid || !authToken || !fromWhatsApp) {
+    console.warn(
+      "[WhatsApp] Twilio WhatsApp غير مضبوط. أضف TWILIO_WHATSAPP_FROM (مثل whatsapp:+14155238886) إلى .env.local"
+    );
+    return true;
+  }
+
+  const toWhatsApp = normalized.startsWith("+") ? `whatsapp:${normalized}` : `whatsapp:+${normalized}`;
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+
+  try {
+    const form = new URLSearchParams({
+      To: toWhatsApp,
+      From: fromWhatsApp,
+      Body: body,
+    });
+    console.log("[WhatsApp] جاري الإرسال إلى:", toWhatsApp);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: form.toString(),
+    });
+    const resText = await res.text();
+    if (!res.ok) {
+      console.error("[WhatsApp] Twilio خطأ:", res.status, resText);
+      return false;
+    }
+    console.log("[WhatsApp] تم إرسال الرسالة بنجاح إلى", toWhatsApp);
+    return true;
+  } catch (err) {
+    console.error("[WhatsApp] خطأ في الإرسال:", err);
+    return false;
+  }
+}
