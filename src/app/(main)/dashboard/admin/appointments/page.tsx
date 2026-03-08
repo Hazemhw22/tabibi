@@ -53,7 +53,7 @@ export default async function AdminAppointmentsPage() {
             قائمة المواعيد ({list.length})
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 overflow-x-auto">
+        <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="text-right text-gray-500 border-b">

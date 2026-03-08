@@ -110,54 +110,54 @@ export default async function PatientTransactionsPage() {
         </p>
       </div>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Receipt className="h-4 w-4 text-blue-500" />
             <span>سجل المعاملات المالية</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 px-0 sm:px-6 overflow-hidden">
           {txRows.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 text-sm">
+            <div className="text-center py-10 text-gray-500 text-sm px-6">
               لا توجد دفعات أو ديون مسجلة حتى الآن.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="table-scroll-mobile w-full min-w-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="text-right text-xs text-gray-500 border-b border-gray-100 bg-gray-50/70">
-                    <th className="pb-3 pr-4 font-medium">التاريخ</th>
-                    <th className="pb-3 font-medium">الطبيب</th>
-                    <th className="pb-3 font-medium">النوع</th>
-                    <th className="pb-3 font-medium">عن ماذا</th>
-                    <th className="pb-3 font-medium">المبلغ</th>
-                    <th className="pb-3 font-medium">المصدر</th>
+                    <th className="pb-3 pr-4 font-medium whitespace-nowrap">التاريخ</th>
+                    <th className="pb-3 font-medium whitespace-nowrap">الطبيب</th>
+                    <th className="pb-3 font-medium whitespace-nowrap">النوع</th>
+                    <th className="pb-3 font-medium whitespace-nowrap">عن ماذا</th>
+                    <th className="pb-3 font-medium whitespace-nowrap">المبلغ</th>
+                    <th className="pb-3 font-medium whitespace-nowrap">المصدر</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {txRows.map((tx) => (
                     <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3 pr-4 text-gray-700">
+                      <td className="py-3 pr-4 text-gray-700 whitespace-nowrap">
                         {tx.date ? format(new Date(tx.date), "dd/MM/yyyy") : "—"}
                       </td>
-                      <td className="py-3 text-gray-900 font-medium">
+                      <td className="py-3 text-gray-900 font-medium whitespace-nowrap">
                         {tx.doctorName !== "—" ? `د. ${tx.doctorName}` : "—"}
                       </td>
-                      <td className="py-3">
+                      <td className="py-3 whitespace-nowrap">
                         <Badge variant={tx.type === "PAYMENT" ? "default" : "secondary"}>
                           {tx.type === "PAYMENT" ? "دفعة" : "خدمة / دين"}
                         </Badge>
                       </td>
-                      <td className="py-3 text-gray-700">{tx.description}</td>
+                      <td className="py-3 text-gray-700 min-w-[80px]">{tx.description}</td>
                       <td
-                        className={`py-3 font-semibold ${
+                        className={`py-3 font-semibold whitespace-nowrap ${
                           tx.type === "PAYMENT" ? "text-emerald-600" : "text-amber-600"
                         }`}
                       >
                         {tx.type === "PAYMENT" ? "+" : "-"}₪{tx.amount}
                       </td>
-                      <td className="py-3">
+                      <td className="py-3 whitespace-nowrap">
                         <Badge variant="outline" className="text-xs">
                           {tx.source}
                         </Badge>

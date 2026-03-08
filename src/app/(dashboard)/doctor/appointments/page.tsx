@@ -99,14 +99,14 @@ export default async function DoctorAppointmentsPage({
         <CardHeader className="pb-3">
           <CardTitle className="text-base">كل المواعيد</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 overflow-x-auto">
+        <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
           {appointments.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Calendar className="h-10 w-10 mx-auto mb-3 text-gray-200" />
               <p className="text-sm">لا توجد مواعيد</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="text-right text-xs text-gray-500 border-b border-gray-100">
                   <th className="pb-3 pr-4 font-medium">المريض</th>

@@ -33,8 +33,8 @@ export default async function AdminDoctorsPage() {
         <p className="text-gray-500 text-sm mt-0.5">{doctors.length} طبيب مسجّل</p>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-2xl border border-gray-200 shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 bg-white rounded-2xl border border-gray-200 shadow-sm touch-pan-x scrollbar-hide">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr className="text-right text-xs text-gray-500">
               <th className="px-5 py-4 font-medium">الطبيب</th>

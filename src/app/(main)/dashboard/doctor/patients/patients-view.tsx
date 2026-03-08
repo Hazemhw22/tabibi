@@ -716,8 +716,8 @@ export default function PatientsView({
                       لا توجد معاملات مسجّلة
                     </div>
                   ) : (
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                      <table className="w-full text-sm">
+                    <div className="table-scroll-mobile w-full min-w-0 rounded-xl border border-gray-200 bg-white -mx-2 px-2 sm:mx-0 sm:px-0">
+                      <table className="w-full text-sm min-w-[520px]">
                         <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
                           <tr>
                             <th className="px-4 py-3 font-medium">التاريخ</th>

@@ -363,13 +363,13 @@ export default async function PatientDashboard() {
         </section>
       )}
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-base">أحدث 5 مواعيد</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 px-0 sm:px-6 overflow-hidden">
           {latestAppointments.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-6">
               <div className="text-5xl mb-4">📅</div>
               <h3 className="text-lg font-semibold text-gray-700 mb-2">لا توجد مواعيد بعد</h3>
               <p className="text-gray-500 mb-6 text-sm">ابدأ بحجز موعدك الأول مع أحد أطبائنا</p>
@@ -378,8 +378,8 @@ export default async function PatientDashboard() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="table-scroll-mobile w-full min-w-0 -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="text-right text-xs text-gray-500 border-b border-gray-100">
                     <th className="pb-3 pr-4 font-medium">الطبيب</th>
@@ -531,7 +531,7 @@ export default async function PatientDashboard() {
       )}
 
       {/* جدول الدفعات والديون الخاصة بهذا المريض فقط */}
-      <Card className="mt-8">
+      <Card className="mt-8 overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <span>الدفعات والديون</span>
@@ -541,14 +541,14 @@ export default async function PatientDashboard() {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 overflow-hidden">
           {txRows.length === 0 ? (
             <div className="text-center py-10 text-gray-500 text-sm">
               لا توجد دفعات أو ديون مسجلة لك حتى الآن.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="table-scroll-mobile w-full min-w-0 -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead>
                   <tr className="text-right text-xs text-gray-500 border-b border-gray-100">
                     <th className="pb-3 pr-4 font-medium">التاريخ</th>

@@ -273,8 +273,8 @@ export default function PatientTabs({ patient, transactions, appointments, balan
             {services.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-sm">لا توجد خدمات مسجّلة بعد</div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 -mx-2 px-2 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+                <table className="w-full text-sm min-w-[480px]">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr className="text-right text-xs text-gray-500">
                       <th className="px-4 py-3 font-medium">التاريخ</th>
@@ -339,8 +339,8 @@ export default function PatientTabs({ patient, transactions, appointments, balan
             {ledger.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-sm">لا توجد حركات بعد</div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 -mx-2 px-2 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+                <table className="w-full text-sm min-w-[520px]">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr className="text-right text-xs text-gray-500">
                       <th className="px-4 py-3 font-medium">التاريخ</th>
@@ -518,8 +518,8 @@ export default function PatientTabs({ patient, transactions, appointments, balan
               {payments.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-xl">لا توجد دفعات مسجّلة</div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-gray-200">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-xl border border-gray-200 -mx-2 px-2 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+                  <table className="w-full text-sm min-w-[480px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr className="text-right text-xs text-gray-500">
                         <th className="px-4 py-3 font-medium">التاريخ</th>

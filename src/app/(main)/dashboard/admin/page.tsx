@@ -68,7 +68,7 @@ export default async function AdminDashboard() {
             الأطباء والاشتراكات
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 overflow-x-auto">
+        <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
           <table className="w-full text-right min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-200 text-sm text-gray-500">

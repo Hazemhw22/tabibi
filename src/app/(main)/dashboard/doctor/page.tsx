@@ -394,8 +394,8 @@ export default async function DoctorDashboard() {
               {last5Tx.length === 0 ? (
                 <p className="text-xs text-gray-500 text-center py-4">لا توجد معاملات حديثة</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+                  <table className="w-full text-xs min-w-[400px]">
                     <thead>
                       <tr className="text-right border-b border-gray-100 text-gray-500">
                         <th className="py-2 px-1 font-medium">التاريخ</th>

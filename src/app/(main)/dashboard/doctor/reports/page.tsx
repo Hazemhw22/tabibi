@@ -234,8 +234,8 @@ export default async function DoctorReportsPage() {
               <p>لا توجد دفعات أو ديون مسجلة</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="text-right border-b border-gray-100 bg-gray-50/80">
                     <th className="py-3 px-4 font-semibold text-gray-600">التاريخ</th>
@@ -285,8 +285,8 @@ export default async function DoctorReportsPage() {
           <CardTitle className="text-lg">ملخص المواعيد حسب الحالة</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+            <table className="w-full text-sm min-w-[320px]">
               <thead>
                 <tr className="text-right border-b border-gray-100 bg-gray-50/80">
                   <th className="py-3 px-4 font-semibold text-gray-600">الحالة</th>
