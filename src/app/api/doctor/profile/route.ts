@@ -38,8 +38,8 @@ export async function GET() {
 
 const clinicSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1),
-  address: z.string().min(1),
+  name: z.string(),
+  address: z.string(),
   city: z.string().default("الخليل"),
   phone: z.string().optional(),
   isMain: z.boolean().default(false),
@@ -126,26 +126,57 @@ export async function PUT(req: Request) {
     }
 
     if (data.clinics) {
-      await supabaseAdmin.from("Clinic").delete().eq("doctorId", doctor.id);
-      if (data.clinics.length > 0) {
-        const clinicRows = data.clinics.map((c) => ({
+      const { data: existingClinics } = await supabaseAdmin
+        .from("Clinic")
+        .select("id")
+        .eq("doctorId", doctor.id);
+      const clinicIds = (existingClinics ?? []).map((c: { id: string }) => c.id);
+      if (clinicIds.length > 0) {
+        await supabaseAdmin.from("Appointment").update({ clinicId: null }).in("clinicId", clinicIds);
+      }
+      const { error: deleteClinicsErr } = await supabaseAdmin
+        .from("Clinic")
+        .delete()
+        .eq("doctorId", doctor.id);
+      if (deleteClinicsErr) {
+        console.error("Delete clinics error:", deleteClinicsErr);
+        return NextResponse.json({ error: "فشل تحديث العيادات: " + (deleteClinicsErr.message || "خطأ في الحذف") }, { status: 500 });
+      }
+      const validClinics = data.clinics.filter((c) => (c.name?.trim() ?? "") !== "" && (c.address?.trim() ?? "") !== "");
+      if (validClinics.length > 0) {
+        const clinicRows = validClinics.map((c) => ({
           doctorId: doctor.id,
-          name: c.name,
-          address: c.address,
-          city: c.city,
-          phone: c.phone || null,
+          name: c.name.trim(),
+          address: c.address.trim(),
+          city: (c.city ?? "الخليل").trim(),
+          phone: (c.phone ?? "").trim() || null,
           isMain: c.isMain ?? false,
         }));
         const { error: clinicErr } = await supabaseAdmin.from("Clinic").insert(clinicRows);
         if (clinicErr) {
           console.error("Insert clinics error:", clinicErr);
-          return NextResponse.json({ error: "فشل حفظ العيادات" }, { status: 500 });
+          return NextResponse.json({ error: "فشل حفظ العيادات: " + (clinicErr.message || "خطأ في الإدراج") }, { status: 500 });
         }
       }
     }
 
     if (data.timeSlots) {
-      await supabaseAdmin.from("TimeSlot").delete().eq("doctorId", doctor.id);
+      const { data: existingSlots } = await supabaseAdmin
+        .from("TimeSlot")
+        .select("id")
+        .eq("doctorId", doctor.id);
+      const slotIds = (existingSlots ?? []).map((s: { id: string }) => s.id);
+      if (slotIds.length > 0) {
+        await supabaseAdmin.from("Appointment").update({ timeSlotId: null }).in("timeSlotId", slotIds);
+      }
+      const { error: deleteSlotsErr } = await supabaseAdmin
+        .from("TimeSlot")
+        .delete()
+        .eq("doctorId", doctor.id);
+      if (deleteSlotsErr) {
+        console.error("Delete timeSlots error:", deleteSlotsErr);
+        return NextResponse.json({ error: "فشل تحديث جدول المواعيد: " + (deleteSlotsErr.message || "خطأ في الحذف") }, { status: 500 });
+      }
       if (data.timeSlots.length > 0) {
         const slotRows = data.timeSlots.map((s) => ({
           doctorId: doctor.id,
@@ -157,7 +188,7 @@ export async function PUT(req: Request) {
         const { error: slotErr } = await supabaseAdmin.from("TimeSlot").insert(slotRows);
         if (slotErr) {
           console.error("Insert timeSlots error:", slotErr);
-          return NextResponse.json({ error: "فشل حفظ المواعيد" }, { status: 500 });
+          return NextResponse.json({ error: "فشل حفظ المواعيد: " + (slotErr.message || "خطأ في الإدراج") }, { status: 500 });
         }
       }
     }

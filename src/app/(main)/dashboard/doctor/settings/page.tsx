@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, Save, MapPin, Clock, Stethoscope } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, MapPin, Clock, Stethoscope, Pencil, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,6 +104,12 @@ export default function DoctorSettingsPage() {
     setClinics(clinics.filter((_, i) => i !== index));
   };
 
+  const setMainClinic = (index: number) => {
+    setClinics(
+      clinics.map((c, i) => ({ ...c, isMain: i === index }))
+    );
+  };
+
   const updateClinic = (index: number, field: keyof Clinic, value: string | boolean) => {
     const updated = [...clinics];
     updated[index] = { ...updated[index], [field]: value };
@@ -124,27 +130,44 @@ export default function DoctorSettingsPage() {
     setTimeSlots(updated);
   };
 
+  const fetchProfile = () => {
+    return fetch("/api/doctor/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.doctor) {
+          setBio(data.doctor.bio || "");
+          setExperienceYears(data.doctor.experienceYears || 0);
+          setConsultationFee(data.doctor.consultationFee || 0);
+          if (data.doctor.specialty?.id) setSelectedSpecialtyId(data.doctor.specialty.id);
+          setClinics(Array.isArray(data.doctor.clinics) && data.doctor.clinics.length > 0 ? data.doctor.clinics : [{ name: "", address: "", city: "الخليل", phone: "", isMain: true }]);
+          setTimeSlots(Array.isArray(data.doctor.timeSlots) && data.doctor.timeSlots.length > 0 ? data.doctor.timeSlots : []);
+        }
+      });
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
       const trimmedNewSpec = newSpecialtyName.trim();
+      const payload = {
+        bio,
+        experienceYears,
+        consultationFee,
+        clinics: clinics.filter((c) => (c.name?.trim() ?? "") !== "" && (c.address?.trim() ?? "") !== ""),
+        timeSlots,
+        specialtyId: trimmedNewSpec ? undefined : selectedSpecialtyId || undefined,
+        newSpecialtyName: trimmedNewSpec || undefined,
+      };
       const res = await fetch("/api/doctor/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bio,
-          experienceYears,
-          consultationFee,
-          clinics,
-          timeSlots,
-          specialtyId: trimmedNewSpec ? undefined : selectedSpecialtyId || undefined,
-          newSpecialtyName: trimmedNewSpec || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (res.ok) {
         toast.success("تم حفظ البيانات بنجاح!");
+        await fetchProfile();
         router.refresh();
       } else {
         toast.error(data.error || "حدث خطأ");
@@ -256,24 +279,51 @@ export default function DoctorSettingsPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
+            {clinics.length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-6">
+                لا توجد عيادات. انقر &quot;إضافة&quot; لإضافة عيادة.
+              </p>
+            )}
             {clinics.map((clinic, i) => (
-              <div key={i} className="p-4 border border-gray-200 rounded-xl space-y-3">
-                <div className="flex items-center justify-between">
+              <div key={clinic.id ?? i} className="p-4 border border-gray-200 rounded-xl space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="text-sm font-medium text-gray-700">
                     عيادة {i + 1} {clinic.isMain && "(رئيسية)"}
                   </h4>
-                  {clinics.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    {!clinic.isMain && (
+                      <button
+                        type="button"
+                        onClick={() => setMainClinic(i)}
+                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                        title="تعيين كعيادة رئيسية"
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                        رئيسية
+                      </button>
+                    )}
                     <button
+                      type="button"
+                      onClick={() => document.getElementById(`clinic-name-${i}`)?.focus()}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                      title="تعديل البيانات"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => removeClinic(i)}
-                      className="text-red-400 hover:text-red-600"
+                      className="p-1.5 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                      title="حذف العيادة"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                  )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <Input
+                    id={`clinic-name-${i}`}
                     placeholder="اسم العيادة"
                     value={clinic.name}
                     onChange={(e) => updateClinic(i, "name", e.target.value)}
