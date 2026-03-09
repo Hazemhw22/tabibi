@@ -69,6 +69,7 @@ async function getFeaturedDoctors() {
       specialty:Specialty(nameAr),
       clinics:Clinic(address, phone)`)
     .eq("status", "APPROVED")
+    .eq("visibleToPatients", true)
     .order("rating", { ascending: false })
     .limit(6);
   const raw = (data ?? []) as DoctorRow[];

@@ -16,17 +16,21 @@ const SUBSCRIPTION_PLANS = [
 export default function AdminDoctorActions({
   doctorId,
   subscriptionPeriod,
+  status,
   showSubscription,
   isPending,
 }: {
   doctorId: string;
   subscriptionPeriod?: string | null;
+  status?: string;
   showSubscription?: boolean;
   isPending?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState(subscriptionPeriod ?? "monthly");
+  const isRejected = status === "REJECTED";
+  const isApproved = status === "APPROVED";
 
   const update = async (payload: { status?: string; subscriptionPeriod?: string }) => {
     const key = payload.status ?? "subscription";
@@ -56,7 +60,8 @@ export default function AdminDoctorActions({
 
   return (
     <div className="flex items-center gap-2 shrink-0 flex-wrap">
-      {isPending && (
+      {/* موافق — للطلبات المعلقة أو المرفوضة */}
+      {(isPending || isRejected) && (
         <>
           <select
             value={selectedPlan}
@@ -74,26 +79,33 @@ export default function AdminDoctorActions({
             onClick={handleApprove}
             disabled={!!loading}
             className="text-xs h-8"
+            title="موافق"
           >
             {loading === "APPROVED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
           </Button>
         </>
       )}
-      <Button
-        size="sm"
-        variant="destructive"
-        onClick={() => update({ status: "REJECTED" })}
-        disabled={!!loading}
-        className="text-xs h-8"
-      >
-        {loading === "REJECTED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
-      </Button>
-      {showSubscription && !isPending && (
+      {/* مرفوض — للطلبات المعلقة أو الموافق عليها */}
+      {(isPending || isApproved) && (
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => update({ status: "REJECTED" })}
+          disabled={!!loading}
+          className="text-xs h-8"
+          title="مرفوض"
+        >
+          {loading === "REJECTED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+        </Button>
+      )}
+      {/* تعديل الاشتراك — للموافق عليهم */}
+      {showSubscription && isApproved && (
         <select
           value={subscriptionPeriod ?? "monthly"}
           onChange={(e) => update({ subscriptionPeriod: e.target.value })}
           disabled={!!loading}
           className="text-xs h-8 rounded-md border border-gray-300 px-2 bg-white min-w-[120px]"
+          title="تعديل الاشتراك"
         >
           {SUBSCRIPTION_PLANS.map((p) => (
             <option key={p.value} value={p.value}>{p.label}</option>

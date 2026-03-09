@@ -150,7 +150,8 @@ export default async function PatientDashboard() {
        clinics:Clinic(address, phone),
        reviews:Review(id)`
     )
-    .eq("status", "APPROVED");
+    .eq("status", "APPROVED")
+    .eq("visibleToPatients", true);
   const doctors = (doctorsData ?? []) as Array<{
     id: string;
     consultationFee?: number | null;

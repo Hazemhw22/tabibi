@@ -34,6 +34,21 @@ export default async function DoctorHomePage() {
     );
   }
 
+  if (doctor.status === "REJECTED") {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-8">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">🚫</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">لوحة التحكم</h1>
+          <p className="text-gray-500 mb-4">تم رفض طلب تسجيلك كطبيب. يرجى مراجعة مسؤول النظام للاستفسار عن السبب أو إعادة تقديم الطلب.</p>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-800 font-medium">يجب مراجعة مسؤول النظام</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
 

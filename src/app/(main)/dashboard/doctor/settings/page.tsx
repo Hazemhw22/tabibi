@@ -50,6 +50,7 @@ export default function DoctorSettingsPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
+  const [visibleToPatients, setVisibleToPatients] = useState(true);
   const [bio, setBio] = useState("");
   const [experienceYears, setExperienceYears] = useState(0);
   const [consultationFee, setConsultationFee] = useState(0);
@@ -66,6 +67,7 @@ export default function DoctorSettingsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.doctor) {
+          setVisibleToPatients(data.doctor.visibleToPatients !== false);
           setBio(data.doctor.bio || "");
           setExperienceYears(data.doctor.experienceYears || 0);
           setConsultationFee(data.doctor.consultationFee || 0);
@@ -135,6 +137,7 @@ export default function DoctorSettingsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.doctor) {
+          setVisibleToPatients(data.doctor.visibleToPatients !== false);
           setBio(data.doctor.bio || "");
           setExperienceYears(data.doctor.experienceYears || 0);
           setConsultationFee(data.doctor.consultationFee || 0);
@@ -150,6 +153,7 @@ export default function DoctorSettingsPage() {
     try {
       const trimmedNewSpec = newSpecialtyName.trim();
       const payload = {
+        visibleToPatients,
         bio,
         experienceYears,
         consultationFee,
@@ -222,6 +226,39 @@ export default function DoctorSettingsPage() {
                   onChange={(e) => setNewSpecialtyName(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                الظهور للمرضى
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleToPatients(true)}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    visibleToPatients
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  عرض للمرضى
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibleToPatients(false)}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    !visibleToPatients
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  عدم العرض
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1.5">
+                عند اختيار &quot;عدم العرض&quot; لن يظهر كارتك للمرضى ولن يستطيعوا الحجز عبر المنصة. فقط مرضى عيادتك يمكنهم الوصول إليك ويتلقون الرسائل على الهاتف.
+              </p>
             </div>
 
             <div>

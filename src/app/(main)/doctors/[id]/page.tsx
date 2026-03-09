@@ -11,7 +11,7 @@ async function getDoctor(id: string) {
   const { data: doctor, error } = await supabaseAdmin
     .from("Doctor")
     .select(`
-      id, consultationFee, rating, experienceYears, bio, status, whatsapp,
+      id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients,
       user:User(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain),
@@ -53,6 +53,7 @@ async function getDoctor(id: string) {
 
   return {
     id: doctor.id,
+    visibleToPatients: doctor.visibleToPatients !== false,
     consultationFee: doctor.consultationFee ?? 0,
     rating: doctor.rating ?? 0,
     experienceYears: doctor.experienceYears ?? 0,
@@ -77,6 +78,18 @@ export default async function DoctorProfilePage({
   const [doctor, session] = await Promise.all([getDoctor(id), auth()]);
 
   if (!doctor) notFound();
+
+  // الطبيب غير ظاهر للمرضى: فقط مرضى العيادة يمكنهم الوصول
+  if (doctor.visibleToPatients === false) {
+    if (!session?.user?.id) notFound();
+    const { data: clinicPatient } = await supabaseAdmin
+      .from("ClinicPatient")
+      .select("id")
+      .eq("doctorId", id)
+      .eq("userId", session.user.id)
+      .maybeSingle();
+    if (!clinicPatient) notFound();
+  }
 
   type SlotItem = { id?: string; dayOfWeek: number; startTime?: string; endTime?: string; isActive?: boolean };
   const timeSlotsByDay = (doctor.timeSlots ?? []).reduce(

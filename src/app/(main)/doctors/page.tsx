@@ -18,7 +18,8 @@ async function getDoctors(params: SearchParams) {
   let query = supabaseAdmin
     .from("Doctor")
     .select(`*, user:User(*), specialty:Specialty(*), clinics:Clinic(*), reviews:Review(id)`)
-    .eq("status", "APPROVED");
+    .eq("status", "APPROVED")
+    .eq("visibleToPatients", true);
 
   if (params.specialtyId) {
     query = query.eq("specialtyId", params.specialtyId);

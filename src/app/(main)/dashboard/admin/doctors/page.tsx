@@ -47,7 +47,7 @@ export default async function AdminDoctorsPage() {
                     <p className="font-medium text-gray-900">{(d.user as { name?: string })?.name ?? "—"}</p>
                     <p className="text-sm text-gray-500">{(d.user as { email?: string })?.email} • {(d.specialty as { nameAr?: string })?.nameAr}</p>
                   </div>
-                  <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} isPending />
+                  <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} status="PENDING" isPending showSubscription={false} />
                 </div>
               ))}
             </div>
@@ -92,8 +92,13 @@ export default async function AdminDoctorsPage() {
                   </td>
                   <td className="py-3 text-gray-500">{d.createdAt ? format(new Date(d.createdAt as string), "dd/MM/yyyy") : "—"}</td>
                   <td className="py-3">
-                    {d.status === "PENDING" && <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} isPending />}
-                    {d.status === "APPROVED" && <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} showSubscription />}
+                    <AdminDoctorActions
+                      doctorId={d.id as string}
+                      subscriptionPeriod={d.subscriptionPeriod as string}
+                      status={d.status as string}
+                      isPending={d.status === "PENDING"}
+                      showSubscription={d.status === "APPROVED"}
+                    />
                   </td>
                 </tr>
               ))}

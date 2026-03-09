@@ -527,7 +527,7 @@ export default function PatientsView({
                         { label: "فصيلة الدم",        value: selectedPatient.bloodType },
                         { label: "العنوان",            value: selectedPatient.address },
                         { label: "البريد الإلكتروني", value: selectedPatient.email },
-                        { label: "رقم الواتساب",      value: selectedPatient.whatsapp },
+                        { label: "رقم الهاتف",      value: selectedPatient.whatsapp },
                       ] as { label: string; value: string | null | undefined }[]
                     ).filter((f) => f.value).map((field) => (
                       <div key={field.label} className="flex items-center justify-between px-5 py-3 text-sm">
@@ -919,7 +919,7 @@ export default function PatientsView({
                 <Input label="الاسم الكامل *" placeholder="محمد أحمد" value={addForm.name} onChange={(e) => setAdd("name", e.target.value)} />
                 <Input label="رقم الملف" placeholder="001" value={addForm.fileNumber} onChange={(e) => setAdd("fileNumber", e.target.value)} />
               </div>
-              <Input label="رقم الواتساب" placeholder="0599xxxxxx (لإرسال الدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
+              <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
               <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -980,7 +980,7 @@ export default function PatientsView({
                 <Input label="الاسم الكامل *" placeholder="محمد أحمد" value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
                 <Input label="رقم الملف" placeholder="001" value={editForm.fileNumber} onChange={(e) => setEditForm((p) => ({ ...p, fileNumber: e.target.value }))} />
               </div>
-              <Input label="رقم الواتساب" placeholder="0599xxxxxx" value={editForm.whatsapp} onChange={(e) => setEditForm((p) => ({ ...p, whatsapp: e.target.value }))} dir="ltr" />
+              <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS)" value={editForm.whatsapp} onChange={(e) => setEditForm((p) => ({ ...p, whatsapp: e.target.value }))} dir="ltr" />
               <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} dir="ltr" />
               <div className="grid grid-cols-3 gap-4">
                 <div>

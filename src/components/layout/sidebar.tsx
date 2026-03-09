@@ -27,13 +27,16 @@ interface NavItem {
   badge?: number;
 }
 
-const doctorNav: NavItem[] = [
+const doctorNavFull: NavItem[] = [
   { label: "الرئيسية", href: "/dashboard/doctor", icon: LayoutDashboard },
   { label: "المرضى", href: "/dashboard/doctor/patients", icon: Users },
   { label: "المواعيد", href: "/dashboard/doctor/appointments", icon: Calendar },
   { label: "التقارير", href: "/dashboard/doctor/reports", icon: TrendingUp },
   { label: "الإعدادات", href: "/dashboard/doctor/settings", icon: Settings },
 ];
+
+/** للطبيب المرفوض: فقط الرئيسية */
+const doctorNavRejected: NavItem[] = doctorNavFull.slice(0, 1);
 
 const adminNav: NavItem[] = [
   { label: "لوحة تحكم", href: "/dashboard/admin", icon: LayoutDashboard },
@@ -121,6 +124,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [doctorStatus, setDoctorStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -136,9 +140,20 @@ export default function Sidebar() {
   const isDark = theme === "dark";
 
   const role = session?.user?.role;
+
+  useEffect(() => {
+    if (role !== "DOCTOR") return;
+    fetch("/api/doctor/profile")
+      .then((r) => r.json())
+      .then((data) => setDoctorStatus(data?.doctor?.status ?? null))
+      .catch(() => setDoctorStatus(null));
+  }, [role]);
+
   const nav =
     role === "DOCTOR"
-      ? doctorNav
+      ? doctorStatus === "REJECTED"
+        ? doctorNavRejected
+        : doctorNavFull
       : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
         ? adminNav
         : patientNav;

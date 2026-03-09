@@ -53,6 +53,7 @@ const timeSlotSchema = z.object({
 });
 
 const updateSchema = z.object({
+  visibleToPatients: z.boolean().optional(),
   bio: z.string().optional(),
   experienceYears: z.number().min(0).optional(),
   consultationFee: z.number().min(0).optional(),
@@ -103,12 +104,14 @@ export async function PUT(req: Request) {
     }
 
     const updatePayload: {
+      visibleToPatients?: boolean;
       bio?: string;
       experienceYears?: number;
       consultationFee?: number;
       specialtyId?: string;
       updatedAt?: string;
     } = {};
+    if (data.visibleToPatients !== undefined) updatePayload.visibleToPatients = data.visibleToPatients;
     if (data.bio !== undefined) updatePayload.bio = data.bio;
     if (data.experienceYears !== undefined) updatePayload.experienceYears = data.experienceYears;
     if (data.consultationFee !== undefined) updatePayload.consultationFee = data.consultationFee;

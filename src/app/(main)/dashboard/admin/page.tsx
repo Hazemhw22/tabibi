@@ -106,10 +106,13 @@ export default async function AdminDashboard() {
                     {d.createdAt ? format(new Date(d.createdAt), "dd/MM/yyyy") : "—"}
                   </td>
                   <td className="py-3">
-                    {d.status === "PENDING" && <AdminDoctorActions doctorId={d.id} subscriptionPeriod={d.subscriptionPeriod} isPending />}
-                    {d.status === "APPROVED" && (
-                      <AdminDoctorActions doctorId={d.id} subscriptionPeriod={d.subscriptionPeriod} showSubscription />
-                    )}
+                    <AdminDoctorActions
+                      doctorId={d.id}
+                      subscriptionPeriod={d.subscriptionPeriod}
+                      status={d.status}
+                      isPending={d.status === "PENDING"}
+                      showSubscription={d.status === "APPROVED"}
+                    />
                   </td>
                 </tr>
               ))}
@@ -158,7 +161,7 @@ export default async function AdminDashboard() {
                         {doctor.createdAt ? format(new Date(doctor.createdAt), "dd/MM/yyyy") : ""}
                       </p>
                     </div>
-                    <AdminDoctorActions doctorId={doctor.id} subscriptionPeriod={doctor.subscriptionPeriod} isPending />
+                    <AdminDoctorActions doctorId={doctor.id} subscriptionPeriod={doctor.subscriptionPeriod} status="PENDING" isPending showSubscription={false} />
                   </div>
                 ))}
               </div>

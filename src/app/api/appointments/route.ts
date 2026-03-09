@@ -26,6 +26,24 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = appointmentSchema.parse(body);
 
+    const { data: doctorRow } = await supabaseAdmin
+      .from("Doctor")
+      .select("id, visibleToPatients")
+      .eq("id", data.doctorId)
+      .single();
+
+    if (doctorRow?.visibleToPatients === false && session.user.role !== "DOCTOR") {
+      const { data: clinicPatient } = await supabaseAdmin
+        .from("ClinicPatient")
+        .select("id")
+        .eq("doctorId", data.doctorId)
+        .eq("userId", session.user.id)
+        .maybeSingle();
+      if (!clinicPatient) {
+        return NextResponse.json({ error: "هذا الطبيب لا يقبل حجوزات من المرضى الجدد" }, { status: 403 });
+      }
+    }
+
     const startOfDay = new Date(data.appointmentDate);
     startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(startOfDay);

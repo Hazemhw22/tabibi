@@ -793,7 +793,7 @@ export default function PatientsView({
                 <Input label="رقم الملف" placeholder="001" value={addForm.fileNumber} onChange={(e) => setAdd("fileNumber", e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Input label="رقم الواتساب" placeholder="0599xxxxxx (لإرسال الدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
+                <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
                 <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
               </div>
               <div className="grid grid-cols-3 gap-4">

@@ -71,7 +71,7 @@ export default function NewPatientPage() {
             <UserPlus className="h-5 w-5 text-blue-600" />
             إضافة مريض جديد
           </CardTitle>
-          <p className="text-sm text-gray-500 mt-1">بيانات المريض في العيادة (اسم، واتساب، بريد، رقم ملف، ملاحظات)</p>
+          <p className="text-sm text-gray-500 mt-1">بيانات المريض في العيادة (اسم، رقم هاتف، بريد، رقم ملف، ملاحظات)</p>
         </CardHeader>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -92,8 +92,8 @@ export default function NewPatientPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="رقم الواتساب"
-                placeholder="0599xxxxxx (لإرسال الدفعات والديون)"
+                label="رقم الهاتف"
+                placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)"
                 value={form.whatsapp}
                 onChange={(e) => set("whatsapp", e.target.value)}
                 dir="ltr"

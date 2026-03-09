@@ -53,6 +53,26 @@ export default async function DoctorDashboard() {
     );
   }
 
+  if (doctor.status === "REJECTED") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <div className="text-6xl mb-6">🚫</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-3">
+          لوحة التحكم
+        </h1>
+        <p className="text-gray-500 leading-relaxed">
+          تم رفض طلب تسجيلك كطبيب. يرجى مراجعة مسؤول النظام للاستفسار عن السبب أو إعادة تقديم الطلب.
+        </p>
+        <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl inline-flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600" />
+          <p className="text-sm text-red-800 font-medium">
+            يجب مراجعة مسؤول النظام
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
@@ -198,6 +218,17 @@ export default async function DoctorDashboard() {
           <p className="text-gray-500 mt-1">
             د. {session.user.name} - {doctor.specialty?.nameAr}
           </p>
+          {doctor.subscriptionPeriod && doctor.subscriptionEndDate && (() => {
+            const end = new Date(doctor.subscriptionEndDate);
+            const months = doctor.subscriptionPeriod === "monthly" ? 1 : doctor.subscriptionPeriod === "half_year" ? 6 : 12;
+            const start = new Date(end);
+            start.setMonth(start.getMonth() - months);
+            return (
+              <p className="text-sm text-blue-600 font-medium mt-1">
+                مدة الاشتراك: من {format(start, "dd/MM/yyyy", { locale: ar })} إلى {format(end, "dd/MM/yyyy", { locale: ar })}
+              </p>
+            );
+          })()}
         </div>
         <Link href="/dashboard/doctor/settings">
           <Button variant="outline" className="gap-2">

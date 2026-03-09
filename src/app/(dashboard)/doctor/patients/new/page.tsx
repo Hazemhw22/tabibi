@@ -65,7 +65,7 @@ export default function NewPatientPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="رقم الواتساب" placeholder="0599xxxxxx (لإرسال الدفعات والديون)" value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} dir="ltr" />
+              <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)" value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} dir="ltr" />
               <Input label="البريد الإلكتروني" type="email" placeholder="example@email.com" value={form.email} onChange={(e) => set("email", e.target.value)} dir="ltr" />
             </div>
 
