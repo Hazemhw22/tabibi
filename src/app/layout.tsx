@@ -10,9 +10,13 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "Tabibi - حجز مواعيد الأطباء في الخليل",
-  description: "منصة Tabibi لحجز مواعيد الأطباء والعيادات في الخليل مع تجربة بسيطة وآمنة",
-  keywords: "Tabibi, طبيب, حجز موعد, الخليل, عيادة, صحة",
+  title: "Tabibi - حجز مواعيد الأطباء في الخليل وقراها",
+  description: "منصة Tabibi لحجز مواعيد الأطباء والعيادات في الخليل وقراها مع تجربة بسيطة وآمنة",
+  keywords: "Tabibi, طبيب, حجز موعد, الخليل, قراها, عيادة, صحة",
+  icons: {
+    icon: "/88e178c9-facc-41a2-8f98-9252ccce19ee.png",
+    apple: "/88e178c9-facc-41a2-8f98-9252ccce19ee.png",
+  },
 };
 
 export const viewport = {
