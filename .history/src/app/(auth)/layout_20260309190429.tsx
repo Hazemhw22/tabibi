@@ -15,7 +15,7 @@ export default function AuthLayout({
             alt="Tabibi"
             width={220}
             height={56}
-            className="h-24 w-auto sm:h-24 max-w-[200px] sm:max-w-[240px]"
+            className="h-16 w-auto sm:h-16 max-w-[200px] sm:max-w-[240px]"
             priority
           />
         </Link>

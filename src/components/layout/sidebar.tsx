@@ -68,9 +68,9 @@ function SidebarContent({ nav, roleLabel, pathname, onLinkClick, isDark }: Sideb
         <Image
           src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
           alt="Tabibi"
-          width={160}
-          height={40}
-          className="h-9 w-auto shrink-0 max-w-[140px]"
+          width={200}
+          height={50}
+          className="h-11 w-auto shrink-0 max-w-[180px]"
         />
         <p className={cn("text-xs truncate", isDark ? "text-gray-400" : "text-gray-500")}>{roleLabel}</p>
       </div>
@@ -196,9 +196,9 @@ export default function Sidebar() {
           <Image
             src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
             alt="Tabibi"
-            width={160}
-            height={40}
-            className="h-9 w-auto max-w-[140px]"
+            width={200}
+            height={50}
+            className="h-11 w-auto max-w-[180px]"
           />
         </div>
         <button

@@ -91,9 +91,9 @@ export default function RegisterPage() {
     <Card className="w-full max-w-md shadow-xl border-0">
       <CardHeader className="text-center pb-2">
         <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
-        <CardDescription>انضم إلى منصة Tabibi</CardDescription>
+        <CardDescription className="text-base mt-1">انضم إلى منصة Tabibi</CardDescription>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         {/* Role Selection */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {[
@@ -203,9 +203,9 @@ export default function RegisterPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-base text-gray-600">
             لديك حساب بالفعل؟{" "}
-            <Link href="/login" className="text-blue-600 font-medium hover:underline">
+            <Link href="/login" className="text-blue-600 font-semibold hover:underline">
               تسجيل الدخول
             </Link>
           </p>

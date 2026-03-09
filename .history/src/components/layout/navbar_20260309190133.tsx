@@ -74,7 +74,7 @@ export default function Navbar() {
               alt="Tabibi"
               width={220}
               height={52}
-              className="h-16 sm:h-12 w-auto max-w-[200px] sm:max-w-[220px]"
+              className="h-11 sm:h-12 w-auto max-w-[200px] sm:max-w-[220px]"
               priority
             />
           </Link>

@@ -62,9 +62,9 @@ function LoginForm() {
     <Card className="w-full max-w-md shadow-xl border-0">
       <CardHeader className="text-center pb-2">
         <CardTitle className="text-2xl">مرحباً بعودتك</CardTitle>
-        <CardDescription>سجّل دخولك للوصول إلى حسابك (مريض، طبيب أو مشرف)</CardDescription>
+        <CardDescription className="text-base mt-1">سجّل دخولك للوصول إلى حسابك (مريض أو طبيب)</CardDescription>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
             label="البريد الإلكتروني"
@@ -125,9 +125,9 @@ function LoginForm() {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-base text-gray-600">
             ليس لديك حساب؟{" "}
-            <Link href="/register" className="text-blue-600 font-medium hover:underline">
+            <Link href="/register" className="text-blue-600 font-semibold hover:underline">
               إنشاء حساب جديد
             </Link>
           </p>
@@ -144,7 +144,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl">مرحباً بعودتك</CardTitle>
-            <CardDescription>جاري التحميل...</CardDescription>
+            <CardDescription className="text-base">جاري التحميل...</CardDescription>
           </CardHeader>
           <CardContent className="pt-4 flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
