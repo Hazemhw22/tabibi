@@ -67,99 +67,174 @@ export default async function AdminDoctorsPage() {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
-          <table className="w-full text-right min-w-[720px] text-sm">
-            <thead>
-              <tr className="text-gray-500 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-sm">
-                <th className="py-2.5 pr-3 font-medium">الطبيب</th>
-                <th className="py-2.5 font-medium">التخصص</th>
-                <th className="py-2.5 font-medium">الحالة</th>
-                <th className="py-2.5 font-medium">الاشتراك</th>
-                <th className="py-2.5 font-medium whitespace-nowrap">تاريخ التسجيل</th>
-                <th className="py-2.5 font-medium">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {list.map((d: Record<string, unknown>) => (
-                <tr key={d.id as string} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="py-3 pr-3 align-top">
-                    <p className="font-medium text-gray-900">
+        <CardContent className="pt-0">
+          {/* موبايل: بطاقات عمودية */}
+          <div className="space-y-3 sm:hidden">
+            {list.map((d: Record<string, unknown>) => (
+              <div
+                key={d.id as string}
+                className="rounded-xl border bg-white p-3 flex flex-col gap-2"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm truncate">
                       {(d.user as { name?: string })?.name ?? "—"}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-[11px] text-gray-500 truncate">
                       {(d.user as { email?: string })?.email}
                     </p>
-                  </td>
-                  <td className="py-3 align-top">
-                    <span className="text-sm text-gray-700">
+                    <p className="text-xs text-gray-600 mt-1">
                       {(d.specialty as { nameAr?: string })?.nameAr ?? "—"}
-                    </span>
-                  </td>
-                  <td className="py-3 align-top">
-                    <Badge
-                      variant={
-                        d.status === "APPROVED"
-                          ? "default"
-                          : d.status === "PENDING"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {d.status === "APPROVED"
-                        ? "موافق"
+                    </p>
+                  </div>
+                  <Badge
+                    variant={
+                      d.status === "APPROVED"
+                        ? "default"
                         : d.status === "PENDING"
-                        ? "قيد المراجعة"
-                        : d.status === "REJECTED"
-                        ? "مرفوض"
-                        : "موقوف"}
-                    </Badge>
-                  </td>
-                  <td className="py-3 align-top">
-                    {(d.subscriptionPeriod as string | null) ? (
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
-                          d.subscriptionPeriod === "monthly"
-                            ? "bg-blue-50 text-blue-700"
-                            : d.subscriptionPeriod === "half_year"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-emerald-50 text-emerald-700"
-                        }`}
-                      >
-                        {d.subscriptionPeriod === "monthly"
-                          ? "شهري ₪80"
-                          : d.subscriptionPeriod === "half_year"
-                          ? "نصف سنة ₪400"
-                          : d.subscriptionPeriod === "yearly"
-                          ? "سنة ₪800"
-                          : "—"}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">لا يوجد اشتراك</span>
-                    )}
-                  </td>
-                  <td className="py-3 align-top text-xs text-gray-500 whitespace-nowrap">
+                        ? "secondary"
+                        : "destructive"
+                    }
+                  >
+                    {d.status === "APPROVED"
+                      ? "موافق"
+                      : d.status === "PENDING"
+                      ? "قيد المراجعة"
+                      : d.status === "REJECTED"
+                      ? "مرفوض"
+                      : "موقوف"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                  <span>
+                    الاشتراك:{" "}
+                    {(d.subscriptionPeriod as string | null) === "monthly"
+                      ? "شهري ₪80"
+                      : (d.subscriptionPeriod as string | null) === "half_year"
+                      ? "نصف سنة ₪400"
+                      : (d.subscriptionPeriod as string | null) === "yearly"
+                      ? "سنة ₪800"
+                      : "لا يوجد"}
+                  </span>
+                  <span className="whitespace-nowrap">
                     {d.createdAt
                       ? format(new Date(d.createdAt as string), "dd/MM/yyyy")
                       : "—"}
-                  </td>
-                  <td className="py-3 align-top">
-                    <AdminDoctorActions
-                      doctorId={d.id as string}
-                      subscriptionPeriod={d.subscriptionPeriod as string}
-                      status={d.status as string}
-                      isPending={d.status === "PENDING"}
-                      showSubscription={d.status === "APPROVED"}
-                    />
-                  </td>
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <AdminDoctorActions
+                    doctorId={d.id as string}
+                    subscriptionPeriod={d.subscriptionPeriod as string}
+                    status={d.status as string}
+                    isPending={d.status === "PENDING"}
+                    showSubscription={d.status === "APPROVED"}
+                  />
+                </div>
+              </div>
+            ))}
+            {list.length === 0 && (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                لا يوجد أطباء مسجلون.
+              </div>
+            )}
+          </div>
+
+          {/* سطح المكتب: جدول أفقي مع سحب */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+            <table className="w-full text-right min-w-[720px] text-sm">
+              <thead>
+                <tr className="text-gray-500 border-b border-gray-200 bg-gray-50/60 text-xs sm:text-sm">
+                  <th className="py-2.5 pr-3 font-medium">الطبيب</th>
+                  <th className="py-2.5 font-medium">التخصص</th>
+                  <th className="py-2.5 font-medium">الحالة</th>
+                  <th className="py-2.5 font-medium">الاشتراك</th>
+                  <th className="py-2.5 font-medium whitespace-nowrap">تاريخ التسجيل</th>
+                  <th className="py-2.5 font-medium">إجراءات</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {list.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              لا يوجد أطباء مسجلون.
-            </div>
-          )}
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {list.map((d: Record<string, unknown>) => (
+                  <tr key={d.id as string} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="py-3 pr-3 align-top">
+                      <p className="font-medium text-gray-900">
+                        {(d.user as { name?: string })?.name ?? "—"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(d.user as { email?: string })?.email}
+                      </p>
+                    </td>
+                    <td className="py-3 align-top">
+                      <span className="text-sm text-gray-700">
+                        {(d.specialty as { nameAr?: string })?.nameAr ?? "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 align-top">
+                      <Badge
+                        variant={
+                          d.status === "APPROVED"
+                            ? "default"
+                            : d.status === "PENDING"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                      >
+                        {d.status === "APPROVED"
+                          ? "موافق"
+                          : d.status === "PENDING"
+                          ? "قيد المراجعة"
+                          : d.status === "REJECTED"
+                          ? "مرفوض"
+                          : "موقوف"}
+                      </Badge>
+                    </td>
+                    <td className="py-3 align-top">
+                      {(d.subscriptionPeriod as string | null) ? (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
+                            d.subscriptionPeriod === "monthly"
+                              ? "bg-blue-50 text-blue-700"
+                              : d.subscriptionPeriod === "half_year"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {d.subscriptionPeriod === "monthly"
+                            ? "شهري ₪80"
+                            : d.subscriptionPeriod === "half_year"
+                            ? "نصف سنة ₪400"
+                            : d.subscriptionPeriod === "yearly"
+                            ? "سنة ₪800"
+                            : "—"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">لا يوجد اشتراك</span>
+                      )}
+                    </td>
+                    <td className="py-3 align-top text-xs text-gray-500 whitespace-nowrap">
+                      {d.createdAt
+                        ? format(new Date(d.createdAt as string), "dd/MM/yyyy")
+                        : "—"}
+                    </td>
+                    <td className="py-3 align-top">
+                      <AdminDoctorActions
+                        doctorId={d.id as string}
+                        subscriptionPeriod={d.subscriptionPeriod as string}
+                        status={d.status as string}
+                        isPending={d.status === "PENDING"}
+                        showSubscription={d.status === "APPROVED"}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {list.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                لا يوجد أطباء مسجلون.
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

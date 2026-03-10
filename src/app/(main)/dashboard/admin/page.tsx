@@ -33,6 +33,16 @@ export default async function AdminDashboard() {
 
   const pendingDoctors = doctorsList?.filter((d) => d.status === "PENDING") ?? [];
   const revenue = subscriptionPayments?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
+  const doctorsForTable = ((doctorsList ?? []) as {
+    id: string;
+    user?: { name?: string; email?: string };
+    specialty?: { nameAr?: string };
+    status?: string;
+    subscriptionPlan?: string;
+    subscriptionPeriod?: string;
+    subscriptionEndDate?: string;
+    createdAt?: string;
+  }[]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -73,109 +83,178 @@ export default async function AdminDashboard() {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
-          <table className="w-full text-right min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-xs sm:text-sm text-gray-500 bg-gray-50/60">
-                <th className="py-2.5 pr-3 font-medium">الطبيب</th>
-                <th className="py-2.5 font-medium">التخصص</th>
-                <th className="py-2.5 font-medium">الحالة</th>
-                <th className="py-2.5 font-medium">الاشتراك</th>
-                <th className="py-2.5 font-medium">تاريخ التسجيل</th>
-                <th className="py-2.5 font-medium">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {((doctorsList ?? []) as {
-                id: string;
-                user?: { name?: string; email?: string };
-                specialty?: { nameAr?: string };
-                status?: string;
-                subscriptionPlan?: string;
-                subscriptionPeriod?: string;
-                subscriptionEndDate?: string;
-                createdAt?: string;
-              }[]).map((d) => (
-                <tr key={d.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="py-3 pr-3 align-top">
-                    <p className="font-medium text-gray-900">{d.user?.name ?? "—"}</p>
-                    <p className="text-xs text-gray-500">{d.user?.email}</p>
-                  </td>
-                  <td className="py-3 align-top text-sm text-gray-700">
-                    {d.specialty?.nameAr ?? "—"}
-                  </td>
-                  <td className="py-3 align-top">
-                    <Badge
-                      variant={
-                        d.status === "APPROVED"
-                          ? "success"
-                          : d.status === "PENDING"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {d.status === "APPROVED"
-                        ? "موافق"
+        <CardContent className="pt-0">
+          {/* عرض موبايل كبطاقات */}
+          <div className="space-y-3 sm:hidden">
+            {doctorsForTable.map((d) => (
+              <div
+                key={d.id}
+                className="rounded-xl border bg-white p-3 flex flex-col gap-2"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm truncate">
+                      د. {d.user?.name ?? "—"}
+                    </p>
+                    <p className="text-[11px] text-gray-500 truncate">
+                      {d.user?.email}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {d.specialty?.nameAr ?? "—"}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={
+                      d.status === "APPROVED"
+                        ? "success"
                         : d.status === "PENDING"
-                        ? "قيد المراجعة"
-                        : d.status === "REJECTED"
-                        ? "مرفوض"
-                        : "موقوف"}
-                    </Badge>
-                  </td>
-                  <td className="py-3 align-top">
-                    {d.subscriptionPeriod ? (
-                      <div className="flex flex-col gap-0.5 text-xs sm:text-sm">
-                        <span
-                          className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 ${
-                            d.subscriptionPeriod === "monthly"
-                              ? "bg-blue-50 text-blue-700"
-                              : d.subscriptionPeriod === "half_year"
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-emerald-50 text-emerald-700"
-                          }`}
-                        >
-                          {d.subscriptionPeriod === "monthly"
-                            ? "شهري ₪80"
-                            : d.subscriptionPeriod === "half_year"
-                            ? "نصف سنة ₪400"
-                            : d.subscriptionPeriod === "yearly"
-                            ? "سنة ₪800"
-                            : "—"}
-                        </span>
-                        {d.subscriptionEndDate && (
-                          <span className="text-[11px] text-gray-400">
-                            ينتهي في{" "}
-                            {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">لا يوجد اشتراك</span>
-                    )}
-                  </td>
-                  <td className="py-3 align-top text-xs text-gray-500 whitespace-nowrap">
+                        ? "secondary"
+                        : "destructive"
+                    }
+                  >
+                    {d.status === "APPROVED"
+                      ? "موافق"
+                      : d.status === "PENDING"
+                      ? "قيد المراجعة"
+                      : d.status === "REJECTED"
+                      ? "مرفوض"
+                      : "موقوف"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                  <span>
+                    الاشتراك:{" "}
+                    {d.subscriptionPeriod === "monthly"
+                      ? "شهري ₪80"
+                      : d.subscriptionPeriod === "half_year"
+                      ? "نصف سنة ₪400"
+                      : d.subscriptionPeriod === "yearly"
+                      ? "سنة ₪800"
+                      : "لا يوجد"}
+                  </span>
+                  <span className="whitespace-nowrap">
                     {d.createdAt ? format(new Date(d.createdAt), "dd/MM/yyyy") : "—"}
-                  </td>
-                  <td className="py-3 align-top">
-                    <AdminDoctorActions
-                      doctorId={d.id}
-                      subscriptionPeriod={d.subscriptionPeriod}
-                      status={d.status}
-                      isPending={d.status === "PENDING"}
-                      showSubscription={d.status === "APPROVED"}
-                    />
-                  </td>
+                  </span>
+                </div>
+                {d.subscriptionEndDate && (
+                  <p className="text-[11px] text-gray-400">
+                    ينتهي في {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
+                  </p>
+                )}
+                <div className="mt-2">
+                  <AdminDoctorActions
+                    doctorId={d.id}
+                    subscriptionPeriod={d.subscriptionPeriod}
+                    status={d.status}
+                    isPending={d.status === "PENDING"}
+                    showSubscription={d.status === "APPROVED"}
+                  />
+                </div>
+              </div>
+            ))}
+            {doctorsForTable.length === 0 && (
+              <div className="text-center py-8 text-gray-400 text-sm">
+                لا يوجد أطباء مسجلون بعد
+              </div>
+            )}
+          </div>
+
+          {/* جدول سطح المكتب */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
+            <table className="w-full text-right min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-xs sm:text-sm text-gray-500 bg-gray-50/60">
+                  <th className="py-2.5 pr-3 font-medium">الطبيب</th>
+                  <th className="py-2.5 font-medium">التخصص</th>
+                  <th className="py-2.5 font-medium">الحالة</th>
+                  <th className="py-2.5 font-medium">الاشتراك</th>
+                  <th className="py-2.5 font-medium">تاريخ التسجيل</th>
+                  <th className="py-2.5 font-medium">إجراءات</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {(!doctorsList || doctorsList.length === 0) && (
-            <div className="text-center py-12 text-gray-400">
-              <Users className="h-12 w-12 mx-auto mb-2" />
-              <p>لا يوجد أطباء مسجلون بعد</p>
-            </div>
-          )}
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {doctorsForTable.map((d) => (
+                  <tr key={d.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="py-3 pr-3 align-top">
+                      <p className="font-medium text-gray-900">{d.user?.name ?? "—"}</p>
+                      <p className="text-xs text-gray-500">{d.user?.email}</p>
+                    </td>
+                    <td className="py-3 align-top text-sm text-gray-700">
+                      {d.specialty?.nameAr ?? "—"}
+                    </td>
+                    <td className="py-3 align-top">
+                      <Badge
+                        variant={
+                          d.status === "APPROVED"
+                            ? "success"
+                            : d.status === "PENDING"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                      >
+                        {d.status === "APPROVED"
+                          ? "موافق"
+                          : d.status === "PENDING"
+                          ? "قيد المراجعة"
+                          : d.status === "REJECTED"
+                          ? "مرفوض"
+                          : "موقوف"}
+                      </Badge>
+                    </td>
+                    <td className="py-3 align-top">
+                      {d.subscriptionPeriod ? (
+                        <div className="flex flex-col gap-0.5 text-xs sm:text-sm">
+                          <span
+                            className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 ${
+                              d.subscriptionPeriod === "monthly"
+                                ? "bg-blue-50 text-blue-700"
+                                : d.subscriptionPeriod === "half_year"
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            {d.subscriptionPeriod === "monthly"
+                              ? "شهري ₪80"
+                              : d.subscriptionPeriod === "half_year"
+                              ? "نصف سنة ₪400"
+                              : d.subscriptionPeriod === "yearly"
+                              ? "سنة ₪800"
+                              : "—"}
+                          </span>
+                          {d.subscriptionEndDate && (
+                            <span className="text-[11px] text-gray-400">
+                              ينتهي في{" "}
+                              {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">لا يوجد اشتراك</span>
+                      )}
+                    </td>
+                    <td className="py-3 align-top text-xs text-gray-500 whitespace-nowrap">
+                      {d.createdAt ? format(new Date(d.createdAt), "dd/MM/yyyy") : "—"}
+                    </td>
+                    <td className="py-3 align-top">
+                      <AdminDoctorActions
+                        doctorId={d.id}
+                        subscriptionPeriod={d.subscriptionPeriod}
+                        status={d.status}
+                        isPending={d.status === "PENDING"}
+                        showSubscription={d.status === "APPROVED"}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {doctorsForTable.length === 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <Users className="h-12 w-12 mx-auto mb-2" />
+                <p>لا يوجد أطباء مسجلون بعد</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
