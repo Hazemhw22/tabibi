@@ -1,12 +1,11 @@
-"use client";
-
+import { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Heart, Stethoscope, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginCard() {
   const searchParams = useSearchParams();
   const rateLimited = searchParams.get("error") === "rate_limited";
 
@@ -65,5 +64,13 @@ export default function LoginPage() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginCard />
+    </Suspense>
   );
 }
