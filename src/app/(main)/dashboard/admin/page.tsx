@@ -62,50 +62,102 @@ export default async function AdminDashboard() {
 
       {/* جدول الأطباء مع الاشتراكات */}
       <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5" />
-            الأطباء والاشتراكات
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between gap-2 text-base sm:text-lg">
+            <span className="inline-flex items-center gap-2 text-gray-900">
+              <Stethoscope className="h-5 w-5 text-blue-600" />
+              <span>الأطباء والاشتراكات</span>
+            </span>
+            <span className="text-xs text-gray-400 hidden sm:inline">
+              عرض سريع لحالة الأطباء وخطط الاشتراك
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
-          <table className="w-full text-right min-w-[600px]">
+          <table className="w-full text-right min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-sm text-gray-500">
-                <th className="pb-3 font-medium">الطبيب</th>
-                <th className="pb-3 font-medium">التخصص</th>
-                <th className="pb-3 font-medium">الحالة</th>
-                <th className="pb-3 font-medium">الاشتراك</th>
-                <th className="pb-3 font-medium">التاريخ</th>
-                <th className="pb-3 font-medium">إجراءات</th>
+              <tr className="border-b border-gray-200 text-xs sm:text-sm text-gray-500 bg-gray-50/60">
+                <th className="py-2.5 pr-3 font-medium">الطبيب</th>
+                <th className="py-2.5 font-medium">التخصص</th>
+                <th className="py-2.5 font-medium">الحالة</th>
+                <th className="py-2.5 font-medium">الاشتراك</th>
+                <th className="py-2.5 font-medium">تاريخ التسجيل</th>
+                <th className="py-2.5 font-medium">إجراءات</th>
               </tr>
             </thead>
-            <tbody>
-              {((doctorsList ?? []) as { id: string; user?: { name?: string; email?: string }; specialty?: { nameAr?: string }; status?: string; subscriptionPlan?: string; subscriptionPeriod?: string; subscriptionEndDate?: string; createdAt?: string }[]).map((d) => (
-                <tr key={d.id} className="border-b border-gray-50 last:border-0">
-                  <td className="py-3">
+            <tbody className="divide-y divide-gray-50">
+              {((doctorsList ?? []) as {
+                id: string;
+                user?: { name?: string; email?: string };
+                specialty?: { nameAr?: string };
+                status?: string;
+                subscriptionPlan?: string;
+                subscriptionPeriod?: string;
+                subscriptionEndDate?: string;
+                createdAt?: string;
+              }[]).map((d) => (
+                <tr key={d.id} className="hover:bg-gray-50/80 transition-colors">
+                  <td className="py-3 pr-3 align-top">
                     <p className="font-medium text-gray-900">{d.user?.name ?? "—"}</p>
                     <p className="text-xs text-gray-500">{d.user?.email}</p>
                   </td>
-                  <td className="py-3 text-sm text-gray-700">{d.specialty?.nameAr ?? "—"}</td>
-                  <td className="py-3">
+                  <td className="py-3 align-top text-sm text-gray-700">
+                    {d.specialty?.nameAr ?? "—"}
+                  </td>
+                  <td className="py-3 align-top">
                     <Badge
                       variant={
-                        d.status === "APPROVED" ? "success" : d.status === "PENDING" ? "secondary" : "destructive"
+                        d.status === "APPROVED"
+                          ? "success"
+                          : d.status === "PENDING"
+                          ? "secondary"
+                          : "destructive"
                       }
                     >
-                      {d.status === "APPROVED" ? "موافق" : d.status === "PENDING" ? "قيد المراجعة" : d.status === "REJECTED" ? "مرفوض" : "موقوف"}
+                      {d.status === "APPROVED"
+                        ? "موافق"
+                        : d.status === "PENDING"
+                        ? "قيد المراجعة"
+                        : d.status === "REJECTED"
+                        ? "مرفوض"
+                        : "موقوف"}
                     </Badge>
                   </td>
-                  <td className="py-3">
-                    <span className="text-sm text-gray-700">
-                      {d.subscriptionPeriod === "monthly" ? "شهري ₪80" : d.subscriptionPeriod === "half_year" ? "نصف سنة ₪400" : d.subscriptionPeriod === "yearly" ? "سنة ₪800" : "—"}
-                    </span>
+                  <td className="py-3 align-top">
+                    {d.subscriptionPeriod ? (
+                      <div className="flex flex-col gap-0.5 text-xs sm:text-sm">
+                        <span
+                          className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 ${
+                            d.subscriptionPeriod === "monthly"
+                              ? "bg-blue-50 text-blue-700"
+                              : d.subscriptionPeriod === "half_year"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {d.subscriptionPeriod === "monthly"
+                            ? "شهري ₪80"
+                            : d.subscriptionPeriod === "half_year"
+                            ? "نصف سنة ₪400"
+                            : d.subscriptionPeriod === "yearly"
+                            ? "سنة ₪800"
+                            : "—"}
+                        </span>
+                        {d.subscriptionEndDate && (
+                          <span className="text-[11px] text-gray-400">
+                            ينتهي في{" "}
+                            {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">لا يوجد اشتراك</span>
+                    )}
                   </td>
-                  <td className="py-3 text-xs text-gray-500">
+                  <td className="py-3 align-top text-xs text-gray-500 whitespace-nowrap">
                     {d.createdAt ? format(new Date(d.createdAt), "dd/MM/yyyy") : "—"}
                   </td>
-                  <td className="py-3">
+                  <td className="py-3 align-top">
                     <AdminDoctorActions
                       doctorId={d.id}
                       subscriptionPeriod={d.subscriptionPeriod}

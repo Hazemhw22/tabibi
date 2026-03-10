@@ -93,7 +93,7 @@ export default function PatientsView({
   const [paymentNotes,  setPaymentNotes]  = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
 
-  /* add appointment */
+  /* add appointment (يُستخدم أيضاً لتسجيل الملاحظات الطبية للزيارة) */
   const [addingApt,   setAddingApt]   = useState(false);
   const [aptTitle,    setAptTitle]    = useState("");
   const [aptDate,     setAptDate]     = useState("");
@@ -584,8 +584,12 @@ export default function PatientsView({
                             className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="نهاية" />
                         </div>
                       )}
-                      <input placeholder="ملاحظات" value={aptNotes} onChange={(e) => setAptNotes(e.target.value)}
-                        className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                      <input
+                        placeholder="الملاحظات الطبية: شكوى المريض، التشخيص، العلاج الموصوف..."
+                        value={aptNotes}
+                        onChange={(e) => setAptNotes(e.target.value)}
+                        className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveApt} disabled={savingApt}>
                           {savingApt ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
@@ -618,6 +622,11 @@ export default function PatientsView({
                               <p className="text-xs text-gray-400">
                                 {apt.duration ? `${apt.duration} دقيقة` : apt.fee ? `رسوم: ₪${apt.fee}` : ""}
                               </p>
+                              {apt.notes && (
+                                <p className="mt-1 text-xs text-gray-600 line-clamp-2">
+                                  {apt.notes}
+                                </p>
+                              )}
                             </div>
                             <span className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", cfg.color)}>
                               <Icon className="h-3 w-3" />{cfg.label}
@@ -856,12 +865,51 @@ export default function PatientsView({
                         </div>
                       </div>
                     )}
-                    {!selectedPatient.allergies && !selectedPatient.notes && (
-                      <div className="py-12 text-center text-sm text-gray-400">
-                        <Stethoscope className="mx-auto mb-3 h-10 w-10 text-gray-200" />
-                        لا توجد ملفات طبية
+                    {/* ملخص زيارات مع ملاحظات طبية (إن وُجدت) */}
+                    {selectedPatient.appointments.some((a) => a.notes) && (
+                      <div className="px-5 py-4">
+                        <div className="text-sm font-semibold text-gray-900 mb-2">
+                          سجل الزيارات الطبية
+                        </div>
+                        <div className="space-y-3">
+                          {selectedPatient.appointments
+                            .filter((a) => a.notes)
+                            .map((apt) => (
+                              <div
+                                key={apt.id}
+                                className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-700"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold">
+                                    {format(new Date(apt.appointmentDate), "dd/MM/yyyy")}
+                                  </span>
+                                  {apt.startTime && (
+                                    <span className="text-gray-400">
+                                      {apt.startTime.slice(0, 5)}
+                                    </span>
+                                  )}
+                                </div>
+                                {apt.title && (
+                                  <div className="text-[11px] text-gray-500 mb-1">
+                                    {apt.title}
+                                  </div>
+                                )}
+                                <div className="whitespace-pre-line">
+                                  {apt.notes}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     )}
+                    {!selectedPatient.allergies &&
+                      !selectedPatient.notes &&
+                      !selectedPatient.appointments.some((a) => a.notes) && (
+                        <div className="py-12 text-center text-sm text-gray-400">
+                          <Stethoscope className="mx-auto mb-3 h-10 w-10 text-gray-200" />
+                          لا توجد ملفات طبية
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -948,10 +996,16 @@ export default function PatientsView({
                   className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">ملاحظات / أدوية حالية</label>
-                <textarea value={addForm.notes} onChange={(e) => setAdd("notes", e.target.value)} rows={2}
-                  placeholder="أي معلومات إضافية..."
-                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  الحالة المرضية الأساسية / العلاج
+                </label>
+                <textarea
+                  value={addForm.notes}
+                  onChange={(e) => setAdd("notes", e.target.value)}
+                  rows={2}
+                  placeholder="مثال: مريض سكري من النوع الثاني، علاج حالي: ميتفورمين 850mg مرتين يومياً..."
+                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={addLoading}>
@@ -1009,10 +1063,16 @@ export default function PatientsView({
                   className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">ملاحظات / أدوية حالية</label>
-                <textarea value={editForm.notes} onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))} rows={2}
-                  placeholder="أي معلومات إضافية..."
-                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  الحالة المرضية الأساسية / ما قام به الطبيب
+                </label>
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))}
+                  rows={2}
+                  placeholder="ما مرض المريض؟ ما العلاج الذي قمت به له أو الأدوية التي يستخدمها حالياً؟"
+                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={editLoading}>

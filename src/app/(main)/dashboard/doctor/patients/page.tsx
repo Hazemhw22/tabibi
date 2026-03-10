@@ -12,6 +12,8 @@ export type AppointmentRow = {
   fee?: number;
   title?: string;
   duration?: number;
+  /** ملاحظات طبية عن الزيارة (ما المشكلة؟ ما العلاج؟ إلخ) */
+  notes?: string | null;
 };
 
 export type TransactionRow = {
@@ -141,7 +143,7 @@ export default async function DoctorPatientsPage({
             .order("date", { ascending: false }),
           supabaseAdmin
             .from("ClinicAppointment")
-            .select("id, date, time, status, title, duration")
+            .select("id, date, time, status, title, duration, notes")
             .eq("clinicPatientId", selectedId)
             .order("date", { ascending: false }),
         ]);
@@ -151,8 +153,13 @@ export default async function DoctorPatientsPage({
           amount: t.amount, date: t.date, notes: t.notes,
         }));
         const appointments: AppointmentRow[] = (aptData ?? []).map((a) => ({
-          id: a.id, appointmentDate: a.date ?? "", startTime: a.time ?? "",
-          status: a.status, title: a.title, duration: a.duration,
+          id: a.id,
+          appointmentDate: a.date ?? "",
+          startTime: a.time ?? "",
+          status: a.status,
+          title: a.title,
+          duration: a.duration,
+          notes: (a as { notes?: string | null }).notes ?? null,
         }));
         const balance = transactions.reduce(
           (s, t) => t.type === "PAYMENT" ? s + t.amount : s - t.amount, 0
@@ -171,7 +178,7 @@ export default async function DoctorPatientsPage({
       const [{ data: platformApts }, { data: userData }, { data: txData }] = await Promise.all([
         supabaseAdmin
           .from("Appointment")
-          .select("id, appointmentDate, startTime, endTime, status, fee")
+          .select("id, appointmentDate, startTime, endTime, status, fee, notes")
           .eq("patientId", selectedId)
           .eq("doctorId", doctor.id)
           .order("appointmentDate", { ascending: false }),
@@ -190,8 +197,13 @@ export default async function DoctorPatientsPage({
           amount: t.amount, date: t.date, notes: t.notes,
         }));
         const appointments: AppointmentRow[] = (platformApts ?? []).map((a) => ({
-          id: a.id, appointmentDate: a.appointmentDate, startTime: a.startTime,
-          endTime: a.endTime, status: a.status, fee: a.fee,
+          id: a.id,
+          appointmentDate: a.appointmentDate,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          status: a.status,
+          fee: a.fee,
+          notes: (a as { notes?: string | null }).notes ?? null,
         }));
         const balance = transactions.reduce(
           (s, t) => t.type === "PAYMENT" ? s + t.amount : s - t.amount, 0
