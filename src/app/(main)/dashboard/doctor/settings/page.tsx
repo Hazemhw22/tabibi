@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { DAYS_AR } from "@/lib/utils";
+import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 function getDateForDayOfWeek(dayOfWeek: number): Date {
   const today = new Date();
@@ -54,6 +55,7 @@ export default function DoctorSettingsPage() {
   const [bio, setBio] = useState("");
   const [experienceYears, setExperienceYears] = useState(0);
   const [consultationFee, setConsultationFee] = useState(0);
+  const [locationId, setLocationId] = useState<string>("");
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>("");
   const [newSpecialtyName, setNewSpecialtyName] = useState("");
@@ -71,6 +73,7 @@ export default function DoctorSettingsPage() {
           setBio(data.doctor.bio || "");
           setExperienceYears(data.doctor.experienceYears || 0);
           setConsultationFee(data.doctor.consultationFee || 0);
+          if (data.doctor.locationId) setLocationId(data.doctor.locationId);
           if (data.doctor.specialty?.id) {
             setSelectedSpecialtyId(data.doctor.specialty.id);
           }
@@ -141,6 +144,7 @@ export default function DoctorSettingsPage() {
           setBio(data.doctor.bio || "");
           setExperienceYears(data.doctor.experienceYears || 0);
           setConsultationFee(data.doctor.consultationFee || 0);
+          if (data.doctor.locationId) setLocationId(data.doctor.locationId);
           if (data.doctor.specialty?.id) setSelectedSpecialtyId(data.doctor.specialty.id);
           setClinics(Array.isArray(data.doctor.clinics) && data.doctor.clinics.length > 0 ? data.doctor.clinics : [{ name: "", address: "", city: "الخليل", phone: "", isMain: true }]);
           setTimeSlots(Array.isArray(data.doctor.timeSlots) && data.doctor.timeSlots.length > 0 ? data.doctor.timeSlots : []);
@@ -152,12 +156,24 @@ export default function DoctorSettingsPage() {
     setLoading(true);
     try {
       const trimmedNewSpec = newSpecialtyName.trim();
+      const loc = locationId ? getLocationById(locationId) : null;
+      const regionName = loc?.nameAr ?? "";
+      const regionGov = loc?.governorateAr ?? "الخليل";
+      const clinicsToSave = clinics
+        .filter((c) => (c.name?.trim() ?? "") !== "")
+        .map((c) => ({
+          ...c,
+          address: (c.address?.trim() ?? "") !== "" ? c.address.trim() : regionName,
+          city: (c.city?.trim() ?? "") !== "" ? c.city : regionGov,
+        }))
+        .filter((c) => c.address !== "");
       const payload = {
         visibleToPatients,
         bio,
         experienceYears,
         consultationFee,
-        clinics: clinics.filter((c) => (c.name?.trim() ?? "") !== "" && (c.address?.trim() ?? "") !== ""),
+        locationId: locationId || null,
+        clinics: clinicsToSave,
         timeSlots,
         specialtyId: trimmedNewSpec ? undefined : selectedSpecialtyId || undefined,
         newSpecialtyName: trimmedNewSpec || undefined,
@@ -303,6 +319,33 @@ export default function DoctorSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* منطقة العمل */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-violet-600" />
+              منطقتك (مكان العمل)
+            </CardTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              اختر المدينة أو المحافظة في الضفة الغربية. سيُستخدم لعرضك للمرضى عند البحث حسب المنطقة. عنوان كل عيادة يُدخل تفصيلياً أدناه.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <select
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+              className="w-full h-11 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+            >
+              <option value="">اختر المدينة أو المحافظة</option>
+              {WEST_BANK_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.nameAr} — {loc.governorateAr}
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
+
         {/* Clinics */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -316,6 +359,9 @@ export default function DoctorSettingsPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-xs text-gray-500">
+              اسم العيادة، رقم الهاتف والعنوان التفصيلي حتى يعرف المريض مكان العيادة.
+            </p>
             {clinics.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-6">
                 لا توجد عيادات. انقر &quot;إضافة&quot; لإضافة عيادة.
@@ -373,7 +419,7 @@ export default function DoctorSettingsPage() {
                   />
                 </div>
                 <Input
-                  placeholder="العنوان التفصيلي"
+                  placeholder="العنوان التفصيلي (شارع، مبنى، طابق...)"
                   value={clinic.address}
                   onChange={(e) => updateClinic(i, "address", e.target.value)}
                 />

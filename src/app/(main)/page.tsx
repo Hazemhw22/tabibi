@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -14,23 +15,42 @@ import {
   Users,
   MessageCircle,
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { auth } from "@/lib/auth";
 
 async function getStats() {
-  const [doctorsCount, appointmentsCount, specialtiesCount] = await Promise.all([
-    prisma.doctor.count({ where: { status: "APPROVED" } }),
-    prisma.appointment.count({ where: { status: "COMPLETED" } }),
-    prisma.specialty.count(),
+  const [
+    { count: doctorsCount },
+    { count: appointmentsCount },
+    { count: specialtiesCount },
+  ] = await Promise.all([
+    supabaseAdmin.from("Doctor").select("id", { count: "exact", head: true }).eq("status", "APPROVED"),
+    supabaseAdmin.from("Appointment").select("id", { count: "exact", head: true }).eq("status", "COMPLETED"),
+    supabaseAdmin.from("Specialty").select("id", { count: "exact", head: true }),
   ]);
-  return { doctorsCount, appointmentsCount, specialtiesCount };
+  return {
+    doctorsCount: doctorsCount ?? 0,
+    appointmentsCount: appointmentsCount ?? 0,
+    specialtiesCount: specialtiesCount ?? 0,
+  };
 }
 
 async function getSpecialties() {
-  return await prisma.specialty.findMany({
-    include: { _count: { select: { doctors: true } } },
-    take: 8,
-  });
+  const { data: specialties } = await supabaseAdmin
+    .from("Specialty")
+    .select("id, name, nameAr, icon")
+    .limit(8);
+  if (!specialties?.length) return [];
+  const withCount = await Promise.all(
+    specialties.map(async (s) => {
+      const { count } = await supabaseAdmin
+        .from("Doctor")
+        .select("id", { count: "exact", head: true })
+        .eq("specialtyId", s.id);
+      return { ...s, _count: { doctors: count ?? 0 } };
+    })
+  );
+  return withCount;
 }
 
 type DoctorRow = {
@@ -64,12 +84,13 @@ function normalizeDoctor(d: DoctorRow) {
 async function getFeaturedDoctors() {
   const { data } = await supabaseAdmin
     .from("Doctor")
-    .select(`id, rating, totalReviews, consultationFee, experienceYears, whatsapp,
+    .select(`id, locationId, rating, totalReviews, consultationFee, experienceYears, whatsapp,
       user:User(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(address, phone)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true)
+    .not("locationId", "is", null)
     .order("rating", { ascending: false })
     .limit(6);
   const raw = (data ?? []) as DoctorRow[];
@@ -90,6 +111,14 @@ const SPECIALTY_ICONS: Record<string, string> = {
 };
 
 export default async function HomePage() {
+  const session = await auth();
+  if (session?.user) {
+    const role = session.user.role ?? "PATIENT";
+    if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") redirect("/dashboard/admin");
+    if (role === "DOCTOR") redirect("/dashboard/doctor");
+    redirect("/dashboard/patient");
+  }
+
   const [stats, specialties, doctors] = await Promise.all([
     getStats(),
     getSpecialties(),
@@ -109,7 +138,7 @@ export default async function HomePage() {
           <div className="text-center text-white">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6 border border-white/30">
               <MapPin className="h-4 w-4" />
-              الخليل، فلسطين
+              الضفة الغربية، فلسطين
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6">
@@ -119,8 +148,8 @@ export default async function HomePage() {
             </h1>
 
             <p className="text-base sm:text-lg lg:text-xl text-blue-100 mb-6 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-1">
-              منصة Tabibi تربطك بأفضل الأطباء والعيادات في الخليل.
-              احجز موعدك بسهولة وادفع بأمان.
+              منصة Tabibi تربطك بأفضل الأطباء والعيادات في الضفة الغربية.
+              اختر منطقتك واحجز موعدك بسهولة. الحجز يتطلب تسجيل الدخول برقم الهاتف.
             </p>
 
             {/* Search Bar */}
@@ -135,7 +164,7 @@ export default async function HomePage() {
               </div>
               <Link href="/doctors">
                 <Button size="lg" className="w-full sm:w-auto rounded-xl">
-                  ابحث الآن
+                  تصفح الأطباء
                 </Button>
               </Link>
             </div>
@@ -359,10 +388,10 @@ export default async function HomePage() {
           <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-5" />
           <h2 className="text-3xl font-bold mb-4">هل أنت طبيب؟</h2>
           <p className="text-gray-400 mb-8 text-lg leading-relaxed">
-            انضم إلى منصة Tabibi واستقبل مرضى جدد من الخليل. سجّل عيادتك وحدد مواعيدك بكل سهولة.
+            انضم إلى منصة Tabibi واستقبل مرضى جدد من منطقتك في الضفة الغربية. سجّل عيادتك وحدد مواعيدك بكل سهولة.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register?role=doctor">
+            <Link href="/register/doctor">
               <Button size="xl" className="w-full sm:w-auto">
                 سجّل كطبيب الآن
               </Button>

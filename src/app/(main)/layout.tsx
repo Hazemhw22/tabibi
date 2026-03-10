@@ -1,5 +1,7 @@
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import RegionModal from "@/components/region/region-modal";
+import RoleChoiceModal from "@/components/region/role-choice-modal";
 
 export default function MainLayout({
   children,
@@ -11,6 +13,8 @@ export default function MainLayout({
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <RoleChoiceModal />
+      <RegionModal />
     </div>
   );
 }

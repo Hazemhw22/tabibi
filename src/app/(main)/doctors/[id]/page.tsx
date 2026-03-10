@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DAYS_AR } from "@/lib/utils";
 import BookingSection from "./booking-section";
 import { auth } from "@/lib/auth";
+import { doctorServesLocation, getLocationFullName } from "@/data/west-bank-locations";
 
 async function getDoctor(id: string) {
   const { data: doctor, error } = await supabaseAdmin
     .from("Doctor")
     .select(`
-      id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients,
+      id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients, locationId,
       user:User(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain),
@@ -51,8 +52,10 @@ async function getDoctor(id: string) {
     patient: { name: (r.patient ?? r.Patient)?.name ?? "مريض" },
   }));
 
+  const rawDoctor = doctor as { locationId?: string | null };
   return {
     id: doctor.id,
+    locationId: rawDoctor.locationId ?? null,
     visibleToPatients: doctor.visibleToPatients !== false,
     consultationFee: doctor.consultationFee ?? 0,
     rating: doctor.rating ?? 0,
@@ -78,6 +81,19 @@ export default async function DoctorProfilePage({
   const [doctor, session] = await Promise.all([getDoctor(id), auth()]);
 
   if (!doctor) notFound();
+
+  const doctorLocationId = doctor.locationId ?? null;
+  if (!doctorLocationId) notFound();
+
+  if (session?.user?.role === "PATIENT" && session.user.id) {
+    const { data: userRow } = await supabaseAdmin
+      .from("User")
+      .select("regionId")
+      .eq("id", session.user.id)
+      .single();
+    const patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
+    if (patientRegionId && !doctorServesLocation(doctorLocationId, patientRegionId)) notFound();
+  }
 
   // الطبيب غير ظاهر للمرضى: فقط مرضى العيادة يمكنهم الوصول
   if (doctor.visibleToPatients === false) {
@@ -180,6 +196,19 @@ export default async function DoctorProfilePage({
                         <div className="text-xs text-gray-500">موعد منجز</div>
                       </div>
                     </div>
+                    {doctor.locationId && (
+                      <div className="flex items-center gap-2 col-span-2 sm:col-span-3">
+                        <div className="bg-emerald-50 p-1.5 rounded-lg">
+                          <MapPin className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-gray-900">
+                            {getLocationFullName(doctor.locationId)}
+                          </div>
+                          <div className="text-xs text-gray-500">منطقة العمل</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

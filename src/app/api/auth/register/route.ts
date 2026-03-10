@@ -3,35 +3,73 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
-const registerSchema = z.object({
-  name: z.string().min(3),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  password: z.string().min(6),
-  role: z.enum(["PATIENT", "DOCTOR"]),
-  specialtyId: z.string().optional(),
-  whatsapp: z.string().optional(),
-}).refine((d) => d.role !== "DOCTOR" || (d.specialtyId && d.specialtyId.length > 0), {
-  message: "يجب اختيار التخصص",
-  path: ["specialtyId"],
-}).refine((d) => d.role !== "DOCTOR" || (d.whatsapp && d.whatsapp.trim().length > 0), {
-  message: "يجب إدخال رقم الواتساب",
-  path: ["whatsapp"],
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(3),
+    role: z.enum(["PATIENT", "DOCTOR"]),
+    password: z.string().min(6),
+    phone: z.string().optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    specialtyId: z.string().optional(),
+    whatsapp: z.string().optional(),
+  })
+  .refine((d) => d.role !== "PATIENT" || (d.phone && d.phone.replace(/\D/g, "").length >= 9), {
+    message: "رقم الهاتف مطلوب للمريض",
+    path: ["phone"],
+  })
+  .refine((d) => d.role !== "DOCTOR" || (d.email && d.email.includes("@")), {
+    message: "البريد الإلكتروني مطلوب للطبيب",
+    path: ["email"],
+  })
+  .refine((d) => d.role !== "DOCTOR" || (d.specialtyId && d.specialtyId.length > 0), {
+    message: "يجب اختيار التخصص",
+    path: ["specialtyId"],
+  })
+  .refine((d) => d.role !== "DOCTOR" || (d.whatsapp && d.whatsapp.trim().length > 0), {
+    message: "يجب إدخال رقم الواتساب",
+    path: ["whatsapp"],
+  });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const data = registerSchema.parse(body);
 
-    // 1. إنشاء المستخدم في Supabase Auth
+    const isPatient = data.role === "PATIENT";
+    let email: string;
+    let phone: string | null = null;
+
+    if (isPatient) {
+      const phoneDigits = (data.phone ?? "").replace(/\D/g, "");
+      const normalizedPhone = phoneDigits.slice(-9);
+      const canonicalPhone = normalizedPhone.startsWith("0") ? normalizedPhone : "0" + normalizedPhone;
+      phone = canonicalPhone;
+      email = `phone.${canonicalPhone.replace(/\D/g, "")}@tabibi.local`;
+
+      const { data: existingUser } = await supabaseAdmin
+        .from("User")
+        .select("id")
+        .or(`phone.eq.${canonicalPhone},phone.eq.${normalizedPhone},phone.eq.972${normalizedPhone}`)
+        .maybeSingle();
+      if (existingUser) {
+        return NextResponse.json({ error: "رقم الهاتف مسجّل بالفعل" }, { status: 400 });
+      }
+    } else {
+      email = (data.email ?? "").trim();
+      phone = (data.phone ?? "").trim() || null;
+      const { data: existingUser } = await supabaseAdmin.from("User").select("id").eq("email", email).maybeSingle();
+      if (existingUser) {
+        return NextResponse.json({ error: "البريد الإلكتروني مسجّل بالفعل" }, { status: 400 });
+      }
+    }
+
     const { data: authData, error } = await supabaseAdmin.auth.admin.createUser({
       email_confirm: true,
-      email: data.email,
+      email,
       password: data.password,
       user_metadata: {
         name: data.name,
-        phone: data.phone ?? "",
+        phone: phone ?? "",
         role: data.role,
       },
     });
@@ -42,7 +80,7 @@ export async function POST(req: Request) {
         error.message.toLowerCase().includes("already exists")
       ) {
         return NextResponse.json(
-          { error: "البريد الإلكتروني مستخدم بالفعل" },
+          { error: isPatient ? "رقم الهاتف مسجّل بالفعل" : "البريد الإلكتروني مسجّل بالفعل" },
           { status: 400 }
         );
       }
@@ -54,21 +92,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "فشل إنشاء المستخدم" }, { status: 500 });
     }
 
-    // 2. إنشاء record في جدول User (يُنشأ أيضاً عبر trigger لكن نضمنه هنا)
     await supabaseAdmin.from("User").upsert({
       id: userId,
-      email: data.email,
+      email,
       name: data.name,
-      phone: data.phone ?? "",
+      phone: phone ?? "",
       role: data.role,
     });
 
-    // 3. إذا كان طبيباً، إنشاء record في جدول Doctor
     if (data.role === "DOCTOR") {
       const specialtyId = data.specialtyId ?? (await supabaseAdmin.from("Specialty").select("id").limit(1).single()).data?.id;
       if (specialtyId) {
         await supabaseAdmin.from("Doctor").insert({
-          userId: userId,
+          userId,
           specialtyId,
           whatsapp: (data.whatsapp ?? "").replace(/\D/g, "").slice(-9) ? `972${(data.whatsapp ?? "").replace(/\D/g, "").slice(-9)}` : null,
           status: "PENDING",

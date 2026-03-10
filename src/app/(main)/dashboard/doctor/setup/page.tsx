@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, Stethoscope, Plus, Upload, AlertCircle } from "lucide-react";
+import { Loader2, Stethoscope, Plus, Upload, AlertCircle, MapPin } from "lucide-react";
+import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -25,6 +26,7 @@ export default function DoctorSetupPage() {
 
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>("");
   const [newSpecialtyName, setNewSpecialtyName] = useState("");
+  const [locationId, setLocationId] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -78,6 +80,7 @@ export default function DoctorSetupPage() {
       } else if (selectedSpecialtyId) {
         body.specialtyId = selectedSpecialtyId;
       }
+      if (locationId) body.locationId = locationId;
 
       const res = await fetch("/api/doctor/setup", {
         method: "POST",
@@ -116,7 +119,7 @@ export default function DoctorSetupPage() {
           </div>
           <CardTitle className="text-xl">إعداد حساب الطبيب</CardTitle>
           <p className="text-sm text-gray-500 mt-1">
-            اختر تخصصك وأضف صورة شخصية لملفك
+            اختر تخصصك ومنطقتك وأضف صورة شخصية لملفك
           </p>
         </CardHeader>
         <CardContent>
@@ -147,6 +150,26 @@ export default function DoctorSetupPage() {
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* المنطقة - الضفة الغربية */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <MapPin className="inline h-4 w-4 ml-1" />
+                المنطقة (الضفة الغربية)
+              </label>
+              <select
+                value={locationId}
+                onChange={(e) => setLocationId(e.target.value)}
+                className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">اختر المدينة أو القرية</option>
+                {WEST_BANK_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.nameAr} - {loc.governorateAr}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* التخصص */}

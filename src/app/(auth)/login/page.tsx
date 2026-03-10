@@ -1,158 +1,59 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Heart, Stethoscope } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-const loginSchema = z.object({
-  email: z.string().email("البريد الإلكتروني غير صالح"),
-  password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-
-function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const onSubmit = async (data: LoginForm) => {
-    setLoading(true);
-    try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      } else {
-        toast.success("تم تسجيل الدخول بنجاح!");
-        router.push(callbackUrl);
-        router.refresh();
-      }
-    } catch {
-      toast.error("حدث خطأ، يرجى المحاولة مجدداً");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function LoginPage() {
   return (
-    <Card className="w-full max-w-md shadow-xl border-0">
-      <CardHeader className="text-center pb-2">
-        <CardTitle className="text-2xl">مرحباً بعودتك</CardTitle>
-        <CardDescription className="text-base mt-1">سجّل دخولك للوصول إلى حسابك (مريض أو طبيب)</CardDescription>
+    <Card className="w-full max-w-md shadow-xl border-0 overflow-hidden">
+      <CardHeader className="text-center pb-1">
+        <CardTitle className="text-2xl font-bold text-gray-900">تسجيل الدخول</CardTitle>
+        <CardDescription className="text-sm text-gray-500">اختر نوع حسابك</CardDescription>
       </CardHeader>
-      <CardContent className="pt-2">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="البريد الإلكتروني"
-            type="email"
-            placeholder="example@email.com"
-            icon={<Mail className="h-4 w-4" />}
-            error={errors.email?.message}
-            autoComplete="email"
-            {...register("email")}
-            dir="ltr"
-          />
-
-          <div className="w-full">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              كلمة المرور
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
-                <Lock className="h-4 w-4" />
-              </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                autoComplete="current-password"
-                {...register("password")}
-                dir="ltr"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 left-3 flex items-center text-gray-400 hover:text-gray-600"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+      <CardContent className="pt-4 pb-6">
+        <div className="grid grid-cols-2 gap-4">
+          <Link
+            href="/login/patient"
+            className={cn(
+              "group relative overflow-hidden rounded-2xl p-6 flex flex-col items-center justify-center gap-3",
+              "bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-100",
+              "hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-100/50 transition-all duration-300"
+            )}
+          >
+            <div className="absolute top-0 left-0 w-20 h-20 rounded-full bg-emerald-200/40 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform" />
+            <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-emerald-100 group-hover:scale-105 transition-transform">
+              <Heart className="h-10 w-10 text-emerald-600" />
             </div>
-            {errors.password && (
-              <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
+            <span className="relative text-lg font-bold text-gray-800">مريض</span>
+            <span className="relative text-xs text-emerald-700/80 text-center">مواعيدك وحسابك</span>
+          </Link>
+          <Link
+            href="/login/doctor"
+            className={cn(
+              "group relative overflow-hidden rounded-2xl p-6 flex flex-col items-center justify-center gap-3",
+              "bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-100",
+              "hover:border-violet-400 hover:shadow-lg hover:shadow-violet-100/50 transition-all duration-300"
             )}
-          </div>
-
-          <div className="flex items-center justify-end">
-            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-              نسيت كلمة المرور؟
-            </Link>
-          </div>
-
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                جاري تسجيل الدخول...
-              </>
-            ) : (
-              "تسجيل الدخول"
-            )}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-base text-gray-600">
+          >
+            <div className="absolute bottom-0 right-0 w-20 h-20 rounded-full bg-violet-200/40 translate-x-1/2 translate-y-1/2 group-hover:scale-110 transition-transform" />
+            <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-violet-100 group-hover:scale-105 transition-transform">
+              <Stethoscope className="h-10 w-10 text-violet-600" />
+            </div>
+            <span className="relative text-lg font-bold text-gray-800">طبيب</span>
+            <span className="relative text-xs text-violet-700/80 text-center">لوحة التحكم</span>
+          </Link>
+        </div>
+        <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+          <p className="text-sm text-gray-500">
             ليس لديك حساب؟{" "}
-            <Link href="/register" className="text-blue-600 font-semibold hover:underline">
+            <Link href="/register" className="text-emerald-600 font-semibold hover:underline">
               إنشاء حساب جديد
             </Link>
           </p>
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <Card className="w-full max-w-md shadow-xl border-0">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">مرحباً بعودتك</CardTitle>
-            <CardDescription className="text-base">جاري التحميل...</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </CardContent>
-        </Card>
-      }
-    >
-      <LoginForm />
-    </Suspense>
   );
 }

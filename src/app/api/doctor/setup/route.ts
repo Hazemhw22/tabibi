@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     const specialtyId = body.specialtyId as string | undefined;
     const newSpecialtyName = body.newSpecialtyName as string | undefined;
     const imageUrl = body.imageUrl as string | undefined;
+    const locationId = body.locationId as string | undefined;
 
     const userId = session.user.id;
     const email = session.user.email ?? "";
@@ -40,6 +41,9 @@ export async function POST(req: Request) {
     if (existing) {
       if (imageUrl) {
         await supabaseAdmin.from("User").update({ image: imageUrl }).eq("id", userId);
+      }
+      if (locationId) {
+        await supabaseAdmin.from("Doctor").update({ locationId }).eq("id", existing.id);
       }
       return NextResponse.json({ doctorId: existing.id });
     }
@@ -71,6 +75,7 @@ export async function POST(req: Request) {
       .insert({
         userId,
         specialtyId: finalSpecialtyId,
+        locationId: locationId || null,
         status: "PENDING",
         experienceYears: 0,
         consultationFee: 0,

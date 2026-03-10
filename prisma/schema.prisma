@@ -64,6 +64,7 @@ model User {
   image         String?
   password      String?
   phone         String?
+  regionId      String?   // منطقة المريض (مدينة/قرية من الضفة الغربية)
   role          Role      @default(PATIENT)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -126,6 +127,7 @@ model Doctor {
   id                 String       @id @default(cuid())
   userId             String       @unique
   specialtyId        String
+  locationId         String?      // موقع العمل (مدينة/قرية من الضفة الغربية)
   bio                String?
   experienceYears    Int          @default(0)
   consultationFee    Float        @default(0)

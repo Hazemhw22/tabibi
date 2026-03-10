@@ -1,23 +1,26 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { Star, MapPin, Clock, MessageCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DoctorFilters from "./filters";
+import { doctorServesLocation, getLocationFullName } from "@/data/west-bank-locations";
 
 interface SearchParams {
   search?: string;
   specialtyId?: string;
+  locationId?: string;
   minPrice?: string;
   maxPrice?: string;
   sort?: string;
 }
 
-async function getDoctors(params: SearchParams) {
+async function getDoctors(params: SearchParams, effectiveLocationId: string | null) {
   let query = supabaseAdmin
     .from("Doctor")
-    .select(`*, user:User(*), specialty:Specialty(*), clinics:Clinic(*), reviews:Review(id)`)
+    .select(`*, locationId, user:User(*), specialty:Specialty(*), clinics:Clinic(*), reviews:Review(id)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true);
 
@@ -42,17 +45,26 @@ async function getDoctors(params: SearchParams) {
   }
 
   const { data } = await query;
+  let result = data ?? [];
 
-  if (params.search && data) {
+  if (params.search && result.length) {
     const q = params.search.toLowerCase();
-    return data.filter(
+    result = result.filter(
       (d: { user?: { name?: string }; specialty?: { nameAr?: string } }) =>
         d.user?.name?.toLowerCase().includes(q) ||
         d.specialty?.nameAr?.toLowerCase().includes(q)
     );
   }
 
-  return data ?? [];
+  if (effectiveLocationId && result.length) {
+    result = result.filter(
+      (d: { locationId?: string | null }) => doctorServesLocation(d.locationId ?? null, effectiveLocationId)
+    );
+  } else {
+    result = result.filter((d: { locationId?: string | null }) => !!d.locationId);
+  }
+
+  return result;
 }
 
 async function getSpecialties() {
@@ -69,8 +81,20 @@ export default async function DoctorsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const session = await auth();
+  let patientRegionId: string | null = null;
+  if (session?.user?.role === "PATIENT" && session.user.id) {
+    const { data: userRow } = await supabaseAdmin
+      .from("User")
+      .select("regionId")
+      .eq("id", session.user.id)
+      .single();
+    patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
+  }
+  const effectiveLocationId = params.locationId ?? patientRegionId;
+
   const [doctors, specialties] = await Promise.all([
-    getDoctors(params),
+    getDoctors(params, effectiveLocationId),
     getSpecialties(),
   ]);
 
@@ -78,7 +102,7 @@ export default async function DoctorsPage({
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="mb-4 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">الأطباء</h1>
-        <p className="text-sm sm:text-base text-gray-500">{doctors.length} طبيب متاح في الخليل</p>
+        <p className="text-sm sm:text-base text-gray-500">{doctors.length} طبيب متاح</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
@@ -100,9 +124,10 @@ export default async function DoctorsPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
-              {doctors.map((doctor: { id: string; user?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; consultationFee?: number; rating?: number; experienceYears?: number; clinics?: { address?: string; phone?: string }[]; reviews?: { length?: number }[]; whatsapp?: string | null }) => {
+              {doctors.map((doctor: { id: string; locationId?: string | null; user?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; consultationFee?: number; rating?: number; experienceYears?: number; clinics?: { address?: string; phone?: string }[]; reviews?: { length?: number }[]; whatsapp?: string | null }) => {
                 const contactNum = doctor.whatsapp || doctor.user?.phone || doctor.clinics?.[0]?.phone;
                 const waNum = contactNum ? contactNum.replace(/\D/g, "") : "";
+                const regionFullName = doctor.locationId ? getLocationFullName(doctor.locationId) : null;
                 return (
                 <Card key={doctor.id} className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 group h-full">
                   <CardContent className="p-5">
@@ -124,14 +149,17 @@ export default async function DoctorsPage({
                             <Badge variant="success" className="shrink-0">متاح</Badge>
                           </div>
 
-                          {doctor.clinics?.[0] && (
-                            <div className="flex items-center gap-1.5 mt-2">
-                              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                              <p className="text-xs text-gray-500 truncate">
-                                {doctor.clinics[0].address}
-                              </p>
-                            </div>
-                          )}
+                          <div className="mt-2 space-y-0.5">
+                            {regionFullName && (
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                <p className="text-xs text-gray-500">{regionFullName}</p>
+                              </div>
+                            )}
+                            {doctor.clinics?.[0]?.address && (
+                              <p className="text-xs text-gray-400 truncate mr-5">{doctor.clinics[0].address}</p>
+                            )}
+                          </div>
 
                           <div className="flex items-center gap-1.5 mt-1">
                             <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />

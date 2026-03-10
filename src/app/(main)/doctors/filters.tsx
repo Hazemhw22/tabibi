@@ -2,9 +2,10 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
 
 interface Specialty {
   id: string;
@@ -17,6 +18,7 @@ interface Props {
   currentParams: {
     search?: string;
     specialtyId?: string;
+    locationId?: string;
     minPrice?: string;
     maxPrice?: string;
     sort?: string;
@@ -30,6 +32,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
 
   const [search, setSearch] = useState(currentParams.search || "");
   const [selectedSpecialty, setSelectedSpecialty] = useState(currentParams.specialtyId || "");
+  const [locationId, setLocationId] = useState(currentParams.locationId || "");
   const [minPrice, setMinPrice] = useState(currentParams.minPrice || "");
   const [maxPrice, setMaxPrice] = useState(currentParams.maxPrice || "");
   const [sort, setSort] = useState(currentParams.sort || "rating");
@@ -38,6 +41,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (selectedSpecialty) params.set("specialtyId", selectedSpecialty);
+    if (locationId) params.set("locationId", locationId);
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
     if (sort) params.set("sort", sort);
@@ -50,6 +54,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
   const clearFilters = () => {
     setSearch("");
     setSelectedSpecialty("");
+    setLocationId("");
     setMinPrice("");
     setMaxPrice("");
     setSort("rating");
@@ -82,6 +87,26 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
               className="w-full h-10 border border-gray-300 rounded-lg pr-9 pl-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+        </div>
+
+        {/* Location - الضفة الغربية */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <MapPin className="inline h-4 w-4 ml-1" />
+            المنطقة (الضفة الغربية)
+          </label>
+          <select
+            value={locationId}
+            onChange={(e) => setLocationId(e.target.value)}
+            className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">الكل</option>
+            {WEST_BANK_LOCATIONS.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.type === "governorate" ? `محافظة ${loc.nameAr}` : loc.nameAr} {loc.type !== "governorate" ? `- ${loc.governorateAr}` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Specialty */}

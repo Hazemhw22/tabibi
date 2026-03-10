@@ -57,6 +57,7 @@ const updateSchema = z.object({
   bio: z.string().optional(),
   experienceYears: z.number().min(0).optional(),
   consultationFee: z.number().min(0).optional(),
+  locationId: z.string().nullable().optional(),
   clinics: z.array(clinicSchema).optional(),
   timeSlots: z.array(timeSlotSchema).optional(),
   specialtyId: z.string().optional(),
@@ -108,6 +109,7 @@ export async function PUT(req: Request) {
       bio?: string;
       experienceYears?: number;
       consultationFee?: number;
+      locationId?: string | null;
       specialtyId?: string;
       updatedAt?: string;
     } = {};
@@ -115,6 +117,7 @@ export async function PUT(req: Request) {
     if (data.bio !== undefined) updatePayload.bio = data.bio;
     if (data.experienceYears !== undefined) updatePayload.experienceYears = data.experienceYears;
     if (data.consultationFee !== undefined) updatePayload.consultationFee = data.consultationFee;
+    if (data.locationId !== undefined) updatePayload.locationId = data.locationId;
     if (finalSpecialtyId) updatePayload.specialtyId = finalSpecialtyId;
     updatePayload.updatedAt = new Date().toISOString();
 

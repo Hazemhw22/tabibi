@@ -2,7 +2,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { PatientSettingsForm } from "./patient-settings-form";
+import PatientRegionSelect from "@/components/patient/patient-region-select";
 
 export default async function PatientSettingsPage() {
   const session = await auth();
@@ -11,6 +13,13 @@ export default async function PatientSettingsPage() {
 
   const name = session.user.name ?? "";
   const phone = (session.user as { phone?: string }).phone ?? "";
+
+  const { data: userRow } = await supabaseAdmin
+    .from("User")
+    .select("regionId")
+    .eq("id", session.user.id)
+    .single();
+  const regionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
 
   return (
     <div className="max-w-2xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -29,6 +38,15 @@ export default async function PatientSettingsPage() {
       </div>
 
       <PatientSettingsForm defaultName={name} defaultPhone={phone} />
+
+      <div className="mt-6">
+        <PatientRegionSelect
+          defaultRegionId={regionId}
+          title="منطقتك لعرض الأطباء"
+          description="تغيير المنطقة يحدّث قائمة الأطباء المعروضين في لوحة التحكم."
+          compact
+        />
+      </div>
     </div>
   );
 }

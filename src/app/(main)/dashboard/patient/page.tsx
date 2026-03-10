@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
+import PatientRegionSelect from "@/components/patient/patient-region-select";
+import { doctorServesLocation, getLocationById, getLocationFullName } from "@/data/west-bank-locations";
 
 const STATUS_CONFIG = {
   DRAFT: { label: "مسودة", variant: "secondary" as const, icon: AlertCircle, color: "text-gray-500" },
@@ -35,6 +37,13 @@ export default async function PatientDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
   if (session.user.role !== "PATIENT") redirect("/");
+
+  const { data: userRow } = await supabaseAdmin
+    .from("User")
+    .select("regionId")
+    .eq("id", session.user.id)
+    .single();
+  const patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
 
   const { data: appointments } = await supabaseAdmin
     .from("Appointment")
@@ -140,11 +149,11 @@ export default async function PatientDashboard() {
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // جلب الأطباء لاستخدامهم في السلايدر (مقترحون، الأعلى تقييماً، الأكثر زيارة)
+  // جلب الأطباء (مع locationId) وتصفيتهم حسب منطقة المريض
   const { data: doctorsData } = await supabaseAdmin
     .from("Doctor")
     .select(
-      `id, consultationFee, rating, createdAt, whatsapp,
+      `id, consultationFee, rating, createdAt, whatsapp, locationId,
        user:User(name, phone),
        specialty:Specialty(nameAr),
        clinics:Clinic(address, phone),
@@ -152,17 +161,22 @@ export default async function PatientDashboard() {
     )
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true);
-  const doctors = (doctorsData ?? []) as Array<{
+  const allDoctors = (doctorsData ?? []) as Array<{
     id: string;
     consultationFee?: number | null;
     rating?: number | null;
     createdAt?: string | null;
     whatsapp?: string | null;
+    locationId?: string | null;
     user?: { name?: string | null };
     specialty?: { nameAr?: string | null };
     clinics?: { address?: string | null }[];
     reviews?: { id: string }[];
   }>;
+  const doctors =
+    patientRegionId
+      ? allDoctors.filter((d) => doctorServesLocation(d.locationId ?? null, patientRegionId))
+      : [];
   const suggestedDoctors = [...doctors]
     .sort(
       (a, b) =>
@@ -212,13 +226,29 @@ export default async function PatientDashboard() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">إدارة مواعيدك الطبية — حساب مريض</p>
         </div>
-        <Link href="/doctors" className="w-full sm:w-auto shrink-0">
+        <Link href={patientRegionId ? `/doctors?locationId=${patientRegionId}` : "/doctors"} className="w-full sm:w-auto shrink-0">
           <Button className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             حجز موعد جديد
           </Button>
         </Link>
       </div>
+
+      {!patientRegionId && <PatientRegionSelect />}
+      {patientRegionId && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <p className="text-sm text-gray-600 flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-emerald-600" />
+            عرض الأطباء في: <span className="font-medium text-gray-900">{getLocationById(patientRegionId)?.nameAr ?? patientRegionId}</span>
+          </p>
+          <Link
+            href="/dashboard/patient/settings"
+            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+          >
+            تعديل الموقع
+          </Link>
+        </div>
+      )}
 
       {/* Stats: مواعيد + مجموع الدفعات + مجموع الديون */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6 sm:mb-8">
@@ -325,6 +355,12 @@ export default async function PatientDashboard() {
                         <p className="text-xs text-blue-600 truncate">
                           {doctor.specialty?.nameAr}
                         </p>
+                        {(doctor as { locationId?: string | null }).locationId && (
+                          <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
+                            {getLocationFullName((doctor as { locationId: string }).locationId)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
@@ -486,9 +522,14 @@ export default async function PatientDashboard() {
                         <p className="text-xs text-blue-600 truncate">
                           {doctor.specialty?.nameAr}
                         </p>
-                        {doctor.clinics?.[0]?.address && (
+                        {(doctor as { locationId?: string | null }).locationId && (
                           <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-gray-400" />
+                            <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
+                            {getLocationFullName((doctor as { locationId: string }).locationId)}
+                          </p>
+                        )}
+                        {doctor.clinics?.[0]?.address && (
+                          <p className="text-[11px] text-gray-400 truncate mt-0.5">
                             {doctor.clinics[0].address}
                           </p>
                         )}
@@ -620,6 +661,12 @@ export default async function PatientDashboard() {
                         <p className="text-xs text-blue-600 truncate">
                           {doctor.specialty?.nameAr}
                         </p>
+                        {(doctor as { locationId?: string | null }).locationId && (
+                          <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
+                            {getLocationFullName((doctor as { locationId: string }).locationId)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
