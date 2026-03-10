@@ -24,22 +24,6 @@ function formatDateAr(d: Date): string {
   return d.toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" });
 }
 
-interface Clinic {
-  id?: string;
-  name: string;
-  address: string;
-  city: string;
-  phone: string;
-  isMain: boolean;
-}
-
-interface TimeSlot {
-  id?: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-}
-
 interface Specialty {
   id: string;
   name: string;
@@ -59,10 +43,6 @@ export default function DoctorSettingsPage() {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>("");
   const [newSpecialtyName, setNewSpecialtyName] = useState("");
-  const [clinics, setClinics] = useState<Clinic[]>([
-    { name: "", address: "", city: "الخليل", phone: "", isMain: true },
-  ]);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
 
   useEffect(() => {
     fetch("/api/doctor/profile")
@@ -76,12 +56,6 @@ export default function DoctorSettingsPage() {
           if (data.doctor.locationId) setLocationId(data.doctor.locationId);
           if (data.doctor.specialty?.id) {
             setSelectedSpecialtyId(data.doctor.specialty.id);
-          }
-          if (data.doctor.clinics?.length > 0) {
-            setClinics(data.doctor.clinics);
-          }
-          if (data.doctor.timeSlots?.length > 0) {
-            setTimeSlots(data.doctor.timeSlots);
           }
         }
       });
@@ -101,40 +75,6 @@ export default function DoctorSettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only; selectedSpecialtyId set from response
   }, []);
 
-  const addClinic = () => {
-    setClinics([...clinics, { name: "", address: "", city: "الخليل", phone: "", isMain: false }]);
-  };
-
-  const removeClinic = (index: number) => {
-    setClinics(clinics.filter((_, i) => i !== index));
-  };
-
-  const setMainClinic = (index: number) => {
-    setClinics(
-      clinics.map((c, i) => ({ ...c, isMain: i === index }))
-    );
-  };
-
-  const updateClinic = (index: number, field: keyof Clinic, value: string | boolean) => {
-    const updated = [...clinics];
-    updated[index] = { ...updated[index], [field]: value };
-    setClinics(updated);
-  };
-
-  const addTimeSlot = () => {
-    setTimeSlots([...timeSlots, { dayOfWeek: 0, startTime: "09:00", endTime: "17:00" }]);
-  };
-
-  const removeTimeSlot = (index: number) => {
-    setTimeSlots(timeSlots.filter((_, i) => i !== index));
-  };
-
-  const updateTimeSlot = (index: number, field: keyof TimeSlot, value: string | number) => {
-    const updated = [...timeSlots];
-    updated[index] = { ...updated[index], [field]: value };
-    setTimeSlots(updated);
-  };
-
   const fetchProfile = () => {
     return fetch("/api/doctor/profile")
       .then((r) => r.json())
@@ -146,8 +86,6 @@ export default function DoctorSettingsPage() {
           setConsultationFee(data.doctor.consultationFee || 0);
           if (data.doctor.locationId) setLocationId(data.doctor.locationId);
           if (data.doctor.specialty?.id) setSelectedSpecialtyId(data.doctor.specialty.id);
-          setClinics(Array.isArray(data.doctor.clinics) && data.doctor.clinics.length > 0 ? data.doctor.clinics : [{ name: "", address: "", city: "الخليل", phone: "", isMain: true }]);
-          setTimeSlots(Array.isArray(data.doctor.timeSlots) && data.doctor.timeSlots.length > 0 ? data.doctor.timeSlots : []);
         }
       });
   };
@@ -314,7 +252,7 @@ export default function DoctorSettingsPage() {
               منطقتك (مكان العمل)
             </CardTitle>
             <p className="text-sm text-gray-500 mt-1">
-              اختر المدينة أو المحافظة في الضفة الغربية. سيُستخدم لعرضك للمرضى عند البحث حسب المنطقة. عنوان كل عيادة يُدخل تفصيلياً أدناه.
+              اختر المدينة أو المحافظة في الضفة الغربية. سيُستخدم لعرضك للمرضى عند البحث حسب المنطقة.
             </p>
           </CardHeader>
           <CardContent>
@@ -332,151 +270,6 @@ export default function DoctorSettingsPage() {
             </select>
           </CardContent>
         </Card>
-
-        {/* Clinics */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              العيادات
-            </CardTitle>
-            <Button size="sm" variant="outline" onClick={addClinic} className="gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              إضافة
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-xs text-gray-500">
-              اسم العيادة، رقم الهاتف والعنوان التفصيلي حتى يعرف المريض مكان العيادة.
-            </p>
-            {clinics.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-6">
-                لا توجد عيادات. انقر &quot;إضافة&quot; لإضافة عيادة.
-              </p>
-            )}
-            {clinics.map((clinic, i) => (
-              <div key={clinic.id ?? i} className="p-4 border border-gray-200 rounded-xl space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-sm font-medium text-gray-700">
-                    عيادة {i + 1} {clinic.isMain && "(رئيسية)"}
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    {!clinic.isMain && (
-                      <button
-                        type="button"
-                        onClick={() => setMainClinic(i)}
-                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
-                        title="تعيين كعيادة رئيسية"
-                      >
-                        <Star className="h-3.5 w-3.5" />
-                        رئيسية
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById(`clinic-name-${i}`)?.focus()}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-                      title="تعديل البيانات"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeClinic(i)}
-                      className="p-1.5 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                      title="حذف العيادة"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    id={`clinic-name-${i}`}
-                    placeholder="اسم العيادة"
-                    value={clinic.name}
-                    onChange={(e) => updateClinic(i, "name", e.target.value)}
-                  />
-                  <Input
-                    placeholder="رقم الهاتف"
-                    value={clinic.phone}
-                    onChange={(e) => updateClinic(i, "phone", e.target.value)}
-                    dir="ltr"
-                  />
-                </div>
-                <Input
-                  placeholder="العنوان التفصيلي (شارع، مبنى، طابق...)"
-                  value={clinic.address}
-                  onChange={(e) => updateClinic(i, "address", e.target.value)}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Time Slots */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              جدول المواعيد
-            </CardTitle>
-            <Button size="sm" variant="outline" onClick={addTimeSlot} className="gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              إضافة وقت
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {timeSlots.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">
-                لم تحدد أوقات عمل بعد. انقر &quot;إضافة وقت&quot; لإضافة جدولك.
-              </p>
-            )}
-            {timeSlots.map((slot, i) => (
-              <div key={i} className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <select
-                    value={slot.dayOfWeek}
-                    onChange={(e) => updateTimeSlot(i, "dayOfWeek", Number(e.target.value))}
-                    className="h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[120px]"
-                  >
-                    {DAYS_AR.map((day, d) => (
-                      <option key={d} value={d}>{day}</option>
-                    ))}
-                  </select>
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
-                    ({formatDateAr(getDateForDayOfWeek(slot.dayOfWeek))})
-                  </span>
-                </div>
-
-                <input
-                  type="time"
-                  value={slot.startTime}
-                  onChange={(e) => updateTimeSlot(i, "startTime", e.target.value)}
-                  className="h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-
-                <span className="text-gray-400">-</span>
-
-                <input
-                  type="time"
-                  value={slot.endTime}
-                  onChange={(e) => updateTimeSlot(i, "endTime", e.target.value)}
-                  className="h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-
-                <button
-                  onClick={() => removeTimeSlot(i)}
-                  className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
         {/* Save Button */}
         <Button onClick={handleSave} size="lg" className="w-full" disabled={loading}>
           {loading ? (
