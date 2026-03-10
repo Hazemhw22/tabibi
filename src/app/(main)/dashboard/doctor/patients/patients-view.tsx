@@ -70,6 +70,8 @@ export default function PatientsView({
     dateOfBirth:"", address:"", bloodType:"",
     allergies:"", notes:"", fileNumber:"",
   });
+  const [addDiagnosis, setAddDiagnosis] = useState("");
+  const [addTreatment, setAddTreatment] = useState("");
 
   /* edit-patient modal (clinic patients only) */
   const [editOpen,    setEditOpen]    = useState(false);
@@ -79,6 +81,8 @@ export default function PatientsView({
     gender:"", dateOfBirth:"", address:"", bloodType:"",
     allergies:"", notes:"",
   });
+  const [editDiagnosis, setEditDiagnosis] = useState("");
+  const [editTreatment, setEditTreatment] = useState("");
 
   /* add service / payment */
   const [addingService, setAddingService] = useState(false);
@@ -111,6 +115,16 @@ export default function PatientsView({
   const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }));
   const setEdit = (k: string, v: string) => setEditForm((p) => ({ ...p, [k]: v }));
 
+  const buildNotes = (diagnosis: string, treatment: string): string | undefined => {
+    const diag = diagnosis.trim();
+    const treat = treatment.trim();
+    const parts: string[] = [];
+    if (diag) parts.push(`الحالة المرضية:\n${diag}`);
+    if (treat) parts.push(`ما قام به الطبيب / العلاج:\n${treat}`);
+    if (!parts.length) return undefined;
+    return parts.join("\n\n");
+  };
+
   /* open edit modal with current patient data */
   const openEdit = () => {
     if (!selectedPatient || selectedPatient.source !== "clinic") return;
@@ -126,6 +140,8 @@ export default function PatientsView({
       allergies: selectedPatient.allergies ?? "",
       notes: selectedPatient.notes ?? "",
     });
+    setEditDiagnosis(selectedPatient.notes ?? "");
+    setEditTreatment("");
     setEditOpen(true);
   };
 
@@ -139,7 +155,10 @@ export default function PatientsView({
       const res = await fetch(`/api/clinic/patients/${selectedPatient.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          ...editForm,
+          notes: buildNotes(editDiagnosis, editTreatment),
+        }),
       });
       if (res.ok) {
         toast.success("تم تحديث بيانات المريض ✓");
@@ -194,13 +213,18 @@ export default function PatientsView({
       const res  = await fetch("/api/clinic/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify({
+          ...addForm,
+          notes: buildNotes(addDiagnosis, addTreatment),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("تم إضافة المريض ✓");
         setAddOpen(false);
         setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
+        setAddDiagnosis("");
+        setAddTreatment("");
         router.refresh();
         openPatient({ id: data.patient.id, name: data.patient.name, source: "clinic", appointmentCount: 0 });
       } else { toast.error(data.error || "حدث خطأ"); }
@@ -995,17 +1019,31 @@ export default function PatientsView({
                 <input placeholder="مثل: حساسية من البنسلين..." value={addForm.allergies} onChange={(e) => setAdd("allergies", e.target.value)}
                   className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  الحالة المرضية الأساسية / العلاج
-                </label>
-                <textarea
-                  value={addForm.notes}
-                  onChange={(e) => setAdd("notes", e.target.value)}
-                  rows={2}
-                  placeholder="مثال: مريض سكري من النوع الثاني، علاج حالي: ميتفورمين 850mg مرتين يومياً..."
-                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    الحالة المرضية الأساسية
+                  </label>
+                  <textarea
+                    value={addDiagnosis}
+                    onChange={(e) => setAddDiagnosis(e.target.value)}
+                    rows={2}
+                    placeholder="مثال: مريض سكري من النوع الثاني منذ 5 سنوات..."
+                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    ما قام به الطبيب / خطة العلاج
+                  </label>
+                  <textarea
+                    value={addTreatment}
+                    onChange={(e) => setAddTreatment(e.target.value)}
+                    rows={2}
+                    placeholder="مثال: ضبط جرعة الميتفورمين، إضافة دواء جديد، نصائح غذائية..."
+                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={addLoading}>
@@ -1062,17 +1100,31 @@ export default function PatientsView({
                 <input placeholder="مثل: حساسية من البنسلين..." value={editForm.allergies} onChange={(e) => setEditForm((p) => ({ ...p, allergies: e.target.value }))}
                   className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  الحالة المرضية الأساسية / ما قام به الطبيب
-                </label>
-                <textarea
-                  value={editForm.notes}
-                  onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))}
-                  rows={2}
-                  placeholder="ما مرض المريض؟ ما العلاج الذي قمت به له أو الأدوية التي يستخدمها حالياً؟"
-                  className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    الحالة المرضية الأساسية
+                  </label>
+                  <textarea
+                    value={editDiagnosis}
+                    onChange={(e) => setEditDiagnosis(e.target.value)}
+                    rows={2}
+                    placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
+                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    ما قام به الطبيب / العلاج
+                  </label>
+                  <textarea
+                    value={editTreatment}
+                    onChange={(e) => setEditTreatment(e.target.value)}
+                    rows={2}
+                    placeholder="العلاج الذي قمت به للمريض أو الأدوية الحالية..."
+                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={editLoading}>
