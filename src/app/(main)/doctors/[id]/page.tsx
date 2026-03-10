@@ -15,7 +15,7 @@ async function getDoctor(id: string) {
       id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients, locationId,
       user:User(name, phone),
       specialty:Specialty(nameAr),
-      clinics:Clinic(id, name, address, city, phone, isMain),
+      clinics:Clinic(id, name, address, city, phone, isMain, locationId),
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive)
     `)
     .eq("id", id)
@@ -37,7 +37,7 @@ async function getDoctor(id: string) {
       .limit(10),
   ]);
 
-  type ClinicItem = { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean };
+  type ClinicItem = { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean; locationId?: string | null };
   type DoctorRow = { whatsapp?: string | null; user?: { name?: string; phone?: string }; User?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; Specialty?: { nameAr?: string }; clinics?: ClinicItem[] };
   const d = doctor as DoctorRow;
   const user = d.user ?? d.User;
@@ -85,13 +85,14 @@ export default async function DoctorProfilePage({
   const doctorLocationId = doctor.locationId ?? null;
   if (!doctorLocationId) notFound();
 
+  let patientRegionId: string | null = null;
   if (session?.user?.role === "PATIENT" && session.user.id) {
     const { data: userRow } = await supabaseAdmin
       .from("User")
       .select("regionId")
       .eq("id", session.user.id)
       .single();
-    const patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
+    patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
     if (patientRegionId && !doctorServesLocation(doctorLocationId, patientRegionId)) notFound();
   }
 
@@ -116,6 +117,14 @@ export default async function DoctorProfilePage({
     },
     {} as Record<number, SlotItem[]>
   );
+
+  const clinicsForView =
+    patientRegionId && doctor.clinics?.length
+      ? doctor.clinics.filter(
+          (c: { locationId?: string | null }) =>
+            c.locationId && doctorServesLocation(c.locationId, patientRegionId as string)
+        )
+      : doctor.clinics ?? [];
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -222,13 +231,13 @@ export default async function DoctorProfilePage({
             </CardContent>
           </Card>
 
-          {doctor.clinics?.length > 0 && (
+          {clinicsForView.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">العيادات</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-0">
-                {doctor.clinics.map((clinic: { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean }) => (
+                {clinicsForView.map((clinic: { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean }) => (
                   <div
                     key={clinic.id}
                     className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl"
@@ -331,12 +340,7 @@ export default async function DoctorProfilePage({
         </div>
 
         <div className="lg:col-span-1">
-          <BookingSection
-            doctor={doctor}
-            timeSlots={doctor.timeSlots ?? []}
-            clinics={doctor.clinics ?? []}
-            isLoggedIn={!!session}
-          />
+          <BookingSection doctor={doctor} timeSlots={doctor.timeSlots ?? []} clinics={clinicsForView} isLoggedIn={!!session} />
         </div>
       </div>
     </div>

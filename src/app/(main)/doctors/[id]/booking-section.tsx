@@ -14,6 +14,7 @@ interface TimeSlot {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  clinicId?: string | null;
 }
 
 interface Clinic {
@@ -56,7 +57,11 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
   const visibleDates = dates.slice(dateOffset, dateOffset + 7);
 
   const availableSlotsForDate = selectedDate
-    ? timeSlots.filter((slot) => slot.dayOfWeek === getDay(selectedDate))
+    ? timeSlots.filter(
+        (slot) =>
+          slot.dayOfWeek === getDay(selectedDate) &&
+          (!selectedClinic || !slot.clinicId || slot.clinicId === selectedClinic)
+      )
     : [];
 
   const handleDateSelect = (date: Date) => {

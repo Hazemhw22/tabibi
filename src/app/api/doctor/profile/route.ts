@@ -43,6 +43,7 @@ const clinicSchema = z.object({
   city: z.string().default("الخليل"),
   phone: z.string().optional(),
   isMain: z.boolean().default(false),
+  locationId: z.string().optional().nullable(),
 });
 
 const timeSlotSchema = z.object({
@@ -50,6 +51,7 @@ const timeSlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
   startTime: z.string(),
   endTime: z.string(),
+  clinicId: z.string().optional().nullable(),
 });
 
 const updateSchema = z.object({
@@ -157,6 +159,7 @@ export async function PUT(req: Request) {
           city: (c.city ?? "الخليل").trim(),
           phone: (c.phone ?? "").trim() || null,
           isMain: c.isMain ?? false,
+          locationId: c.locationId ?? null,
         }));
         const { error: clinicErr } = await supabaseAdmin.from("Clinic").insert(clinicRows);
         if (clinicErr) {
@@ -186,6 +189,9 @@ export async function PUT(req: Request) {
       if (data.timeSlots.length > 0) {
         const slotRows = data.timeSlots.map((s) => ({
           doctorId: doctor.id,
+          // في هذه المرحلة نتجاهل clinicId في قاعدة البيانات
+          // حتى لا يحدث تعارض مع قيود العلاقات عند حذف/إعادة إنشاء العيادات
+          clinicId: null,
           dayOfWeek: s.dayOfWeek,
           startTime: s.startTime,
           endTime: s.endTime,

@@ -151,29 +151,33 @@ model Doctor {
 }
 
 model Clinic {
-  id       String  @id @default(cuid())
-  doctorId String
-  name     String
-  address  String
-  city     String  @default("الخليل")
-  phone    String?
-  mapUrl   String?
-  isMain   Boolean @default(false)
+  id         String  @id @default(cuid())
+  doctorId   String
+  name       String
+  address    String
+  city       String  @default("الخليل")
+  phone      String?
+  mapUrl     String?
+  isMain     Boolean @default(false)
+  locationId String? // منطقة هذه العيادة (مدينة/قرية من الضفة الغربية)
 
   doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   appointments Appointment[]
+  timeSlots    TimeSlot[]
 }
 
 model TimeSlot {
   id        String   @id @default(cuid())
   doctorId  String
+  clinicId  String?
   dayOfWeek Int
   startTime String
   endTime   String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  doctor       Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   appointments Appointment[]
 }
 

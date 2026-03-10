@@ -32,6 +32,7 @@ const doctorNavFull: NavItem[] = [
   { label: "المرضى", href: "/dashboard/doctor/patients", icon: Users },
   { label: "المواعيد", href: "/dashboard/doctor/appointments", icon: Calendar },
   { label: "التقارير", href: "/dashboard/doctor/reports", icon: TrendingUp },
+  { label: "العيادات والمواعيد", href: "/dashboard/doctor/clinics", icon: ClipboardList },
   { label: "الإعدادات", href: "/dashboard/doctor/settings", icon: Settings },
 ];
 

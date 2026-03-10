@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, Save, MapPin, Clock, Stethoscope, Pencil, Star } from "lucide-react";
+import { Loader2, Save, MapPin, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,25 +156,12 @@ export default function DoctorSettingsPage() {
     setLoading(true);
     try {
       const trimmedNewSpec = newSpecialtyName.trim();
-      const loc = locationId ? getLocationById(locationId) : null;
-      const regionName = loc?.nameAr ?? "";
-      const regionGov = loc?.governorateAr ?? "الخليل";
-      const clinicsToSave = clinics
-        .filter((c) => (c.name?.trim() ?? "") !== "")
-        .map((c) => ({
-          ...c,
-          address: (c.address?.trim() ?? "") !== "" ? c.address.trim() : regionName,
-          city: (c.city?.trim() ?? "") !== "" ? c.city : regionGov,
-        }))
-        .filter((c) => c.address !== "");
       const payload = {
         visibleToPatients,
         bio,
         experienceYears,
         consultationFee,
         locationId: locationId || null,
-        clinics: clinicsToSave,
-        timeSlots,
         specialtyId: trimmedNewSpec ? undefined : selectedSpecialtyId || undefined,
         newSpecialtyName: trimmedNewSpec || undefined,
       };
@@ -203,7 +190,7 @@ export default function DoctorSettingsPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">إعدادات الملف الطبي</h1>
-        <p className="text-gray-500 mt-1">أضف معلوماتك وعيادتك وجدول عملك</p>
+        <p className="text-gray-500 mt-1">أضف معلوماتك الأساسية التي تظهر للمرضى</p>
       </div>
 
       <div className="space-y-8">
