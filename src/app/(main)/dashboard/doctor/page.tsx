@@ -238,7 +238,7 @@ export default async function DoctorDashboard() {
     source: "platform",
     raw: apt,
   }));
-  const clinicRows: TodayRow[] = (todayClinic ?? []).map((apt: { id: string; time: string; duration?: number; status: string; clinicPatient?: { name?: string; phone?: string }; title?: string }) => {
+  const clinicRows: TodayRow[] = ((todayClinic ?? []) as any[]).map((apt) => {
     const start = apt.time;
     const dur = apt.duration ?? 30;
     const [h, m] = start.split(":").map(Number);
