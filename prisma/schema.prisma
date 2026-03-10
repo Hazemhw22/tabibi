@@ -306,3 +306,18 @@ model ClinicAppointment {
   doctor        Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   clinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
 }
+
+/// ملاحظات / ملفات طبية متعددة لكل مريض عيادة
+model ClinicMedicalNote {
+  id              String   @id @default(cuid())
+  doctorId        String
+  clinicPatientId String
+  allergies       String?  // حساسية / تنبيهات تخص هذه الملاحظة
+  diagnosis       String?  // الحالة المرضية الأساسية
+  treatment       String?  // ما قام به الطبيب / خطة العلاج
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  doctor        Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+}

@@ -39,8 +39,9 @@ export async function PATCH(
       .from("ClinicPatient")
       .select("id")
       .eq("id", id)
-      .eq("doctorId", doctor.id)
-      .single();
+      // نقبل سجلات قديمة محفوظة بـ doctorId = userId أو doctorId = Doctor.id
+      .or(`doctorId.eq.${doctor.id},doctorId.eq.${session.user.id}`)
+      .maybeSingle();
 
     if (!existing) {
       return NextResponse.json({ error: "المريض غير موجود أو غير مصرح" }, { status: 404 });

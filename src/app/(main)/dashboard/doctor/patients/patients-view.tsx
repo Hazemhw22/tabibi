@@ -70,8 +70,6 @@ export default function PatientsView({
     dateOfBirth:"", address:"", bloodType:"",
     allergies:"", notes:"", fileNumber:"",
   });
-  const [addDiagnosis, setAddDiagnosis] = useState("");
-  const [addTreatment, setAddTreatment] = useState("");
 
   /* edit-patient modal (clinic patients only) */
   const [editOpen,    setEditOpen]    = useState(false);
@@ -81,8 +79,6 @@ export default function PatientsView({
     gender:"", dateOfBirth:"", address:"", bloodType:"",
     allergies:"", notes:"",
   });
-  const [editDiagnosis, setEditDiagnosis] = useState("");
-  const [editTreatment, setEditTreatment] = useState("");
 
   /* add service / payment */
   const [addingService, setAddingService] = useState(false);
@@ -109,21 +105,23 @@ export default function PatientsView({
   const [aptEndTime, setAptEndTime] = useState("09:30");
   const [aptFee,     setAptFee]     = useState(String(defaultFee || ""));
 
+  /* medical notes (inside الملفات الطبية) — clinic patients only */
+  const [addingMedical, setAddingMedical] = useState(false);
+  const [medicalAllergies, setMedicalAllergies] = useState("");
+  const [medicalDiagnosis, setMedicalDiagnosis] = useState("");
+  const [medicalTreatment, setMedicalTreatment] = useState("");
+  const [savingMedical, setSavingMedical] = useState(false);
+  const [editingMedicalId, setEditingMedicalId] = useState<string | null>(null);
+  const [editMedicalAllergies, setEditMedicalAllergies] = useState("");
+  const [editMedicalDiagnosis, setEditMedicalDiagnosis] = useState("");
+  const [editMedicalTreatment, setEditMedicalTreatment] = useState("");
+  const [savingMedicalEdit, setSavingMedicalEdit] = useState(false);
+
   /* reset tab when patient changes */
   useEffect(() => { setActiveTab("info"); }, [selectedId]);
 
   const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }));
   const setEdit = (k: string, v: string) => setEditForm((p) => ({ ...p, [k]: v }));
-
-  const buildNotes = (diagnosis: string, treatment: string): string | undefined => {
-    const diag = diagnosis.trim();
-    const treat = treatment.trim();
-    const parts: string[] = [];
-    if (diag) parts.push(`الحالة المرضية:\n${diag}`);
-    if (treat) parts.push(`ما قام به الطبيب / العلاج:\n${treat}`);
-    if (!parts.length) return undefined;
-    return parts.join("\n\n");
-  };
 
   /* open edit modal with current patient data */
   const openEdit = () => {
@@ -140,8 +138,6 @@ export default function PatientsView({
       allergies: selectedPatient.allergies ?? "",
       notes: selectedPatient.notes ?? "",
     });
-    setEditDiagnosis(selectedPatient.notes ?? "");
-    setEditTreatment("");
     setEditOpen(true);
   };
 
@@ -155,10 +151,7 @@ export default function PatientsView({
       const res = await fetch(`/api/clinic/patients/${selectedPatient.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...editForm,
-          notes: buildNotes(editDiagnosis, editTreatment),
-        }),
+        body: JSON.stringify(editForm),
       });
       if (res.ok) {
         toast.success("تم تحديث بيانات المريض ✓");
@@ -213,18 +206,13 @@ export default function PatientsView({
       const res  = await fetch("/api/clinic/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...addForm,
-          notes: buildNotes(addDiagnosis, addTreatment),
-        }),
+        body: JSON.stringify(addForm),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("تم إضافة المريض ✓");
         setAddOpen(false);
         setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
-        setAddDiagnosis("");
-        setAddTreatment("");
         router.refresh();
         openPatient({ id: data.patient.id, name: data.patient.name, source: "clinic", appointmentCount: 0 });
       } else { toast.error(data.error || "حدث خطأ"); }
@@ -303,15 +291,56 @@ export default function PatientsView({
   const deleteTransaction = async () => {
     if (!confirmDeleteId) return;
     setDeleting(true);
-    const isClinic = selectedPatient?.source === "clinic";
     try {
+      // حذف ملاحظات طبية عامة (notes على ClinicPatient)
+      if (confirmDeleteId === "clear-notes" && selectedPatient?.source === "clinic") {
+        const res = await fetch(`/api/clinic/patients/${selectedPatient.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: "" }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "فشل مسح الملاحظات الطبية");
+        } else {
+          toast.success("تم مسح الملاحظات الطبية");
+          setConfirmDeleteId(null);
+          router.refresh();
+        }
+        return;
+      }
+
+      // حذف ملاحظة طبية مفصلة
+      if (selectedPatient?.source === "clinic" && confirmDeleteId.startsWith("note_")) {
+        const id = confirmDeleteId.replace("note_", "");
+        const res = await fetch(`/api/clinic/medical-notes/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "فشل حذف الملاحظة الطبية");
+        } else {
+          toast.success("تم حذف الملاحظة الطبية");
+          setConfirmDeleteId(null);
+          router.refresh();
+        }
+        return;
+      }
+
+      // حذف معاملة مالية (السلوك السابق)
+      const isClinic = selectedPatient?.source === "clinic";
       const res = await fetch(
         isClinic ? `/api/clinic/transactions/${confirmDeleteId}` : `/api/doctor/transactions/${confirmDeleteId}`,
         { method: "DELETE" }
       );
-      if (res.ok) { toast.success("تم الحذف"); setConfirmDeleteId(null); router.refresh(); }
-      else toast.error("حدث خطأ");
-    } finally { setDeleting(false); }
+      if (res.ok) {
+        toast.success("تم الحذف");
+        setConfirmDeleteId(null);
+        router.refresh();
+      } else {
+        toast.error("حدث خطأ");
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   /* edit transaction */
@@ -464,21 +493,12 @@ export default function PatientsView({
                       {selectedPatient.source === "clinic" ? "عيادة" : "منصة"}
                     </Badge>
                     {selectedPatient.source === "clinic" && (
-                      <Button size="sm" variant="outline" onClick={() => {
-                        setEditForm({
-                          name: selectedPatient.name,
-                          email: selectedPatient.email ?? "",
-                          whatsapp: selectedPatient.whatsapp ?? "",
-                          fileNumber: selectedPatient.fileNumber ?? "",
-                          gender: selectedPatient.gender ?? "",
-                          dateOfBirth: selectedPatient.dateOfBirth ? format(new Date(selectedPatient.dateOfBirth), "yyyy-MM-dd") : "",
-                          address: selectedPatient.address ?? "",
-                          bloodType: selectedPatient.bloodType ?? "",
-                          allergies: selectedPatient.allergies ?? "",
-                          notes: selectedPatient.notes ?? "",
-                        });
-                        setEditOpen(true);
-                      }} className="gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={openEdit}
+                        className="gap-1"
+                      >
                         <Pencil className="h-3.5 w-3.5" /> تعديل
                       </Button>
                     )}
@@ -521,9 +541,9 @@ export default function PatientsView({
                   </div>
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5">
-                  <div className="text-xs text-gray-400 mb-0.5">الأدوية / ملاحظات</div>
+                  <div className="text-xs text-gray-400 mb-0.5">نوع الملف</div>
                   <div className="text-sm font-semibold text-gray-800 truncate">
-                    {selectedPatient.notes || "—"}
+                    {selectedPatient.source === "clinic" ? "مريض عيادة" : "مريض منصة"}
                   </div>
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5">
@@ -541,7 +561,20 @@ export default function PatientsView({
               {/* ── البيانات ──────────────────────────────────── */}
               {activeTab === "info" && (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700">معلومات المريض</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-700">معلومات المريض</h3>
+                    {selectedPatient.source === "clinic" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={openEdit}
+                        className="h-7 px-3 text-xs gap-1"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        تعديل البيانات
+                      </Button>
+                    )}
+                  </div>
                   <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50">
                     {(
                       [
@@ -551,17 +584,23 @@ export default function PatientsView({
                         { label: "فصيلة الدم",        value: selectedPatient.bloodType },
                         { label: "العنوان",            value: selectedPatient.address },
                         { label: "البريد الإلكتروني", value: selectedPatient.email },
-                        { label: "رقم الهاتف",      value: selectedPatient.whatsapp },
+                        { label: "رقم الهاتف",        value: selectedPatient.whatsapp },
                       ] as { label: string; value: string | null | undefined }[]
                     ).filter((f) => f.value).map((field) => (
                       <div key={field.label} className="flex items-center justify-between px-5 py-3 text-sm">
                         <span className="text-gray-400">{field.label}</span>
-                        <span className="font-medium text-gray-900">{field.value}</span>
+                        <span className="font-medium text-gray-900 whitespace-pre-line text-right">{field.value}</span>
                       </div>
                     ))}
-                    {!selectedPatient.fileNumber && !selectedPatient.whatsapp && !selectedPatient.email && (
-                      <div className="px-5 py-8 text-center text-sm text-gray-400">لا توجد بيانات إضافية</div>
-                    )}
+                    {!selectedPatient.fileNumber &&
+                      !selectedPatient.gender &&
+                      !selectedPatient.dateOfBirth &&
+                      !selectedPatient.bloodType &&
+                      !selectedPatient.address &&
+                      !selectedPatient.email &&
+                      !selectedPatient.whatsapp && (
+                        <div className="px-5 py-8 text-center text-sm text-gray-400">لا توجد بيانات إضافية</div>
+                      )}
                   </div>
                 </div>
               )}
@@ -871,24 +910,301 @@ export default function PatientsView({
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-700">الملفات الطبية</h3>
                   <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50">
-                    {selectedPatient.allergies && (
-                      <div className="flex items-start gap-3 px-5 py-4">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900 mb-1">الحساسيات والتنبيهات</div>
-                          <div className="text-sm text-gray-600">{selectedPatient.allergies}</div>
+                    {/* ملاحظات طبية يضيفها الطبيب يدوياً (ClinicMedicalNote) — عيادة فقط */}
+                    {selectedPatient.source === "clinic" && (
+                      <div className="px-5 py-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-semibold text-gray-900">
+                            ملاحظات  طبية جديدة
+                          </div>
+                          {!addingMedical && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setAddingMedical(true);
+                                setMedicalAllergies("");
+                                setMedicalDiagnosis("");
+                                setMedicalTreatment("");
+                              }}
+                              className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> إضافة تفاصيل
+                            </Button>
+                          )}
                         </div>
+
+                        {addingMedical && (
+                          <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
+                            <div>
+                              <label className="mb-1 block text-xs font-medium text-gray-700">
+                                الحساسيات / التنبيهات
+                              </label>
+                              <input
+                                value={medicalAllergies}
+                                onChange={(e) => setMedicalAllergies(e.target.value)}
+                                placeholder="مثل: حساسية من البنسلين..."
+                                className="h-9 w-full rounded-lg border border-gray-300 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-xs font-medium text-gray-700">
+                                الحالة المرضية الأساسية
+                              </label>
+                              <textarea
+                                value={medicalDiagnosis}
+                                onChange={(e) => setMedicalDiagnosis(e.target.value)}
+                                rows={2}
+                                placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
+                                className="w-full resize-none rounded-lg border border-gray-300 p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-xs font-medium text-gray-700">
+                                ما قام به الطبيب / العلاج
+                              </label>
+                              <textarea
+                                value={medicalTreatment}
+                                onChange={(e) => setMedicalTreatment(e.target.value)}
+                                rows={2}
+                                placeholder="ما الذي قمت به للمريض؟ ما العلاج أو الأدوية التي وصِفت له؟"
+                                className="w-full resize-none rounded-lg border border-gray-300 p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  if (!selectedPatient) return;
+                                  if (!medicalDiagnosis.trim() && !medicalTreatment.trim() && !medicalAllergies.trim()) {
+                                    toast.error("أضف على الأقل الحاله أو العلاج أو الحساسية");
+                                    return;
+                                  }
+                                  setSavingMedical(true);
+                                  try {
+                                    const res = await fetch(`/api/clinic/patients/${selectedPatient.id}/medical-notes`, {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        allergies: medicalAllergies,
+                                        diagnosis: medicalDiagnosis,
+                                        treatment: medicalTreatment,
+                                      }),
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok) {
+                                      toast.error(data.error || "فشل حفظ التفاصيل الطبية");
+                                    } else {
+                                      toast.success("تم إضافة التفاصيل الطبية ✓");
+                                      setAddingMedical(false);
+                                      setMedicalAllergies("");
+                                      setMedicalDiagnosis("");
+                                      setMedicalTreatment("");
+                                      router.refresh();
+                                    }
+                                  } catch {
+                                    toast.error("خطأ في الاتصال");
+                                  } finally {
+                                    setSavingMedical(false);
+                                  }
+                                }}
+                                disabled={savingMedical}
+                              >
+                                {savingMedical ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  "حفظ"
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setAddingMedical(false)}
+                              >
+                                إلغاء
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedPatient.medicalNotes && selectedPatient.medicalNotes.length > 0 && (
+                          <div className="space-y-3">
+                            {selectedPatient.medicalNotes.map((note) => {
+                              const isEditing = editingMedicalId === note.id;
+                              return (
+                                <div
+                                  key={note.id}
+                                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-700"
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="text-[11px] text-gray-400">
+                                      أضيفت في{" "}
+                                      {format(new Date(note.createdAt), "dd/MM/yyyy HH:mm")}
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      {!isEditing && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingMedicalId(note.id);
+                                            setEditMedicalAllergies(note.allergies ?? "");
+                                            setEditMedicalDiagnosis(note.diagnosis ?? "");
+                                            setEditMedicalTreatment(note.treatment ?? "");
+                                          }}
+                                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-100"
+                                        >
+                                          <Pencil className="h-3 w-3" /> تعديل
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirmDeleteId(`note_${note.id}`)}
+                                        className="inline-flex items_center gap-1 rounded-lg border border-red-100 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="h-3 w-3" /> حذف
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {isEditing ? (
+                                    <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3 space-y-2">
+                                      <div>
+                                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                                          الحساسيات / التنبيهات
+                                        </label>
+                                        <input
+                                          value={editMedicalAllergies}
+                                          onChange={(e) => setEditMedicalAllergies(e.target.value)}
+                                          placeholder="مثل: حساسية من البنسلين..."
+                                          className="h-8 w-full rounded-lg border border-gray-300 px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                                          الحالة المرضية الأساسية
+                                        </label>
+                                        <textarea
+                                          value={editMedicalDiagnosis}
+                                          onChange={(e) => setEditMedicalDiagnosis(e.target.value)}
+                                          rows={2}
+                                          placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
+                                          className="w-full resize-none rounded-lg border border-gray-300 p-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                                          ما قام به الطبيب / العلاج
+                                        </label>
+                                        <textarea
+                                          value={editMedicalTreatment}
+                                          onChange={(e) => setEditMedicalTreatment(e.target.value)}
+                                          rows={2}
+                                          placeholder="ما الذي قمت به للمريض؟ ما العلاج أو الأدوية التي وصِفت له؟"
+                                          className="w-full resize-none rounded-lg border border-gray-300 p-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          onClick={async () => {
+                                            setSavingMedicalEdit(true);
+                                            try {
+                                              const res = await fetch(`/api/clinic/medical-notes/${note.id}`, {
+                                                method: "PATCH",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({
+                                                  allergies: editMedicalAllergies,
+                                                  diagnosis: editMedicalDiagnosis,
+                                                  treatment: editMedicalTreatment,
+                                                }),
+                                              });
+                                              const data = await res.json();
+                                              if (!res.ok) {
+                                                toast.error(data.error || "فشل تحديث الملاحظة");
+                                              } else {
+                                                toast.success("تم تحديث الملاحظة الطبية ✓");
+                                                setEditingMedicalId(null);
+                                                router.refresh();
+                                              }
+                                            } catch {
+                                              toast.error("خطأ في الاتصال");
+                                            } finally {
+                                              setSavingMedicalEdit(false);
+                                            }
+                                          }}
+                                          disabled={savingMedicalEdit}
+                                        >
+                                          {savingMedicalEdit ? (
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                          ) : (
+                                            "حفظ"
+                                          )}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => setEditingMedicalId(null)}
+                                        >
+                                          إلغاء
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col gap-2 md:flex-row md:gap-3 text-xs sm:text-sm">
+                                      {note.allergies && (
+                                        <div className="flex-1 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 flex items-start gap-2">
+                                          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                          <div>
+                                            <div className="text-xs font-semibold text-amber-900 mb-0.5">
+                                              الحساسيات / التنبيهات
+                                            </div>
+                                            <div className="text-xs sm:text-sm text-amber-900/80">
+                                              {note.allergies}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {note.diagnosis && (
+                                        <div className="flex-1 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 flex items-start gap-2">
+                                          <Stethoscope className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                                          <div>
+                                            <div className="text-xs font-semibold text-blue-900 mb-0.5">
+                                              الحالة المرضية الأساسية
+                                            </div>
+                                            <div className="text-xs sm:text-sm text-blue-900/80 whitespace-pre-line">
+                                              {note.diagnosis}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {note.treatment && (
+                                        <div className="flex-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 flex items-start gap-2">
+                                          <FileText className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                          <div>
+                                            <div className="text-xs font-semibold text-emerald-900 mb-0.5">
+                                              ما قام به الطبيب / العلاج
+                                            </div>
+                                            <div className="text-xs sm:text-sm text-emerald-900/80 whitespace-pre-line">
+                                              {note.treatment}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {!note.allergies && !note.diagnosis && !note.treatment && (
+                                        <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-center text-gray-400 flex-1">
+                                          لا توجد تفاصيل في هذه الملاحظة.
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
-                    {selectedPatient.notes && (
-                      <div className="flex items-start gap-3 px-5 py-4">
-                        <FileText className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900 mb-1">ملاحظات طبية</div>
-                          <div className="text-sm text-gray-600">{selectedPatient.notes}</div>
-                        </div>
-                      </div>
-                    )}
+
                     {/* ملخص زيارات مع ملاحظات طبية (إن وُجدت) */}
                     {selectedPatient.appointments.some((a) => a.notes) && (
                       <div className="px-5 py-4">
@@ -1014,37 +1330,6 @@ export default function PatientsView({
                 </div>
               </div>
               <Input label="العنوان" placeholder="الخليل، حي البلد" value={addForm.address} onChange={(e) => setAdd("address", e.target.value)} />
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">الحساسيات / التنبيهات</label>
-                <input placeholder="مثل: حساسية من البنسلين..." value={addForm.allergies} onChange={(e) => setAdd("allergies", e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    الحالة المرضية الأساسية
-                  </label>
-                  <textarea
-                    value={addDiagnosis}
-                    onChange={(e) => setAddDiagnosis(e.target.value)}
-                    rows={2}
-                    placeholder="مثال: مريض سكري من النوع الثاني منذ 5 سنوات..."
-                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    ما قام به الطبيب / خطة العلاج
-                  </label>
-                  <textarea
-                    value={addTreatment}
-                    onChange={(e) => setAddTreatment(e.target.value)}
-                    rows={2}
-                    placeholder="مثال: ضبط جرعة الميتفورمين، إضافة دواء جديد، نصائح غذائية..."
-                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={addLoading}>
                   {addLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "إضافة المريض"}
@@ -1095,37 +1380,6 @@ export default function PatientsView({
                 </div>
               </div>
               <Input label="العنوان" placeholder="الخليل، حي البلد" value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} />
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">الحساسيات / التنبيهات</label>
-                <input placeholder="مثل: حساسية من البنسلين..." value={editForm.allergies} onChange={(e) => setEditForm((p) => ({ ...p, allergies: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    الحالة المرضية الأساسية
-                  </label>
-                  <textarea
-                    value={editDiagnosis}
-                    onChange={(e) => setEditDiagnosis(e.target.value)}
-                    rows={2}
-                    placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
-                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    ما قام به الطبيب / العلاج
-                  </label>
-                  <textarea
-                    value={editTreatment}
-                    onChange={(e) => setEditTreatment(e.target.value)}
-                    rows={2}
-                    placeholder="العلاج الذي قمت به للمريض أو الأدوية الحالية..."
-                    className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={editLoading}>
                   {editLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "حفظ التعديلات"}
@@ -1154,7 +1408,11 @@ export default function PatientsView({
             {/* Body */}
             <div className="px-5 py-4">
               <p className="text-sm text-gray-700">
-                هل أنت متأكد من حذف هذه المعاملة؟ لن تتمكن من استرجاعها لاحقاً.
+                {confirmDeleteId === "clear-notes"
+                  ? "هل أنت متأكد من مسح الملاحظات الطبية العامة لهذا المريض؟"
+                  : confirmDeleteId?.startsWith("note_")
+                  ? "هل أنت متأكد من حذف هذه الملاحظة الطبية؟"
+                  : "هل أنت متأكد من حذف هذه المعاملة؟ لن تتمكن من استرجاعها لاحقاً."}
               </p>
             </div>
             {/* Actions */}

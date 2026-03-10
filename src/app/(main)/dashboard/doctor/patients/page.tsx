@@ -36,6 +36,14 @@ export type PatientListItem = {
   appointmentCount: number;
 };
 
+export type MedicalNote = {
+  id: string;
+  allergies?: string | null;
+  diagnosis?: string | null;
+  treatment?: string | null;
+  createdAt: string;
+};
+
 export type SelectedPatient = {
   id: string;
   name: string;
@@ -53,6 +61,7 @@ export type SelectedPatient = {
   appointments: AppointmentRow[];
   transactions: TransactionRow[];
   balance: number;
+  medicalNotes?: MedicalNote[];
 };
 
 export default async function DoctorPatientsPage({
@@ -135,7 +144,7 @@ export default async function DoctorPatientsPage({
         .single();
 
       if (cp) {
-        const [{ data: txData }, { data: aptData }] = await Promise.all([
+        const [{ data: txData }, { data: aptData }, { data: notesData }] = await Promise.all([
           supabaseAdmin
             .from("ClinicTransaction")
             .select("id, type, description, amount, date, notes")
@@ -146,6 +155,11 @@ export default async function DoctorPatientsPage({
             .select("id, date, time, status, title, duration, notes")
             .eq("clinicPatientId", selectedId)
             .order("date", { ascending: false }),
+          supabaseAdmin
+            .from("ClinicMedicalNote")
+            .select("id, allergies, diagnosis, treatment, createdAt")
+            .eq("clinicPatientId", selectedId)
+            .order("createdAt", { ascending: false }),
         ]);
 
         const transactions: TransactionRow[] = (txData ?? []).map((t) => ({
@@ -164,11 +178,19 @@ export default async function DoctorPatientsPage({
         const balance = transactions.reduce(
           (s, t) => t.type === "PAYMENT" ? s + t.amount : s - t.amount, 0
         );
+        const medicalNotes: MedicalNote[] = (notesData ?? []).map((n) => ({
+          id: n.id,
+          allergies: (n as { allergies?: string | null }).allergies ?? null,
+          diagnosis: (n as { diagnosis?: string | null }).diagnosis ?? null,
+          treatment: (n as { treatment?: string | null }).treatment ?? null,
+          createdAt: n.createdAt as string,
+        }));
         selectedPatient = {
           id: cp.id, name: cp.name ?? "—", whatsapp: (cp as { whatsapp?: string | null }).whatsapp ?? null, email: cp.email,
           fileNumber: cp.fileNumber, gender: cp.gender, dateOfBirth: cp.dateOfBirth,
           address: cp.address, bloodType: cp.bloodType, allergies: cp.allergies,
           notes: cp.notes, source: "clinic", appointments, transactions, balance,
+          medicalNotes,
         };
       }
     }
