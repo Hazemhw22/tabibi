@@ -147,6 +147,7 @@ model Doctor {
   reviews            Review[]
   clinicPatients     ClinicPatient[]
   clinicAppointments ClinicAppointment[]
+  medicalNotes       ClinicMedicalNote[]
 }
 
 model Clinic {
@@ -271,6 +272,7 @@ model ClinicPatient {
   doctor             Doctor               @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   transactions       ClinicTransaction[]
   clinicAppointments ClinicAppointment[]
+  medicalNotes       ClinicMedicalNote[]
 }
 
 /// المعاملات المالية: خدمات (دين سالب) أو دفعات (موجب)
