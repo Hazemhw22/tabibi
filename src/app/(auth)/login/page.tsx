@@ -1,3 +1,5 @@
+"use client";
+
 import { Suspense } from "react";
 import Link from "next/link";
 import { Heart, Stethoscope, AlertCircle } from "lucide-react";
