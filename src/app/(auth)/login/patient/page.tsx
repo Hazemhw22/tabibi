@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Phone, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +24,7 @@ function LoginPatientForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const rateLimited = searchParams.get("error") === "rate_limited";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -55,6 +56,12 @@ function LoginPatientForm() {
 
   return (
     <Card className="w-full max-w-md shadow-xl border-0">
+      {rateLimited && (
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة مرة أخرى بعد 15 دقيقة.</span>
+        </div>
+      )}
       <CardHeader className="text-center pb-2">
         <CardTitle className="text-2xl">تسجيل دخول المريض</CardTitle>
         <CardDescription className="text-base mt-1">ادخل رقم هاتفك وكلمة المرور</CardDescription>

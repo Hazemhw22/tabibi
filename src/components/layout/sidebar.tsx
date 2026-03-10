@@ -36,8 +36,8 @@ const doctorNavFull: NavItem[] = [
   { label: "الإعدادات", href: "/dashboard/doctor/settings", icon: Settings },
 ];
 
-/** للطبيب المرفوض: فقط الرئيسية */
-const doctorNavRejected: NavItem[] = doctorNavFull.slice(0, 1);
+/** للطبيب قيد المراجعة أو المرفوض: فقط الرئيسية */
+const doctorNavLimited: NavItem[] = doctorNavFull.slice(0, 1);
 
 const adminNav: NavItem[] = [
   { label: "لوحة تحكم", href: "/dashboard/admin", icon: LayoutDashboard },
@@ -152,8 +152,8 @@ export default function Sidebar() {
 
   const nav =
     role === "DOCTOR"
-      ? doctorStatus === "REJECTED"
-        ? doctorNavRejected
+      ? doctorStatus === "REJECTED" || doctorStatus === "PENDING"
+        ? doctorNavLimited
         : doctorNavFull
       : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
         ? adminNav

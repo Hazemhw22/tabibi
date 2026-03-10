@@ -133,6 +133,15 @@ html[data-theme="dark"] nav a:hover {
   animation: fadeIn 0.3s ease-out;
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
 /* Star rating */
 .star-filled { color: #f59e0b; }
 .star-empty { color: #d1d5db; }

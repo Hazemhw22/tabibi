@@ -35,41 +35,41 @@ export default async function DoctorDashboard() {
   if (doctor.status === "PENDING") {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <div className="text-6xl mb-6">⏳</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">
-          حسابك قيد المراجعة
-        </h1>
-        <p className="text-gray-500 leading-relaxed">
-          شكراً لتسجيلك في منصة Tabibi. سيتم مراجعة طلبك من قِبل فريقنا
-          وإشعارك بالقبول قريباً.
-        </p>
-        <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl inline-flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-yellow-600" />
-          <p className="text-sm text-yellow-800 font-medium">
-            مدة المراجعة: 24-48 ساعة عمل
+          <div className="text-6xl mb-6">⏳</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            حسابك قيد المراجعة
+          </h1>
+          <p className="text-gray-500 leading-relaxed">
+            شكراً لتسجيلك في منصة Tabibi. سيتم مراجعة طلبك من قِبل فريقنا
+            وإشعارك بالقبول قريباً.
           </p>
+          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl inline-flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            <p className="text-sm text-yellow-800 font-medium">
+              مدة المراجعة: 24-48 ساعة عمل
+            </p>
+          </div>
         </div>
-      </div>
     );
   }
 
   if (doctor.status === "REJECTED") {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <div className="text-6xl mb-6">🚫</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">
-          لوحة التحكم
-        </h1>
-        <p className="text-gray-500 leading-relaxed">
-          تم رفض طلب تسجيلك كطبيب. يرجى مراجعة مسؤول النظام للاستفسار عن السبب أو إعادة تقديم الطلب.
-        </p>
-        <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl inline-flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-600" />
-          <p className="text-sm text-red-800 font-medium">
-            يجب مراجعة مسؤول النظام
+          <div className="text-6xl mb-6">🚫</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            لوحة التحكم
+          </h1>
+          <p className="text-gray-500 leading-relaxed">
+            تم رفض طلب تسجيلك كطبيب. يرجى مراجعة مسؤول النظام للاستفسار عن السبب أو إعادة تقديم الطلب.
           </p>
+          <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl inline-flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <p className="text-sm text-red-800 font-medium">
+              يجب مراجعة مسؤول النظام
+            </p>
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -85,7 +85,8 @@ export default async function DoctorDashboard() {
   const cpIds = (clinicPatients ?? []).map((p: { id: string }) => p.id);
 
   const [
-    { data: todayAppointments },
+    { data: todayPlatform },
+    { data: todayClinic },
     { data: allAppointments },
     { data: payments },
     { data: clinicTx },
@@ -100,6 +101,14 @@ export default async function DoctorDashboard() {
       .gte("appointmentDate", today.toISOString())
       .lt("appointmentDate", tomorrow.toISOString())
       .order("startTime"),
+
+    supabaseAdmin
+      .from("ClinicAppointment")
+      .select(`id, title, date, time, duration, status, clinicPatient:ClinicPatient(name, phone)`)
+      .eq("doctorId", doctor.id)
+      .gte("date", today.toISOString())
+      .lt("date", tomorrow.toISOString())
+      .order("time"),
 
     supabaseAdmin
       .from("Appointment")
@@ -207,6 +216,54 @@ export default async function DoctorDashboard() {
   );
   const totalEarningsWithPayments = totalEarnings + totalPaymentsAdded;
 
+  type TodayRow = {
+    id: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    fee?: number;
+    patientName: string;
+    patientContact: string;
+    source: "platform" | "clinic";
+    raw?: unknown;
+  };
+  const platformRows: TodayRow[] = (todayPlatform ?? []).map((apt: { id: string; startTime: string; endTime: string; status: string; fee?: number; patient?: { name?: string; phone?: string; email?: string } }) => ({
+    id: apt.id,
+    startTime: apt.startTime,
+    endTime: apt.endTime,
+    status: apt.status,
+    fee: apt.fee,
+    patientName: apt.patient?.name ?? "—",
+    patientContact: apt.patient?.phone || apt.patient?.email || "—",
+    source: "platform",
+    raw: apt,
+  }));
+  const clinicRows: TodayRow[] = (todayClinic ?? []).map((apt: { id: string; time: string; duration?: number; status: string; clinicPatient?: { name?: string; phone?: string }; title?: string }) => {
+    const start = apt.time;
+    const dur = apt.duration ?? 30;
+    const [h, m] = start.split(":").map(Number);
+    const endM = (m + dur) % 60;
+    const endH = h + Math.floor((m + dur) / 60);
+    const endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+    return {
+      id: apt.id,
+      startTime: start,
+      endTime: endTime,
+      status: apt.status,
+      patientName: (apt.clinicPatient as { name?: string })?.name ?? "—",
+      patientContact: (apt.clinicPatient as { phone?: string })?.phone ?? "—",
+      source: "clinic",
+      raw: apt,
+    };
+  });
+  const todayAppointments = [...platformRows, ...clinicRows].sort((a, b) => {
+    const t = (s: string) => {
+      const [h, m] = s.split(":").map(Number);
+      return (h ?? 0) * 60 + (m ?? 0);
+    };
+    return t(a.startTime) - t(b.startTime);
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -255,7 +312,7 @@ export default async function DoctorDashboard() {
           },
           {
             label: "مواعيد اليوم",
-            value: todayAppointments?.length ?? 0,
+            value: todayAppointments.length,
             icon: Calendar,
             color: "text-blue-600 bg-blue-50",
           },
@@ -286,19 +343,19 @@ export default async function DoctorDashboard() {
               <CardTitle className="text-base">
                 جدول اليوم ({format(today, "dd/MM/yyyy")})
               </CardTitle>
-              <Badge variant="default">{todayAppointments?.length ?? 0} موعد</Badge>
+              <Badge variant="default">{todayAppointments.length} موعد</Badge>
             </CardHeader>
             <CardContent className="pt-0">
-              {!todayAppointments?.length ? (
+              {todayAppointments.length === 0 ? (
                 <div className="text-center py-10 text-gray-500">
                   <Calendar className="h-10 w-10 mx-auto mb-3 text-gray-300" />
                   <p>لا توجد مواعيد اليوم</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(todayAppointments as { id: string; startTime: string; endTime: string; status: string; fee?: number; patient?: { name?: string; phone?: string; email?: string }; doctor?: { user?: { name?: string }; specialty?: { nameAr?: string } } }[]).map((apt) => (
+                  {todayAppointments.map((apt) => (
                     <div
-                      key={apt.id}
+                      key={`${apt.source}-${apt.id}`}
                       className={`flex flex-wrap items-center gap-4 p-4 rounded-xl border transition-colors ${
                         apt.status === "COMPLETED"
                           ? "bg-green-50 border-green-100"
@@ -306,7 +363,9 @@ export default async function DoctorDashboard() {
                             ? "bg-red-50 border-red-100"
                             : apt.status === "DRAFT"
                               ? "bg-amber-50 border-amber-100"
-                              : "bg-gray-50 border-gray-100 hover:bg-blue-50 hover:border-blue-100"
+                              : apt.status === "CANCELLED"
+                                ? "bg-gray-100 border-gray-200"
+                                : "bg-gray-50 border-gray-100 hover:bg-blue-50 hover:border-blue-100"
                       }`}
                     >
                       <div className="text-center min-w-[60px]">
@@ -318,27 +377,40 @@ export default async function DoctorDashboard() {
 
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900">
-                          {apt.patient?.name ?? "—"}
+                          {apt.patientName}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {apt.patient?.phone || apt.patient?.email || "—"}
-                        </p>
+                        <p className="text-xs text-gray-500">{apt.patientContact || "—"}</p>
                       </div>
 
                       <div className="text-left shrink-0">
-                        <p className="text-sm font-bold text-green-600">
-                          ₪{Number(apt.fee ?? 0)}
-                        </p>
-                        <p className="text-xs text-gray-500">سعر الحجز</p>
+                        {apt.source === "platform" && apt.fee != null ? (
+                          <>
+                            <p className="text-sm font-bold text-green-600">
+                              ₪{Number(apt.fee)}
+                            </p>
+                            <p className="text-xs text-gray-500">سعر الحجز</p>
+                          </>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">عيادة</Badge>
+                        )}
                       </div>
 
-                      {apt.status === "CONFIRMED" && (
+                      {apt.source === "platform" && apt.status === "CONFIRMED" && (
                         <DoctorActions appointmentId={apt.id} />
                       )}
-                      {apt.status === "DRAFT" && (
+                      {apt.source === "platform" && apt.status === "DRAFT" && (
                         <Badge variant="secondary">مسودة (بانتظار الدفع)</Badge>
                       )}
-                      {apt.status === "COMPLETED" && (
+                      {apt.source === "clinic" && apt.status === "SCHEDULED" && (
+                        <Badge variant="default">مجدول</Badge>
+                      )}
+                      {apt.source === "clinic" && apt.status === "COMPLETED" && (
+                        <Badge variant="success">
+                          <CheckCircle className="h-3 w-3 ml-1" />
+                          منجز
+                        </Badge>
+                      )}
+                      {apt.status === "COMPLETED" && apt.source === "platform" && (
                         <Badge variant="success">
                           <CheckCircle className="h-3 w-3 ml-1" />
                           منجز
@@ -350,6 +422,9 @@ export default async function DoctorDashboard() {
                       {apt.status === "CANCELLED" && (
                         <Badge variant="destructive">ملغي</Badge>
                       )}
+                      <Badge variant="secondary" className="text-[10px]">
+                        {apt.source === "platform" ? "منصة" : "عيادة"}
+                      </Badge>
                     </div>
                   ))}
                 </div>

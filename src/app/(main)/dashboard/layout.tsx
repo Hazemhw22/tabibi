@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import Sidebar from "@/components/layout/sidebar";
 import DashboardHeader from "@/components/layout/dashboard-header";
+import { DoctorWhatsAppFloat } from "@/components/doctor/whatsapp-float";
 
 export default async function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default async function DashboardLayout({
 }) {
   const session = await auth();
   const isPatient = session?.user?.role === "PATIENT";
+  const isDoctor = session?.user?.role === "DOCTOR";
 
   if (isPatient) {
     return (
@@ -25,6 +27,7 @@ export default async function DashboardLayout({
         <DashboardHeader />
         <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">{children}</main>
       </div>
+      {isDoctor && <DoctorWhatsAppFloat />}
     </div>
   );
 }

@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Stethoscope } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Heart, Stethoscope, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const rateLimited = searchParams.get("error") === "rate_limited";
+
   return (
     <Card className="w-full max-w-md shadow-xl border-0 overflow-hidden">
+      {rateLimited && (
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة مرة أخرى بعد 15 دقيقة.</span>
+        </div>
+      )}
       <CardHeader className="text-center pb-1">
         <CardTitle className="text-2xl font-bold text-gray-900">تسجيل الدخول</CardTitle>
         <CardDescription className="text-sm text-gray-500">اختر نوع حسابك</CardDescription>
