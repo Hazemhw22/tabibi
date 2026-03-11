@@ -8,15 +8,16 @@ import {
   CreditCard,
   Star,
   CheckCircle,
-  ArrowLeft,
   Shield,
-  Clock,
   MapPin,
   Users,
   MessageCircle,
+  Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/lib/auth";
+import { getLocationFullName } from "@/data/west-bank-locations";
 
 async function getStats() {
   const [
@@ -55,6 +56,7 @@ async function getSpecialties() {
 
 type DoctorRow = {
   id: string;
+  locationId?: string | null;
   rating?: number;
   totalReviews?: number;
   consultationFee?: number;
@@ -70,6 +72,7 @@ function normalizeDoctor(d: DoctorRow) {
   const specialty = Array.isArray(d.specialty) ? d.specialty[0] : d.specialty;
   return {
     id: d.id,
+    locationId: d.locationId,
     rating: d.rating,
     totalReviews: d.totalReviews,
     consultationFee: d.consultationFee,
@@ -90,7 +93,6 @@ async function getFeaturedDoctors() {
       clinics:Clinic(address, phone)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true)
-    .not("locationId", "is", null)
     .order("rating", { ascending: false })
     .limit(6);
   const raw = (data ?? []) as DoctorRow[];
@@ -241,7 +243,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured Doctors */}
+      {/* أطباء مميزون — جميع الأطباء مع عرض موقع كل طبيب (قبل تسجيل الدخول) */}
       {doctors.length > 0 && (
         <section className="py-10 sm:py-16 bg-white">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -262,67 +264,71 @@ export default async function HomePage() {
               {doctors.map((doctor) => {
                 const contactNum = doctor.whatsapp || doctor.user?.phone || doctor.clinics?.[0]?.phone;
                 const waNum = contactNum ? contactNum.replace(/\D/g, "") : "";
+                const locationLabel = doctor.locationId ? getLocationFullName(doctor.locationId) : null;
                 return (
-                <Card key={doctor.id} className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group">
-                  <CardContent className="p-6">
-                    <Link href={`/doctors/${doctor.id}`} className="block">
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600 shrink-0">
-                          {doctor.user?.name?.charAt(0) || "D"}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                            د. {doctor.user?.name}
-                          </h3>
-                          <p className="text-sm text-blue-600 font-medium">
-                            {doctor.specialty?.nameAr}
-                          </p>
-                          {doctor.clinics?.[0] && (
-                            <div className="flex items-center gap-1 mt-1.5">
-                              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                              <p className="text-xs text-gray-500 truncate">
+                  <Card key={doctor.id} className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group">
+                    <CardContent className="p-6">
+                      <Link href={`/doctors/${doctor.id}`} className="block">
+                        <div className="flex items-start gap-4">
+                          <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600 shrink-0">
+                            {doctor.user?.name?.charAt(0) || "D"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                              د. {doctor.user?.name}
+                            </h3>
+                            <p className="text-sm text-blue-600 font-medium">
+                              {doctor.specialty?.nameAr}
+                            </p>
+                            {locationLabel && (
+                              <div className="flex items-center gap-1 mt-1.5">
+                                <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                <p className="text-xs text-gray-500">{locationLabel}</p>
+                              </div>
+                            )}
+                            {doctor.clinics?.[0]?.address && (
+                              <p className="text-xs text-gray-400 mt-0.5 truncate">
                                 {doctor.clinics[0].address}
                               </p>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
 
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-semibold text-gray-800">
-                          {(doctor.rating ?? 0).toFixed(1)}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          ({doctor.totalReviews ?? 0})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {waNum.length >= 9 && (
-                          <a
-                            href={`https://wa.me/${waNum}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                            title="تواصل عبر واتساب"
-                          >
-                            <MessageCircle className="h-5 w-5" />
-                          </a>
-                        )}
-                        <div className="text-sm font-semibold text-green-600">
-                          ₪{doctor.consultationFee ?? 0}
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm font-semibold text-gray-800">
+                            {(doctor.rating ?? 0).toFixed(1)}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            ({doctor.totalReviews ?? 0})
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Clock className="h-3.5 w-3.5" />
-                          {(doctor.experienceYears ?? 0)} سنوات
+                        <div className="flex items-center gap-2">
+                          {waNum.length >= 9 && (
+                            <a
+                              href={`https://wa.me/${waNum}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                              title="تواصل عبر واتساب"
+                            >
+                              <MessageCircle className="h-5 w-5" />
+                            </a>
+                          )}
+                          <div className="text-sm font-semibold text-green-600">
+                            ₪{doctor.consultationFee ?? 0}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <Clock className="h-3.5 w-3.5" />
+                            {(doctor.experienceYears ?? 0)} سنوات
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
+                    </CardContent>
+                  </Card>
+                );
               })}
             </div>
           </div>
@@ -397,7 +403,7 @@ export default async function HomePage() {
               </Button>
             </Link>
             <Link href="/about">
-              <Button size="xl" variant="outline" className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800">
+              <Button size="xl" variant="outline" className="w-full sm:w-auto text-gray-900 hover:bg-gray-800 hover:text-white">
                 اعرف المزيد
               </Button>
             </Link>

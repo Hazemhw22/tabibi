@@ -83,7 +83,7 @@ export default async function DoctorProfilePage({
   if (!doctor) notFound();
 
   const doctorLocationId = doctor.locationId ?? null;
-  if (!doctorLocationId) notFound();
+  const isGuest = !session?.user;
 
   let patientRegionId: string | null = null;
   if (session?.user?.role === "PATIENT" && session.user.id) {
@@ -93,8 +93,13 @@ export default async function DoctorProfilePage({
       .eq("id", session.user.id)
       .single();
     patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
+    // المريض المسجّل: إخفاء صفحة الطبيب إذا كان الطبيب لا يخدم منطقته (أو ليس له موقع)
     if (patientRegionId && !doctorServesLocation(doctorLocationId, patientRegionId)) notFound();
+  } else if (!isGuest) {
+    // مستخدم مسجّل (مثلاً طبيب/أدمن): الطبيب يجب أن يكون له موقع للعرض
+    if (!doctorLocationId) notFound();
   }
+  // الضيف (قبل تسجيل الدخول): يمكنه فتح صفحة أي طبيب معتمد دون شرط المنطقة
 
   // الطبيب غير ظاهر للمرضى: فقط مرضى العيادة يمكنهم الوصول
   if (doctor.visibleToPatients === false) {
@@ -340,7 +345,7 @@ export default async function DoctorProfilePage({
         </div>
 
         <div className="lg:col-span-1">
-          <BookingSection doctor={doctor} timeSlots={doctor.timeSlots ?? []} clinics={clinicsForView} isLoggedIn={!!session} />
+          <BookingSection doctor={doctor} timeSlots={doctor.timeSlots ?? []} clinics={clinicsForView} isLoggedIn={!!session} callbackUrl={`/doctors/${id}`} />
         </div>
       </div>
     </div>

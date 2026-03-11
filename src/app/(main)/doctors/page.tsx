@@ -17,7 +17,11 @@ interface SearchParams {
   sort?: string;
 }
 
-async function getDoctors(params: SearchParams, effectiveLocationId: string | null) {
+async function getDoctors(
+  params: SearchParams,
+  effectiveLocationId: string | null,
+  isGuest: boolean
+) {
   let query = supabaseAdmin
     .from("Doctor")
     .select(`*, locationId, user:User(*), specialty:Specialty(*), clinics:Clinic(*), reviews:Review(id)`)
@@ -60,7 +64,7 @@ async function getDoctors(params: SearchParams, effectiveLocationId: string | nu
     result = result.filter(
       (d: { locationId?: string | null }) => doctorServesLocation(d.locationId ?? null, effectiveLocationId)
     );
-  } else {
+  } else if (!isGuest) {
     result = result.filter((d: { locationId?: string | null }) => !!d.locationId);
   }
 
@@ -82,6 +86,7 @@ export default async function DoctorsPage({
 }) {
   const params = await searchParams;
   const session = await auth();
+  const isGuest = !session?.user;
   let patientRegionId: string | null = null;
   if (session?.user?.role === "PATIENT" && session.user.id) {
     const { data: userRow } = await supabaseAdmin
@@ -91,10 +96,10 @@ export default async function DoctorsPage({
       .single();
     patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
   }
-  const effectiveLocationId = params.locationId ?? patientRegionId;
+  const effectiveLocationId = isGuest ? null : (params.locationId ?? patientRegionId);
 
   const [doctors, specialties] = await Promise.all([
-    getDoctors(params, effectiveLocationId),
+    getDoctors(params, effectiveLocationId, isGuest),
     getSpecialties(),
   ]);
 

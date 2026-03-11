@@ -41,6 +41,7 @@ export default async function AdminDoctorDetailPage({
       id,
       userId,
       status,
+      whatsapp,
       subscriptionPeriod,
       subscriptionEndDate,
       locationId,
@@ -65,6 +66,8 @@ export default async function AdminDoctorDetailPage({
   if (error || !doctor) notFound();
 
   const u = doctor.user as { name?: string; email?: string; phone?: string; createdAt?: string } | null;
+  const doctorWithWhatsapp = doctor as { whatsapp?: string | null };
+  const displayPhone = u?.phone || doctorWithWhatsapp.whatsapp || null;
   const specialty = doctor.specialty as { nameAr?: string; name?: string } | null;
   const clinics = (doctor.clinics ?? []) as Array<{
     id: string;
@@ -167,9 +170,9 @@ export default async function AdminDoctorDetailPage({
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
                 <Phone className="h-5 w-5 text-gray-500 shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-500">رقم الهاتف</p>
+                  <p className="text-xs text-gray-500">رقم الهاتف / واتساب</p>
                   <p className="font-medium text-gray-900 dir-ltr text-right">
-                    {u?.phone ?? "—"}
+                    {displayPhone ?? "—"}
                   </p>
                 </div>
               </div>

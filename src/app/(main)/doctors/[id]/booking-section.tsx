@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Clock, MapPin, CreditCard, Loader2, ChevronRight, ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { Calendar, Clock, MapPin, CreditCard, Loader2, ChevronRight, ChevronLeft, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -36,6 +37,8 @@ interface Props {
   timeSlots: TimeSlot[];
   clinics: Clinic[];
   isLoggedIn: boolean;
+  /** للمستخدم غير المسجّل: الرابط لإعادته بعد تسجيل الدخول */
+  callbackUrl?: string;
 }
 
 function generateDates(count = 14) {
@@ -43,7 +46,7 @@ function generateDates(count = 14) {
   return Array.from({ length: count }, (_, i) => addDays(today, i));
 }
 
-export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn }: Props) {
+export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn, callbackUrl }: Props) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -117,6 +120,45 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn 
       setLoading(false);
     }
   };
+
+  if (!isLoggedIn) {
+    const loginHref = callbackUrl
+      ? `/login/patient?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : "/login/patient";
+    return (
+      <div className="space-y-4 lg:sticky lg:top-20">
+        <Card className="border-2 border-amber-100 bg-amber-50/30">
+          <CardHeader className="pb-3 px-4 sm:p-6 sm:pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-900">
+              <Calendar className="h-4 w-4 text-amber-600" />
+              احجز موعدك
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 sm:p-6 sm:pt-0 space-y-4">
+            <p className="text-amber-800 font-medium">
+              يجب تسجيل الدخول أولاً لحجز موعد مع الطبيب.
+            </p>
+            <Link href={loginHref}>
+              <Button size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700">
+                <LogIn className="h-4 w-4" />
+                تسجيل دخول المرضى
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50 border-green-100">
+          <CardContent className="p-4">
+            <h4 className="font-semibold text-green-800 text-sm mb-2">✅ سياسة الحجز</h4>
+            <ul className="text-xs text-green-700 space-y-1">
+              <li>• الدفع في العيادة</li>
+              <li>• يمكنك إلغاء أي حجز قبل 24 ساعة من الموعد</li>
+              <li>• ستصلك تأكيدات عبر البريد الإلكتروني والواتساب</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 lg:sticky lg:top-20">
