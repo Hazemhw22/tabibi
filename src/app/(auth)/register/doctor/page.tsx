@@ -18,9 +18,9 @@ const schema = z
   .object({
     name: z.string().min(3, "الاسم 3 أحرف على الأقل"),
     email: z.string().email("البريد الإلكتروني غير صالح"),
-    phone: z.string().optional(),
+    phone: z.string().min(9, "رقم الهاتف مطلوب (9 أرقام على الأقل)"),
     specialtyId: z.string().min(1, "اختر التخصص"),
-    whatsapp: z.string().min(9, "رقم الواتساب مطلوب"),
+    whatsapp: z.string().optional(),
     password: z.string().min(6, "كلمة المرور 6 أحرف على الأقل"),
     confirmPassword: z.string(),
   })
@@ -54,10 +54,10 @@ export default function RegisterDoctorPage() {
         body: JSON.stringify({
           name: data.name,
           email: data.email,
-          phone: data.phone || undefined,
+          phone: data.phone,
           role: "DOCTOR",
           specialtyId: data.specialtyId,
-          whatsapp: data.whatsapp,
+          whatsapp: (data.whatsapp && data.whatsapp.replace(/\D/g, "").length >= 9) ? data.whatsapp : data.phone,
           password: data.password,
         }),
       });
@@ -85,7 +85,7 @@ export default function RegisterDoctorPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="الاسم الكامل" placeholder="د. أحمد محمد" icon={<User className="h-4 w-4" />} error={errors.name?.message} {...register("name")} />
           <Input label="البريد الإلكتروني" type="email" placeholder="doctor@example.com" icon={<Mail className="h-4 w-4" />} error={errors.email?.message} {...register("email")} dir="ltr" />
-          <Input label="رقم الهاتف (اختياري)" type="tel" placeholder="05991234567" icon={<Phone className="h-4 w-4" />} error={errors.phone?.message} {...register("phone")} dir="ltr" />
+          <Input label="رقم الهاتف" type="tel" placeholder="05991234567" icon={<Phone className="h-4 w-4" />} error={errors.phone?.message} {...register("phone")} dir="ltr" />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">التخصص</label>
             <select className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" {...register("specialtyId")}>
@@ -94,7 +94,7 @@ export default function RegisterDoctorPage() {
             </select>
             {errors.specialtyId && <p className="mt-1 text-xs text-red-500">{errors.specialtyId.message}</p>}
           </div>
-          <Input label="رقم الواتساب" type="tel" placeholder="05991234567" icon={<Phone className="h-4 w-4" />} error={errors.whatsapp?.message} {...register("whatsapp")} dir="ltr" />
+          <Input label="رقم الواتساب (اختياري — يُستخدم رقم الهاتف إن تركته فارغاً)" type="tel" placeholder="05991234567" icon={<Phone className="h-4 w-4" />} error={errors.whatsapp?.message} {...register("whatsapp")} dir="ltr" />
           <div className="w-full">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">كلمة المرور</label>
             <div className="relative">

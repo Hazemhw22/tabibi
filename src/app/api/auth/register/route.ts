@@ -25,9 +25,9 @@ const registerSchema = z
     message: "يجب اختيار التخصص",
     path: ["specialtyId"],
   })
-  .refine((d) => d.role !== "DOCTOR" || (d.whatsapp && d.whatsapp.trim().length > 0), {
-    message: "يجب إدخال رقم الواتساب",
-    path: ["whatsapp"],
+  .refine((d) => d.role !== "DOCTOR" || (d.phone && d.phone.replace(/\D/g, "").length >= 9), {
+    message: "رقم الهاتف مطلوب للطبيب (9 أرقام على الأقل)",
+    path: ["phone"],
   });
 
 export async function POST(req: Request) {
@@ -56,7 +56,9 @@ export async function POST(req: Request) {
       }
     } else {
       email = (data.email ?? "").trim();
-      phone = (data.phone ?? "").trim() || null;
+      const phoneDigits = (data.phone ?? "").replace(/\D/g, "");
+      const normalizedPhone = phoneDigits.slice(-9);
+      phone = normalizedPhone ? (normalizedPhone.startsWith("0") ? normalizedPhone : "0" + normalizedPhone) : null;
       const { data: existingUser } = await supabaseAdmin.from("User").select("id").eq("email", email).maybeSingle();
       if (existingUser) {
         return NextResponse.json({ error: "البريد الإلكتروني مسجّل بالفعل" }, { status: 400 });
@@ -102,11 +104,16 @@ export async function POST(req: Request) {
 
     if (data.role === "DOCTOR") {
       const specialtyId = data.specialtyId ?? (await supabaseAdmin.from("Specialty").select("id").limit(1).single()).data?.id;
+      const whatsappRaw = (data.whatsapp ?? "").trim().replace(/\D/g, "").slice(-9)
+        ? (data.whatsapp ?? "").trim()
+        : (data.phone ?? "").trim();
+      const whatsappDigits = whatsappRaw.replace(/\D/g, "").slice(-9);
+      const whatsappValue = whatsappDigits ? `972${whatsappDigits}` : null;
       if (specialtyId) {
         await supabaseAdmin.from("Doctor").insert({
           userId,
           specialtyId,
-          whatsapp: (data.whatsapp ?? "").replace(/\D/g, "").slice(-9) ? `972${(data.whatsapp ?? "").replace(/\D/g, "").slice(-9)}` : null,
+          whatsapp: whatsappValue,
           status: "PENDING",
           experienceYears: 0,
           consultationFee: 0,
