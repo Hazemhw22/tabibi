@@ -74,10 +74,14 @@ export default async function DoctorPatientsPage({
 
   const { data: doctor } = await supabaseAdmin
     .from("Doctor")
-    .select("id, consultationFee")
+    .select("id, consultationFee, specialty:Specialty(nameAr)")
     .eq("userId", session.user.id)
     .single();
   if (!doctor) redirect("/dashboard/doctor/setup");
+
+  const isDentist =
+    ((doctor as { specialty?: { nameAr?: string | null } | null }).specialty?.nameAr ?? "").trim() ===
+    "طب أسنان";
 
   const { q, id: selectedId, source: selectedSource } = await searchParams;
 
@@ -251,6 +255,7 @@ export default async function DoctorPatientsPage({
         selectedId={selectedId ?? null}
         doctorId={doctor.id}
         defaultFee={(doctor as { consultationFee?: number }).consultationFee ?? 0}
+        isDentist={isDentist}
       />
     </div>
   );
