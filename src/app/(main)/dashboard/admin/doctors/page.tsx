@@ -43,10 +43,11 @@ export default async function AdminDoctorsPage() {
             <div className="space-y-3">
               {pending.map((d: Record<string, unknown>) => (
                 <div key={d.id as string} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                  <div>
+                  <Link href={`/dashboard/admin/doctors/${d.id}`} className="hover:opacity-90 min-w-0 flex-1">
                     <p className="font-medium text-gray-900">{(d.user as { name?: string })?.name ?? "—"}</p>
                     <p className="text-sm text-gray-500">{(d.user as { email?: string })?.email} • {(d.specialty as { nameAr?: string })?.nameAr}</p>
-                  </div>
+                    <span className="text-xs text-blue-600">عرض التفاصيل</span>
+                  </Link>
                   <AdminDoctorActions doctorId={d.id as string} subscriptionPeriod={d.subscriptionPeriod as string} status="PENDING" isPending showSubscription={false} />
                 </div>
               ))}
@@ -76,7 +77,7 @@ export default async function AdminDoctorsPage() {
                 className="rounded-xl border bg-white p-3 flex flex-col gap-2"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <Link href={`/dashboard/admin/doctors/${d.id}`} className="min-w-0 flex-1 hover:opacity-90">
                     <p className="font-semibold text-gray-900 text-sm truncate">
                       {(d.user as { name?: string })?.name ?? "—"}
                     </p>
@@ -86,7 +87,8 @@ export default async function AdminDoctorsPage() {
                     <p className="text-xs text-gray-600 mt-1">
                       {(d.specialty as { nameAr?: string })?.nameAr ?? "—"}
                     </p>
-                  </div>
+                    <span className="text-xs text-blue-600 mt-1 inline-block">عرض التفاصيل ←</span>
+                  </Link>
                   <Badge
                     variant={
                       d.status === "APPROVED"
@@ -157,12 +159,15 @@ export default async function AdminDoctorsPage() {
                 {list.map((d: Record<string, unknown>) => (
                   <tr key={d.id as string} className="hover:bg-gray-50/80 transition-colors">
                     <td className="py-3 pr-3 align-top">
-                      <p className="font-medium text-gray-900">
-                        {(d.user as { name?: string })?.name ?? "—"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {(d.user as { email?: string })?.email}
-                      </p>
+                      <Link href={`/dashboard/admin/doctors/${d.id}`} className="block hover:opacity-90">
+                        <p className="font-medium text-gray-900">
+                          {(d.user as { name?: string })?.name ?? "—"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(d.user as { email?: string })?.email}
+                        </p>
+                        <span className="text-xs text-blue-600">عرض التفاصيل</span>
+                      </Link>
                     </td>
                     <td className="py-3 align-top">
                       <span className="text-sm text-gray-700">
