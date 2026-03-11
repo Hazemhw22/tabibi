@@ -362,8 +362,8 @@ export default async function HomePage() {
               {
                 step: "٣",
                 icon: CreditCard,
-                title: "ادفع بأمان",
-                desc: "ادفع عبر Stripe أو PayPal بكل أمان وستصلك تأكيد الحجز فوراً",
+                title: "تابع دفعاتك والديون",
+                desc: "تابع دفعاتك والديون الخاصة بك من لوحة تحكمك بكل وضوح",
                 color: "bg-purple-600",
               },
             ].map((item, i) => (
