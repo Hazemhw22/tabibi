@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Clock, MapPin, CreditCard, Loader2, ChevronRight, ChevronLeft, LogIn } from "lucide-react";
@@ -53,19 +53,65 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
   const [selectedClinic, setSelectedClinic] = useState<string>(clinics[0]?.id || "");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [bookedData, setBookedData] = useState<{
+    bookedTimeSlotIds: string[];
+    bookedStartTimes: string[];
+  } | null>(null);
   const [, setStep] = useState<"date" | "slot" | "confirm">("date");
   const [dateOffset, setDateOffset] = useState(0);
 
   const dates = generateDates(21);
   const visibleDates = dates.slice(dateOffset, dateOffset + 7);
 
-  const availableSlotsForDate = selectedDate
-    ? timeSlots.filter(
-        (slot) =>
-          slot.dayOfWeek === getDay(selectedDate) &&
-          (!selectedClinic || !slot.clinicId || slot.clinicId === selectedClinic)
-      )
-    : [];
+  useEffect(() => {
+    if (!selectedDate || !isLoggedIn) {
+      setBookedData(null);
+      return;
+    }
+    setSlotsLoading(true);
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    fetch(`/api/doctors/${doctor.id}/booked-slots?date=${dateStr}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.bookedTimeSlotIds !== undefined && data.bookedStartTimes !== undefined) {
+          setBookedData({
+            bookedTimeSlotIds: data.bookedTimeSlotIds ?? [],
+            bookedStartTimes: data.bookedStartTimes ?? [],
+          });
+        } else {
+          setBookedData(null);
+        }
+      })
+      .catch(() => setBookedData(null))
+      .finally(() => setSlotsLoading(false));
+  }, [selectedDate, doctor.id, isLoggedIn]);
+
+  const { allSlotsSorted, availableWithTurn } = useMemo(() => {
+    if (!selectedDate) return { allSlotsSorted: [], availableWithTurn: [] };
+    const dayNum = getDay(selectedDate);
+    const slots = timeSlots.filter(
+      (slot) =>
+        slot.dayOfWeek === dayNum &&
+        (!selectedClinic || !slot.clinicId || slot.clinicId === selectedClinic)
+    );
+    const sorted = [...slots].sort(
+      (a, b) => a.startTime.localeCompare(b.startTime)
+    );
+    if (sorted.length === 0) return { allSlotsSorted: sorted, availableWithTurn: [] };
+    const bookedIds = new Set(bookedData?.bookedTimeSlotIds ?? []);
+    const bookedTimes = new Set(bookedData?.bookedStartTimes ?? []);
+    const available = sorted.filter(
+      (s) =>
+        !bookedIds.has(s.id) &&
+        !bookedTimes.has(s.startTime)
+    );
+    const withTurn = available.map((slot) => {
+      const turnIndex = sorted.findIndex((s) => s.id === slot.id) + 1;
+      return { slot, turnNumber: turnIndex };
+    });
+    return { allSlotsSorted: sorted, availableWithTurn: withTurn };
+  }, [selectedDate, selectedClinic, timeSlots, bookedData]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -170,6 +216,35 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5 px-4 sm:p-6 sm:pt-0">
+          {/* اختيار العيادة - أولاً */}
+          {clinics.length > 1 ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                اختر العيادة التي تريد الذهاب إليها
+              </label>
+              <select
+                value={selectedClinic}
+                onChange={(e) => {
+                  setSelectedClinic(e.target.value);
+                  setSelectedDate(null);
+                  setSelectedSlot(null);
+                }}
+                className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                {clinics.map((clinic) => (
+                  <option key={clinic.id} value={clinic.id}>
+                    {clinic.name} - {clinic.address}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : clinics.length === 1 ? (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <MapPin className="h-4 w-4 text-blue-600" />
+              <span>ستذهب إلى: <strong>{clinics[0].name}</strong></span>
+            </div>
+          ) : null}
+
           {/* Date Picker */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -186,7 +261,11 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
               </button>
               <div className="flex-1 grid grid-cols-7 gap-0.5 sm:gap-1 min-w-0">
                 {visibleDates.map((date) => {
-                  const daySlots = timeSlots.filter((s) => s.dayOfWeek === getDay(date));
+                  const daySlots = timeSlots.filter(
+                    (s) =>
+                      s.dayOfWeek === getDay(date) &&
+                      (!selectedClinic || !s.clinicId || s.clinicId === selectedClinic)
+                  );
                   const hasSlots = daySlots.length > 0;
                   const isSelected =
                     selectedDate?.toDateString() === date.toDateString();
@@ -230,15 +309,20 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
           {selectedDate && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                الأوقات المتاحة ليوم {format(selectedDate, "EEEE d/M", { locale: undefined })}
+                الأدوار المتاحة ليوم {format(selectedDate, "EEEE d/M", { locale: undefined })}
               </label>
-              {availableSlotsForDate.length === 0 ? (
+              {slotsLoading ? (
+                <p className="text-sm text-gray-500 text-center py-3 bg-gray-50 rounded-lg flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  جاري تحميل الأدوار...
+                </p>
+              ) : availableWithTurn.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-3 bg-gray-50 rounded-lg">
-                  لا توجد مواعيد متاحة
+                  لا توجد أدوار متاحة
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  {availableSlotsForDate.map((slot) => (
+                  {availableWithTurn.map(({ slot, turnNumber }) => (
                     <button
                       key={slot.id}
                       onClick={() => handleSlotSelect(slot)}
@@ -249,31 +333,11 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
                       }`}
                     >
                       <Clock className="h-3.5 w-3.5" />
-                      {slot.startTime}
+                      دور {turnNumber}
                     </button>
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Clinic Select */}
-          {clinics.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                العيادة
-              </label>
-              <select
-                value={selectedClinic}
-                onChange={(e) => setSelectedClinic(e.target.value)}
-                className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                {clinics.map((clinic) => (
-                  <option key={clinic.id} value={clinic.id}>
-                    {clinic.name} - {clinic.address}
-                  </option>
-                ))}
-              </select>
             </div>
           )}
 

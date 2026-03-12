@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { DAYS_AR } from "@/lib/utils";
+import { DAYS_AR, cn } from "@/lib/utils";
 import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 interface Clinic {
@@ -38,6 +38,9 @@ export default function DoctorClinicsPage() {
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [doctorLocationId, setDoctorLocationId] = useState<string | null>(null);
   const [selectedClinicId, setSelectedClinicId] = useState<string>("");
+  /** حسب الساعات = أوقات محددة | حسب الدور = عدد أدوار خلال فترة */
+  const [scheduleMode, setScheduleMode] = useState<"hours" | "turns">("hours");
+  const [turnForm, setTurnForm] = useState({ dayOfWeek: 0, fromTime: "09:00", toTime: "17:00", turnsCount: 10 });
 
   useEffect(() => {
     fetch("/api/doctor/profile")
@@ -151,6 +154,50 @@ export default function DoctorClinicsPage() {
     const updated = [...timeSlots];
     updated[index] = { ...updated[index], [field]: value };
     setTimeSlots(updated);
+  };
+
+  /** توليد أوقات من عدد الأدوار: اليوم + من ساعة إلى ساعة + عدد الأدوار */
+  const addTurnsAsSlots = () => {
+    if (!selectedClinicId) {
+      toast.error("يرجى اختيار عيادة أولاً");
+      return;
+    }
+    const { dayOfWeek, fromTime, toTime, turnsCount } = turnForm;
+    if (!turnsCount || turnsCount < 1 || turnsCount > 100) {
+      toast.error("عدد الأدوار يجب أن يكون بين 1 و 100");
+      return;
+    }
+    const [fromH, fromM] = fromTime.split(":").map(Number);
+    const [toH, toM] = toTime.split(":").map(Number);
+    const fromMins = fromH * 60 + fromM;
+    const toMins = toH * 60 + toM;
+    if (toMins <= fromMins) {
+      toast.error("وقت انتهاء العمل يجب أن يكون بعد وقت البداية");
+      return;
+    }
+    const totalMins = toMins - fromMins;
+    const minsPerTurn = Math.floor(totalMins / turnsCount);
+    if (minsPerTurn < 5) {
+      toast.error("المدة الزمنية قصيرة جداً. قلّل عدد الأدوار أو وسّع الفترة.");
+      return;
+    }
+    const newSlots: TimeSlot[] = [];
+    for (let i = 0; i < turnsCount; i++) {
+      const startMins = fromMins + i * minsPerTurn;
+      const endMins = startMins + minsPerTurn;
+      const sh = Math.floor(startMins / 60);
+      const sm = startMins % 60;
+      const eh = Math.floor(endMins / 60);
+      const em = endMins % 60;
+      newSlots.push({
+        dayOfWeek,
+        startTime: `${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`,
+        endTime: `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`,
+        clinicId: selectedClinicId,
+      });
+    }
+    setTimeSlots([...timeSlots, ...newSlots]);
+    toast.success(`تم إضافة ${turnsCount} دوراً لليوم ${DAYS_AR[dayOfWeek]}`);
   };
 
   const handleSave = async () => {
@@ -332,13 +379,97 @@ export default function DoctorClinicsPage() {
                 className="w-full h-9 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white mb-3"
               >
                 <option value="">اختر العيادة</option>
-                {clinics.map((clinic) => (
-                  <option key={clinic.id ?? clinic.name} value={clinic.id}>
+                {clinics.map((clinic, idx) => (
+                  <option key={clinic.id ?? `c${idx}`} value={clinic.id ?? `c${idx}`}>
                     {clinic.name || "عيادة بدون اسم"}
                   </option>
                 ))}
               </select>
             </div>
+
+            {selectedClinicId && (
+              <div className="flex gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setScheduleMode("hours")}
+                  className={cn(
+                    "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors",
+                    scheduleMode === "hours"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                  )}
+                >
+                  حسب الساعات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScheduleMode("turns")}
+                  className={cn(
+                    "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors",
+                    scheduleMode === "turns"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                  )}
+                >
+                  حسب الدور
+                </button>
+              </div>
+            )}
+
+            {selectedClinicId && scheduleMode === "turns" && (
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 space-y-3 mb-4">
+                <p className="text-xs font-medium text-amber-800">
+                  حدد اليوم، ساعات عمل العيادة، وعدد الأدوار (عدد المرضى)
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={turnForm.dayOfWeek}
+                    onChange={(e) =>
+                      setTurnForm((p) => ({ ...p, dayOfWeek: Number(e.target.value) }))
+                    }
+                    className="h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[120px]"
+                  >
+                    {DAYS_AR.map((day, d) => (
+                      <option key={d} value={d}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-gray-500 text-sm">من</span>
+                  <input
+                    type="time"
+                    value={turnForm.fromTime}
+                    onChange={(e) => setTurnForm((p) => ({ ...p, fromTime: e.target.value }))}
+                    className="h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-500 text-sm">إلى</span>
+                  <input
+                    type="time"
+                    value={turnForm.toTime}
+                    onChange={(e) => setTurnForm((p) => ({ ...p, toTime: e.target.value }))}
+                    className="h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    placeholder="عدد الأدوار"
+                    value={turnForm.turnsCount || ""}
+                    onChange={(e) =>
+                      setTurnForm((p) => ({
+                        ...p,
+                        turnsCount: Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                      }))
+                    }
+                    className="w-24 h-10"
+                  />
+                  <Button size="sm" onClick={addTurnsAsSlots} className="gap-1">
+                    <Plus className="h-3.5 w-3.5" />
+                    إضافة الأدوار
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {!selectedClinicId && (
               <p className="text-sm text-gray-500 text-center py-4">
@@ -349,12 +480,17 @@ export default function DoctorClinicsPage() {
             {selectedClinicId &&
               timeSlots.filter((s) => s.clinicId === selectedClinicId).length === 0 && (
               <p className="text-sm text-gray-500 text-center py-4">
-                لم تحدد أوقات عمل بعد. انقر &quot;إضافة وقت&quot; لإضافة جدولك.
+                لم تحدد أوقات عمل بعد. {scheduleMode === "hours" ? "انقر إضافة وقت" : "استخدم النموذج أعلاه لإضافة أدوار"} أو غيّر إلى &quot;حسب الساعات&quot; لإضافة أوقات يدوياً.
               </p>
             )}
 
-            {selectedClinicId &&
-              timeSlots.map((slot, index) => {
+            {selectedClinicId && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs font-semibold text-gray-700 mb-2">
+                  جدول المواعيد المُضافة {timeSlots.filter((s) => s.clinicId === selectedClinicId).length > 0 && `(${timeSlots.filter((s) => s.clinicId === selectedClinicId).length})`}
+                </p>
+                <div className="space-y-2">
+                  {timeSlots.map((slot, index) => {
                 if (slot.clinicId !== selectedClinicId) return null;
                 return (
               <div key={slot.id ?? index} className="flex flex-wrap items-center gap-3">
@@ -396,7 +532,10 @@ export default function DoctorClinicsPage() {
                 </button>
               </div>
             );
-              })}
+                  })}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

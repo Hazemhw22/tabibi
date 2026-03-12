@@ -16,7 +16,7 @@ async function getDoctor(id: string) {
       user:User(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain, locationId),
-      timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive)
+      timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId)
     `)
     .eq("id", id)
     .single();
@@ -113,14 +113,24 @@ export default async function DoctorProfilePage({
     if (!clinicPatient) notFound();
   }
 
-  type SlotItem = { id?: string; dayOfWeek: number; startTime?: string; endTime?: string; isActive?: boolean };
-  const timeSlotsByDay = (doctor.timeSlots ?? []).reduce(
+  type SlotItem = { id?: string; dayOfWeek: number; startTime?: string; endTime?: string; clinicId?: string | null };
+  const slotsByDay = (doctor.timeSlots ?? []).reduce(
     (acc: Record<number, SlotItem[]>, slot: SlotItem) => {
       if (!acc[slot.dayOfWeek]) acc[slot.dayOfWeek] = [];
       acc[slot.dayOfWeek].push(slot);
       return acc;
     },
     {} as Record<number, SlotItem[]>
+  );
+  /** لكل يوم: عرض "من X إلى Y" فقط (أول بداية إلى آخر نهاية) */
+  const hoursRangeByDay = Object.fromEntries(
+    Object.entries(slotsByDay).map(([day, slots]) => {
+      const starts = slots.map((s) => s.startTime || "00:00").filter(Boolean);
+      const ends = slots.map((s) => s.endTime || "23:59").filter(Boolean);
+      const from = starts.length ? starts.sort()[0] : "";
+      const to = ends.length ? ends.sort().reverse()[0] : "";
+      return [day, { from, to }];
+    })
   );
 
   const clinicsForView =
@@ -273,33 +283,31 @@ export default async function DoctorProfilePage({
             </Card>
           )}
 
-          {Object.keys(timeSlotsByDay).length > 0 && (
+          {Object.keys(slotsByDay).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">ساعات العمل</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-2">
-                  {Object.entries(timeSlotsByDay).map(([day, slots]) => (
-                    <div
-                      key={day}
-                      className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                    >
-                      <span className="text-sm font-medium text-gray-700">
-                        {DAYS_AR[Number(day)]}
-                      </span>
-                      <div className="flex flex-wrap gap-1.5 justify-end">
-                        {(slots as { id: string; startTime: string; endTime: string }[]).map((slot) => (
-                          <span
-                            key={slot.id}
-                            className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full"
-                          >
-                            {slot.startTime} - {slot.endTime}
-                          </span>
-                        ))}
+                  {Object.entries(slotsByDay).map(([day, slots]) => {
+                    const arr = slots as { startTime: string; endTime: string }[];
+                    const minStart = arr.reduce((m, s) => (s.startTime < m ? s.startTime : m), arr[0]?.startTime ?? "23:59");
+                    const maxEnd = arr.reduce((m, s) => (s.endTime > m ? s.endTime : m), arr[0]?.endTime ?? "00:00");
+                    return (
+                      <div
+                        key={day}
+                        className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                      >
+                        <span className="text-sm font-medium text-gray-700">
+                          {DAYS_AR[Number(day)]}
+                        </span>
+                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                          من {minStart} إلى {maxEnd}
+                        </span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
