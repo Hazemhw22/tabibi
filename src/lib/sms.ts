@@ -1,10 +1,7 @@
 /**
  * إرسال رسالة SMS للمريض عند إضافة دفعة أو خدمة.
- * يستخدم Twilio REST API إذا وُجدت المتغيرات: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
- * إذا لم تُضبط، لا يتم إرسال أي رسالة ولا يفشل الطلب.
- *
- * للتشخيص: راقب الطرفية (Terminal) حيث يعمل npm run dev — تظهر سطور [SMS] توضح:
- * هل الرقم صالح، هل Twilio مضبوط، الرقم المُرسل إليه، ونتيجة Twilio.
+ * يستخدم Astra API (astra.htd.ps) إذا وُجد SMS_API_ID.
+ * للتشخيص: راقب الطرفية حيث يعمل npm run dev — تظهر سطور [SMS].
  */
 
 /**
@@ -24,51 +21,48 @@ export function normalizePhoneForSms(phone: string | null | undefined): string |
   return `+${digits}`;
 }
 
+/** تحويل رقم إلى صيغة Astra (970xxxxxxxx) */
+function toAstraPhoneFormat(phone: string | null | undefined): string | null {
+  const normalized = normalizePhoneForSms(phone);
+  if (!normalized) return null;
+  const digits = normalized.replace(/\D/g, "");
+  if (digits.startsWith("972")) return `970${digits.slice(3)}`;
+  if (digits.startsWith("970")) return digits;
+  return `970${digits}`;
+}
+
 /**
- * إرسال SMS إلى رقم الهاتف عبر Twilio REST API.
- * @returns true إذا تم الإرسال أو إذا SMS غير مضبوط (لا خطأ)، false عند فشل الإرسال.
+ * إرسال SMS عبر Astra API.
+ * .env.local: SMS_API_ID=xxx (مطلوب), SMS_SENDER=Tabibi (اختياري)
  */
 export async function sendSms(to: string, body: string): Promise<boolean> {
-  const normalized = normalizePhoneForSms(to);
-  if (!normalized) {
+  const astraTo = toAstraPhoneFormat(to);
+  if (!astraTo) {
     console.warn("[SMS] رقم غير صالح أو فارغ، تم تخطي الإرسال. الرقم المدخل:", JSON.stringify(to));
     return true;
   }
 
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-  if (!accountSid || !authToken || !fromNumber) {
+  const apiId = process.env.SMS_API_ID;
+  if (!apiId) {
     console.warn(
-      "[SMS] Twilio غير مضبوط. أضف TWILIO_ACCOUNT_SID و TWILIO_AUTH_TOKEN و TWILIO_PHONE_NUMBER إلى ملف .env.local ثم أعد تشغيل السيرفر (npm run dev)."
+      "[SMS] Astra SMS غير مضبوط. أضف SMS_API_ID إلى .env.local ثم أعد تشغيل السيرفر."
     );
     return true;
   }
 
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-  const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+  const sender = process.env.SMS_SENDER || "Tabibi";
+  const baseUrl = process.env.SMS_API_URL || "http://astra.htd.ps/API/SendSMS.aspx";
+  const url = `${baseUrl}?id=${encodeURIComponent(apiId)}&sender=${encodeURIComponent(sender)}&to=${encodeURIComponent(astraTo)}&msg=${encodeURIComponent(body)}`;
 
   try {
-    const form = new URLSearchParams({
-      To: normalized,
-      From: fromNumber,
-      Body: body,
-    });
-    console.log("[SMS] جاري الإرسال إلى:", normalized, "(من:", fromNumber + ")");
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: form.toString(),
-    });
+    console.log("[SMS] جاري الإرسال إلى:", astraTo, "(مرسل:", sender + ")");
+    const res = await fetch(url, { method: "GET" });
     const resText = await res.text();
     if (!res.ok) {
-      console.error("[SMS] Twilio خطأ:", res.status, resText);
+      console.error("[SMS] Astra خطأ:", res.status, resText);
       return false;
     }
-    console.log("[SMS] تم إرسال الرسالة بنجاح إلى", normalized);
+    console.log("[SMS] تم إرسال الرسالة بنجاح إلى", astraTo);
     return true;
   } catch (err) {
     console.error("[SMS] خطأ في الإرسال:", err);
@@ -82,11 +76,18 @@ export function buildTransactionSmsMessage(options: {
   amount: number;
   description: string;
   doctorName?: string;
+  /** باقي الرصيد بعد المعاملة (للدفعات فقط) */
+  balanceAfter?: number;
 }): string {
-  const { type, amount, description, doctorName } = options;
+  const { type, amount, description, doctorName, balanceAfter } = options;
   const name = doctorName ? ` د. ${doctorName}` : "";
   if (type === "PAYMENT") {
-    return `Tabibi: تم تسجيل دفعة قدرها ₪${amount} في ملفك لدى${name}. ${description || ""}`.trim();
+    let msg = `Tabibi: تم تسجيل دفعة قدرها ₪${amount} في ملفك لدى${name}.`;
+    if (description) msg += ` ${description}.`;
+    if (balanceAfter !== undefined && balanceAfter !== null) {
+      msg += ` باقي الرصيد: ₪${Math.round(balanceAfter)}`;
+    }
+    return msg.trim();
   }
   return `Tabibi: تم تسجيل خدمة (${description}) بقيمة ₪${amount} في ملفك لدى${name}.`.trim();
 }

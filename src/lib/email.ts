@@ -13,23 +13,28 @@ export async function sendTransactionEmail(options: {
   amount: number;
   description: string;
   doctorName?: string | null;
+  /** باقي الرصيد بعد المعاملة — يظهر في رسالة الدفعة فقط */
+  balanceAfter?: number;
 }) {
   if (!resend || !apiKey) {
     console.warn("[EMAIL] Resend غير مضبوط (RESEND_API_KEY). تم تخطي الإرسال.");
     return;
   }
 
-  const { to, type, amount, description, doctorName } = options;
+  const { to, type, amount, description, doctorName, balanceAfter } = options;
   const friendlyDoctor = doctorName ? `د. ${doctorName}` : "الطبيب";
   const subject =
     type === "PAYMENT"
       ? `تم تسجيل دفعة جديدة في ملفك`
       : `تم تسجيل خدمة طبية جديدة في ملفك`;
 
-  const bodyText =
+  let bodyText =
     type === "PAYMENT"
       ? `تم تسجيل دفعة قدرها ₪${amount} في ملفك عند ${friendlyDoctor}. الوصف: ${description || "-"}`
       : `تم تسجيل خدمة طبية (${description}) بقيمة ₪${amount} في ملفك عند ${friendlyDoctor}.`;
+  if (type === "PAYMENT" && balanceAfter !== undefined && balanceAfter !== null) {
+    bodyText += ` باقي الرصيد: ₪${Math.round(balanceAfter)}`;
+  }
 
   const html = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">

@@ -89,6 +89,20 @@ export async function POST(
       return NextResponse.json({ error: "فشل إضافة المعاملة" }, { status: 500 });
     }
 
+    /* ── حساب الرصيد بعد المعاملة (للدفعات) ───────────────────── */
+    let balanceAfter: number | undefined;
+    if (data.type === "PAYMENT") {
+      const { data: allTx } = await supabaseAdmin
+        .from("PlatformPatientTransaction")
+        .select("type, amount")
+        .eq("doctorId", doctor.id)
+        .eq("patientId", patientId);
+      balanceAfter = (allTx ?? []).reduce(
+        (s, t) => (t.type === "PAYMENT" ? s + t.amount : s - t.amount),
+        0
+      );
+    }
+
     let smsSent: boolean | null = null;
     const { data: patientUser } = await supabaseAdmin
       .from("User")
@@ -102,6 +116,7 @@ export async function POST(
         amount: data.amount,
         description: data.description,
         doctorName: session.user.name ?? undefined,
+        balanceAfter,
       });
       smsSent = await sendSms(phone, msg);
     } else {
@@ -117,6 +132,7 @@ export async function POST(
         amount: data.amount,
         description: data.description,
         doctorName: session.user.name,
+        balanceAfter,
       });
     }
 

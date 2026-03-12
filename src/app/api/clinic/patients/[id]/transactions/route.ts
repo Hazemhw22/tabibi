@@ -71,12 +71,26 @@ export async function POST(
       return NextResponse.json({ error: "فشل إضافة المعاملة" }, { status: 500 });
     }
 
+    /* ── حساب الرصيد بعد المعاملة (للدفعات) ───────────────────── */
+    let balanceAfter: number | undefined;
+    if (data.type === "PAYMENT") {
+      const { data: allTx } = await supabaseAdmin
+        .from("ClinicTransaction")
+        .select("type, amount")
+        .eq("clinicPatientId", id);
+      balanceAfter = (allTx ?? []).reduce(
+        (s, t) => (t.type === "PAYMENT" ? s + t.amount : s - t.amount),
+        0
+      );
+    }
+
     /* ── WhatsApp / SMS ─────────────────────────────────────── */
     const msg = buildTransactionSmsMessage({
       type: data.type,
       amount: data.amount,
       description: data.description,
       doctorName: session.user.name ?? undefined,
+      balanceAfter,
     });
     let smsSent: boolean | null = null;
     const patientWhatsapp = (patient as { whatsapp?: string | null }).whatsapp;
@@ -103,6 +117,7 @@ export async function POST(
         amount: data.amount,
         description: data.description,
         doctorName: session.user.name,
+        balanceAfter,
       });
     }
 

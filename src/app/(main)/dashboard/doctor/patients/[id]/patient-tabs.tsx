@@ -137,7 +137,7 @@ export default function PatientTabs({
       if (res.ok) {
         toast.success("تم تسجيل الدفعة ✓");
         if (data.smsSent === false) {
-          toast.warning("لم تُرسل رسالة SMS للمريض. تحقق من رقم الهاتف وإعدادات Twilio في .env");
+          toast.warning("لم تُرسل رسالة SMS للمريض. تحقق من رقم الهاتف وإعدادات SMS في .env");
         }
         setShowPayment(false);
         setPaymentAmount("");
@@ -179,7 +179,7 @@ export default function PatientTabs({
       if (res.ok) {
         toast.success("تم إضافة الخدمة ✓");
         if (data.smsSent === false) {
-          toast.warning("لم تُرسل رسالة SMS للمريض. تحقق من رقم الهاتف وإعدادات Twilio في .env");
+          toast.warning("لم تُرسل رسالة SMS للمريض. تحقق من رقم الهاتف وإعدادات SMS في .env");
         }
         setShowService(false);
         setServiceDesc("");
