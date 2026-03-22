@@ -6,6 +6,25 @@ import { Search, SlidersHorizontal, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
+
+const LOCATION_FILTER_OPTIONS = [
+  { value: "", label: "الكل" },
+  ...WEST_BANK_LOCATIONS.map((loc) => ({
+    value: loc.id,
+    label:
+      loc.type === "governorate"
+        ? `محافظة ${loc.nameAr}`
+        : `${loc.nameAr} - ${loc.governorateAr}`,
+  })),
+];
+
+const SORT_OPTIONS = [
+  { value: "rating", label: "الأعلى تقييماً" },
+  { value: "price_asc", label: "السعر: الأقل أولاً" },
+  { value: "price_desc", label: "السعر: الأعلى أولاً" },
+  { value: "experience", label: "الأكثر خبرة" },
+];
 
 interface Specialty {
   id: string;
@@ -173,16 +192,15 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             ترتيب حسب
           </label>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="rating">الأعلى تقييماً</option>
-            <option value="price_asc">السعر: الأقل أولاً</option>
-            <option value="price_desc">السعر: الأعلى أولاً</option>
-            <option value="experience">الأكثر خبرة</option>
-          </select>
+          <div className="w-full min-w-0">
+            <DropdownSelect
+              value={sort}
+              onChange={setSort}
+              options={SORT_OPTIONS}
+              placeholder="ترتيب"
+              buttonClassName="h-10 border-gray-300"
+            />
+          </div>
         </div>
 
         {/* Buttons */}

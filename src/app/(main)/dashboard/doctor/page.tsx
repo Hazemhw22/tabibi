@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Plus,
   Receipt,
-  CreditCard,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -238,7 +237,14 @@ export default async function DoctorDashboard() {
     source: "platform",
     raw: apt,
   }));
-  const clinicRows: TodayRow[] = ((todayClinic ?? []) as any[]).map((apt) => {
+  type ClinicAptRow = {
+    id: string;
+    time: string;
+    duration?: number;
+    status: string;
+    clinicPatient?: { name?: string; phone?: string } | null;
+  };
+  const clinicRows: TodayRow[] = ((todayClinic ?? []) as ClinicAptRow[]).map((apt) => {
     const start = apt.time;
     const dur = apt.duration ?? 30;
     const [h, m] = start.split(":").map(Number);

@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { notifyAppointmentBooked } from "@/lib/notifications";
+import {
+  countAppointmentsForSlotOnDay,
+  getAppointmentRowsForSlotOnDay,
+  getTimeSlotCapacity,
+} from "@/lib/appointment-capacity";
+import { buildOccupiedTurnsOrdered, firstFreeSlotTurn } from "@/lib/appointment-slot-turn";
+import { getAppointmentFinanceSnapshot } from "@/lib/medical-center-finance";
+import { formatDateNumeric } from "@/lib/utils";
 import { z } from "zod";
 
 const appointmentSchema = z.object({
@@ -14,6 +22,8 @@ const appointmentSchema = z.object({
   endTime: z.string(),
   notes: z.string().optional(),
   fee: z.number().positive(),
+  /** رقم الدور 1..slotCapacity ضمن نفس الفترة */
+  slotTurn: z.number().int().min(1).max(100).optional(),
 });
 
 export async function POST(req: Request) {
@@ -49,21 +59,70 @@ export async function POST(req: Request) {
     const endOfDay = new Date(startOfDay);
     endOfDay.setUTCDate(endOfDay.getUTCDate() + 1);
 
-    const { data: existing } = await supabaseAdmin
-      .from("Appointment")
-      .select("id")
-      .eq("doctorId", data.doctorId)
-      .gte("appointmentDate", startOfDay.toISOString())
-      .lt("appointmentDate", endOfDay.toISOString())
-      .eq("startTime", data.startTime)
-      .in("status", ["DRAFT", "CONFIRMED"])
-      .limit(1);
+    let resolvedSlotTurn: number | null = null;
 
-    if (existing?.length) {
-      return NextResponse.json(
-        { error: "هذا الموعد محجوز بالفعل، يرجى اختيار وقت آخر" },
-        { status: 409 }
+    if (data.timeSlotId) {
+      const used = await countAppointmentsForSlotOnDay(
+        data.doctorId,
+        data.appointmentDate,
+        data.timeSlotId
       );
+      const cap = await getTimeSlotCapacity(data.timeSlotId);
+      if (used >= cap) {
+        return NextResponse.json(
+          { error: "هذا الموعد محجوز بالفعل، يرجى اختيار وقت آخر" },
+          { status: 409 }
+        );
+      }
+
+      const rows = await getAppointmentRowsForSlotOnDay(
+        data.doctorId,
+        data.appointmentDate,
+        data.timeSlotId
+      );
+      const occupied = buildOccupiedTurnsOrdered(rows, cap);
+
+      if (data.slotTurn !== undefined) {
+        if (data.slotTurn > cap) {
+          return NextResponse.json(
+            { error: `رقم الدور يجب أن يكون بين 1 و ${cap}` },
+            { status: 400 }
+          );
+        }
+        if (occupied.has(data.slotTurn)) {
+          return NextResponse.json(
+            { error: "هذا الدور محجوز بالفعل، اختر دوراً آخر" },
+            { status: 409 }
+          );
+        }
+        resolvedSlotTurn = data.slotTurn;
+      } else {
+        const free = firstFreeSlotTurn(occupied, cap);
+        if (free === null) {
+          return NextResponse.json(
+            { error: "لا توجد أدوار متاحة لهذه الفترة" },
+            { status: 409 }
+          );
+        }
+        resolvedSlotTurn = free;
+      }
+    } else {
+      const { data: existing } = await supabaseAdmin
+        .from("Appointment")
+        .select("id")
+        .eq("doctorId", data.doctorId)
+        .gte("appointmentDate", startOfDay.toISOString())
+        .lt("appointmentDate", endOfDay.toISOString())
+        .eq("startTime", data.startTime)
+        .in("status", ["DRAFT", "CONFIRMED"])
+        .limit(1);
+
+      if (existing?.length) {
+        return NextResponse.json(
+          { error: "هذا الموعد محجوز بالفعل، يرجى اختيار وقت آخر" },
+          { status: 409 }
+        );
+      }
     }
 
     let patientId = session.user.id;
@@ -71,21 +130,31 @@ export async function POST(req: Request) {
       patientId = data.patientId;
     }
 
+    const fin = await getAppointmentFinanceSnapshot(data.doctorId);
+    const insertRow: Record<string, unknown> = {
+      patientId,
+      doctorId: data.doctorId,
+      clinicId: data.clinicId || null,
+      timeSlotId: data.timeSlotId || null,
+      appointmentDate: data.appointmentDate,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      notes: data.notes ?? null,
+      fee: data.fee,
+      status: "CONFIRMED",
+      paymentStatus: "UNPAID",
+    };
+    if (resolvedSlotTurn !== null) {
+      insertRow.slotTurn = resolvedSlotTurn;
+    }
+    if (fin.medicalCenterId) {
+      insertRow.medicalCenterId = fin.medicalCenterId;
+      insertRow.doctorClinicFeeSnapshot = fin.doctorClinicFeeSnapshot ?? 0;
+    }
+
     const { data: appointment, error: insertErr } = await supabaseAdmin
       .from("Appointment")
-      .insert({
-        patientId,
-        doctorId: data.doctorId,
-        clinicId: data.clinicId || null,
-        timeSlotId: data.timeSlotId || null,
-        appointmentDate: data.appointmentDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        notes: data.notes ?? null,
-        fee: data.fee,
-        status: "CONFIRMED",
-        paymentStatus: "UNPAID",
-      })
+      .insert(insertRow)
       .select("id")
       .single();
 
@@ -110,7 +179,7 @@ export async function POST(req: Request) {
     const doctorUserId = doctorUser?.userId;
     const doctorName   = (doctorUser?.user as { name?: string } | null)?.name ?? "الطبيب";
     const patientName  = session.user.name ?? "المريض";
-    const formattedDate = new Date(data.appointmentDate).toLocaleDateString("ar-SA");
+    const formattedDate = formatDateNumeric(data.appointmentDate);
 
     if (doctorUserId) {
       await notifyAppointmentBooked({

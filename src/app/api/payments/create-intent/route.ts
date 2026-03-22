@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
+import { formatDateNumeric } from "@/lib/utils";
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
             currency: "usd",
             product_data: {
               name: `موعد طبي - د. ${appointment.doctor.user.name}`,
-              description: `${appointment.doctor.specialty.nameAr} - ${appointment.startTime} - ${new Date(appointment.appointmentDate).toLocaleDateString("ar-PS")}`,
+              description: `${appointment.doctor.specialty.nameAr} - ${appointment.startTime} - ${formatDateNumeric(appointment.appointmentDate)}`,
             },
             unit_amount: Math.round(appointment.fee * 100),
           },

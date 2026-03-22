@@ -7,6 +7,18 @@ import { MapPin, Loader2, Navigation, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WEST_BANK_LOCATIONS, suggestLocationIdFromPlaceName } from "@/data/west-bank-locations";
 import { getStoredUserRole } from "./role-choice-modal";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
+
+const REGION_OPTIONS = [
+  { value: "", label: "اختر المدينة أو المحافظة" },
+  ...WEST_BANK_LOCATIONS.map((loc) => ({
+    value: loc.id,
+    label:
+      loc.type === "governorate"
+        ? `محافظة ${loc.nameAr}`
+        : `${loc.nameAr} - ${loc.governorateAr}`,
+  })),
+];
 
 const STORAGE_KEY = "tabibi-region-id";
 const DISMISSED_KEY = "tabibi-region-dismissed";
@@ -144,18 +156,15 @@ export default function RegionModal() {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           أو اختر من القائمة
         </label>
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          className="w-full h-11 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        >
-          <option value="">اختر المدينة أو المحافظة</option>
-          {WEST_BANK_LOCATIONS.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.type === "governorate" ? `محافظة ${loc.nameAr}` : `${loc.nameAr} - ${loc.governorateAr}`}
-            </option>
-          ))}
-        </select>
+        <div className="w-full min-w-0">
+          <DropdownSelect
+            value={selectedId}
+            onChange={setSelectedId}
+            options={REGION_OPTIONS}
+            placeholder="اختر المدينة أو المحافظة"
+            buttonClassName="h-11 border-gray-300"
+          />
+        </div>
 
         <div className="flex flex-col gap-2 mt-6">
           <div className="flex gap-2">

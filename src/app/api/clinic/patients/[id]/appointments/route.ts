@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createNotification } from "@/lib/notifications";
+import { formatDateNumeric } from "@/lib/utils";
 import { z } from "zod";
 
 const schema = z.object({
@@ -60,7 +61,7 @@ export async function POST(
       return NextResponse.json({ error: "فشل إضافة الموعد" }, { status: 500 });
     }
 
-    const formattedDate = new Date(data.date).toLocaleDateString("ar-SA");
+    const formattedDate = formatDateNumeric(data.date);
 
     /* إشعار للطبيب دائماً */
     await createNotification({

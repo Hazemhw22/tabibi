@@ -845,7 +845,7 @@ export default function PatientsView({
               {activeTab === "info" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-700">معلومات المريض</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">معلومات المريض</h3>
                     {selectedPatient.source === "clinic" && (
                       <Button
                         size="sm"
@@ -882,8 +882,8 @@ export default function PatientsView({
                       !selectedPatient.address &&
                       !selectedPatient.email &&
                       !selectedPatient.whatsapp && (
-                        <div className="px-5 py-8 text-center text-sm text-gray-400">لا توجد بيانات إضافية</div>
-                      )}
+                      <div className="px-5 py-8 text-center text-sm text-gray-400">لا توجد بيانات إضافية</div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1219,7 +1219,7 @@ export default function PatientsView({
 
                         {addingMedical && (
                           <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
-                            <div>
+                        <div>
                               <label className="mb-1 block text-xs font-medium text-gray-700">
                                 الحساسيات / التنبيهات
                               </label>
@@ -1229,7 +1229,7 @@ export default function PatientsView({
                                 placeholder="مثل: حساسية من البنسلين..."
                                 className="h-9 w-full rounded-lg border border-gray-300 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                               />
-                            </div>
+                        </div>
                             <div>
                               <label className="mb-1 block text-xs font-medium text-gray-700">
                                 الحالة المرضية الأساسية
@@ -1241,7 +1241,7 @@ export default function PatientsView({
                                 placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
                                 className="w-full resize-none rounded-lg border border-gray-300 p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                               />
-                            </div>
+                      </div>
                             <div>
                               <label className="mb-1 block text-xs font-medium text-gray-700">
                                 ما قام به الطبيب / العلاج
@@ -1351,7 +1351,7 @@ export default function PatientsView({
 
                                   {isEditing ? (
                                     <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3 space-y-2">
-                                      <div>
+                        <div>
                                         <label className="mb-1 block text-xs font-medium text-gray-700">
                                           الحساسيات / التنبيهات
                                         </label>
@@ -1361,7 +1361,7 @@ export default function PatientsView({
                                           placeholder="مثل: حساسية من البنسلين..."
                                           className="h-8 w-full rounded-lg border border-gray-300 px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         />
-                                      </div>
+                        </div>
                                       <div>
                                         <label className="mb-1 block text-xs font-medium text-gray-700">
                                           الحالة المرضية الأساسية
@@ -1373,7 +1373,7 @@ export default function PatientsView({
                                           placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
                                           className="w-full resize-none rounded-lg border border-gray-300 p-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         />
-                                      </div>
+                      </div>
                                       <div>
                                         <label className="mb-1 block text-xs font-medium text-gray-700">
                                           ما قام به الطبيب / العلاج
@@ -1528,11 +1528,11 @@ export default function PatientsView({
                     {!selectedPatient.allergies &&
                       !selectedPatient.notes &&
                       !selectedPatient.appointments.some((a) => a.notes) && (
-                        <div className="py-12 text-center text-sm text-gray-400">
-                          <Stethoscope className="mx-auto mb-3 h-10 w-10 text-gray-200" />
-                          لا توجد ملفات طبية
-                        </div>
-                      )}
+                      <div className="py-12 text-center text-sm text-gray-400">
+                        <Stethoscope className="mx-auto mb-3 h-10 w-10 text-gray-200" />
+                        لا توجد ملفات طبية
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

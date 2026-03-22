@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLocationFullName } from "@/data/west-bank-locations";
 import AdminDoctorActions from "../../admin-doctor-actions";
+import ExtraClinicToggle from "./extra-clinic-toggle";
 
 const DAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
@@ -52,6 +53,8 @@ export default async function AdminDoctorDetailPage({
       rating,
       totalReviews,
       visibleToPatients,
+      medicalCenterId,
+      canAddExtraClinics,
       createdAt,
       updatedAt,
       user:User(id, name, email, phone, createdAt),
@@ -96,15 +99,18 @@ export default async function AdminDoctorDetailPage({
           ? "مرفوض"
           : "موقوف";
 
-  const subscriptionLabel = doctor.subscriptionPeriod
-    ? doctor.subscriptionPeriod === "monthly"
-      ? "شهري ₪80"
-      : doctor.subscriptionPeriod === "half_year"
-        ? "نصف سنة ₪400"
-        : doctor.subscriptionPeriod === "yearly"
-          ? "سنة ₪800"
-          : "—"
-    : "لا يوجد اشتراك";
+  const isCenterDoctor = Boolean((doctor as { medicalCenterId?: string | null }).medicalCenterId);
+  const subscriptionLabel = isCenterDoctor
+    ? "ضمن اشتراك المركز (تلقائي — يتبع تاريخ انتهاء اشتراك المركز)"
+    : doctor.subscriptionPeriod
+      ? doctor.subscriptionPeriod === "monthly"
+        ? "شهري ₪80"
+        : doctor.subscriptionPeriod === "half_year"
+          ? "نصف سنة ₪400"
+          : doctor.subscriptionPeriod === "yearly"
+            ? "سنة ₪800"
+            : "—"
+      : "لا يوجد اشتراك";
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -279,7 +285,17 @@ export default async function AdminDoctorDetailPage({
               status={doctor.status}
               isPending={doctor.status === "PENDING"}
               showSubscription={doctor.status === "APPROVED"}
+              medicalCenterId={(doctor as { medicalCenterId?: string | null }).medicalCenterId}
+              canAddExtraClinics={Boolean((doctor as { canAddExtraClinics?: boolean }).canAddExtraClinics)}
             />
+            <div className="pt-4 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">أطباء المركز الطبي — عيادات إضافية</p>
+              <ExtraClinicToggle
+                doctorId={doctor.id}
+                medicalCenterId={(doctor as { medicalCenterId?: string | null }).medicalCenterId ?? null}
+                canAddExtraClinics={Boolean((doctor as { canAddExtraClinics?: boolean }).canAddExtraClinics)}
+              />
+            </div>
           </CardContent>
         </Card>
 

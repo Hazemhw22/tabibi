@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { User, Stethoscope } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const ROLE_STORAGE_KEY = "tabibi-user-role";
@@ -24,16 +23,16 @@ export default function RoleChoiceModal() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
     if (!mounted || pathname !== "/") return;
     const role = window.localStorage.getItem(ROLE_STORAGE_KEY);
-    if (!role) setOpen(true);
+    if (!role) queueMicrotask(() => setOpen(true));
   }, [mounted, pathname]);
 
   const handlePatient = () => {

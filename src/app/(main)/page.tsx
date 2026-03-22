@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Search,
   Calendar,
-  CreditCard,
   Star,
   CheckCircle,
   Shield,
@@ -15,9 +14,12 @@ import {
   Clock,
   ArrowLeft,
 } from "lucide-react";
+import { Suspense } from "react";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/lib/auth";
 import { getLocationFullName } from "@/data/west-bank-locations";
+import { HowItWorksSection } from "@/components/home/how-it-works-section";
+import { MedicalCentersPreview } from "@/components/home/medical-centers-preview";
 
 async function getStats() {
   const [
@@ -118,6 +120,7 @@ export default async function HomePage() {
     const role = session.user.role ?? "PATIENT";
     if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") redirect("/dashboard/admin");
     if (role === "DOCTOR") redirect("/dashboard/doctor");
+    if (role === "MEDICAL_CENTER_ADMIN") redirect("/dashboard/medical-center");
     redirect("/dashboard/patient");
   }
 
@@ -245,12 +248,12 @@ export default async function HomePage() {
 
       {/* أطباء مميزون — جميع الأطباء مع عرض موقع كل طبيب (قبل تسجيل الدخول) */}
       {doctors.length > 0 && (
-        <section className="py-10 sm:py-16 bg-white">
+        <section className="py-10 sm:py-16 bg-white dark:bg-[#060818]">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-10">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">أطباء مميزون</h2>
-                <p className="text-gray-500">الأطباء الأعلى تقييماً على المنصة</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">أطباء مميزون</h2>
+                <p className="text-gray-500 dark:text-slate-400">الأطباء الأعلى تقييماً على المنصة</p>
               </div>
               <Link href="/doctors">
                 <Button variant="outline" className="gap-2">
@@ -266,7 +269,10 @@ export default async function HomePage() {
                 const waNum = contactNum ? contactNum.replace(/\D/g, "") : "";
                 const locationLabel = doctor.locationId ? getLocationFullName(doctor.locationId) : null;
                 return (
-                  <Card key={doctor.id} className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group">
+                  <Card
+                    key={doctor.id}
+                    className="hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer group dark:bg-slate-800/90 dark:border-slate-700"
+                  >
                     <CardContent className="p-6">
                       <Link href={`/doctors/${doctor.id}`} className="block">
                         <div className="flex items-start gap-4">
@@ -274,16 +280,16 @@ export default async function HomePage() {
                             {doctor.user?.name?.charAt(0) || "D"}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                            <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                               د. {doctor.user?.name}
                             </h3>
-                            <p className="text-sm text-blue-600 font-medium">
+                            <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
                               {doctor.specialty?.nameAr}
                             </p>
                             {locationLabel && (
                               <div className="flex items-center gap-1 mt-1.5">
                                 <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                                <p className="text-xs text-gray-500">{locationLabel}</p>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">{locationLabel}</p>
                               </div>
                             )}
                             {doctor.clinics?.[0]?.address && (
@@ -295,10 +301,10 @@ export default async function HomePage() {
                         </div>
                       </Link>
 
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-semibold text-gray-800">
+                          <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">
                             {(doctor.rating ?? 0).toFixed(1)}
                           </span>
                           <span className="text-xs text-gray-400">
@@ -335,58 +341,17 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* How it works */}
-      <section className="py-10 sm:py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">كيف يعمل Tabibi؟</h2>
-            <p className="text-gray-500">احجز موعدك في 3 خطوات بسيطة</p>
+      <Suspense
+        fallback={
+          <div className="py-12 text-center text-gray-500 dark:text-slate-400 bg-white dark:bg-[#060818]">
+            جاري تحميل المراكز...
           </div>
+        }
+      >
+        <MedicalCentersPreview />
+      </Suspense>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                step: "١",
-                icon: Search,
-                title: "ابحث عن طبيب",
-                desc: "ابحث بالتخصص، الموقع، أو التقييم للعثور على الطبيب المناسب لك",
-                color: "bg-blue-600",
-              },
-              {
-                step: "٢",
-                icon: Calendar,
-                title: "احجز موعدك",
-                desc: "اختر الوقت المناسب من المواعيد المتاحة وأضف ملاحظاتك",
-                color: "bg-indigo-600",
-              },
-              {
-                step: "٣",
-                icon: CreditCard,
-                title: "تابع دفعاتك والديون",
-                desc: "تابع دفعاتك والديون الخاصة بك من لوحة تحكمك بكل وضوح",
-                color: "bg-purple-600",
-              },
-            ].map((item, i) => (
-              <div key={i} className="relative">
-                <Card className="border-0 shadow-md hover:shadow-xl transition-shadow">
-                  <CardContent className="p-8 text-center">
-                    <div
-                      className={`${item.color} text-white w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg`}
-                    >
-                      <item.icon className="h-7 w-7" />
-                    </div>
-                    <div className="text-5xl font-bold text-gray-100 absolute top-4 left-4">
-                      {item.step}
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                    <p className="text-gray-500 leading-relaxed text-sm">{item.desc}</p>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HowItWorksSection />
 
       {/* CTA */}
       <section className="py-10 sm:py-16 bg-gray-900 text-white">

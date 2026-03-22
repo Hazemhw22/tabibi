@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local editor backup copies (not part of the app)
+    ".history/**",
+    // Node one-off scripts (CommonJS require)
+    "scripts/**",
   ]),
 ]);
 

@@ -7,6 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
 import { toast } from "sonner";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
+
+const REGION_OPTIONS = [
+  { value: "", label: "اختر المدينة أو المحافظة" },
+  ...WEST_BANK_LOCATIONS.map((loc) => ({
+    value: loc.id,
+    label:
+      loc.type === "governorate"
+        ? `محافظة ${loc.nameAr}`
+        : `${loc.nameAr} - ${loc.governorateAr}`,
+  })),
+];
 
 type Props = {
   /** القيمة الحالية (مثلاً من الإعدادات) */
@@ -65,18 +77,15 @@ export default function PatientRegionSelect({
         {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
       </CardHeader>
       <CardContent className="space-y-4">
-        <select
-          value={regionId}
-          onChange={(e) => setRegionId(e.target.value)}
-          className="w-full h-11 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-        >
-          <option value="">اختر المدينة أو المحافظة</option>
-          {WEST_BANK_LOCATIONS.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.type === "governorate" ? `محافظة ${loc.nameAr}` : `${loc.nameAr} - ${loc.governorateAr}`}
-            </option>
-          ))}
-        </select>
+        <div className="w-full min-w-0">
+          <DropdownSelect
+            value={regionId}
+            onChange={setRegionId}
+            options={REGION_OPTIONS}
+            placeholder="اختر المدينة أو المحافظة"
+            buttonClassName="h-11 border-gray-300"
+          />
+        </div>
         <Button onClick={handleSave} disabled={!regionId || loading} className="gap-2">
           {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الحفظ...</> : compact ? "حفظ المنطقة" : "حفظ وعرض الأطباء"}
         </Button>

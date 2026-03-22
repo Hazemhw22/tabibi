@@ -12,7 +12,9 @@ export async function GET() {
 
     const { data: doctor, error: docError } = await supabaseAdmin
       .from("Doctor")
-      .select("*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*)")
+      .select(
+        "*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*), medicalCenterId, canAddExtraClinics"
+      )
       .eq("userId", session.user.id)
       .single();
 
@@ -52,6 +54,7 @@ const timeSlotSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   clinicId: z.string().optional().nullable(),
+  slotCapacity: z.number().int().min(1).max(100).optional(),
 });
 
 const updateSchema = z.object({
@@ -78,13 +81,16 @@ export async function PUT(req: Request) {
 
     const { data: doctor, error: findErr } = await supabaseAdmin
       .from("Doctor")
-      .select("id")
+      .select("id, medicalCenterId, canAddExtraClinics")
       .eq("userId", session.user.id)
       .single();
 
     if (findErr || !doctor) {
       return NextResponse.json({ error: "الطبيب غير موجود" }, { status: 404 });
     }
+
+    const centerLinked = Boolean((doctor as { medicalCenterId?: string | null }).medicalCenterId);
+    const allowExtraClinics = Boolean((doctor as { canAddExtraClinics?: boolean }).canAddExtraClinics);
 
     // معالجة التخصص (اختيار أو إضافة جديد)
     let finalSpecialtyId: string | undefined = data.specialtyId;
@@ -151,6 +157,16 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "فشل تحديث العيادات: " + (deleteClinicsErr.message || "خطأ في الحذف") }, { status: 500 });
       }
       const validClinics = data.clinics.filter((c) => (c.name?.trim() ?? "") !== "" && (c.address?.trim() ?? "") !== "");
+      if (centerLinked && !allowExtraClinics && validClinics.length > 1) {
+        return NextResponse.json(
+          {
+            error:
+              "لا يمكن إضافة أكثر من عيادة (عيادة المركز) دون موافقة إدارة المنصة. تواصل مع المشرف لتفعيل «إضافة عيادات» (500 ₪ سنوياً) أو استخدم زر طلب التفعيل.",
+            code: "EXTRA_CLINICS_NOT_ALLOWED",
+          },
+          { status: 403 }
+        );
+      }
       if (validClinics.length > 0) {
         const clinicRows = validClinics.map((c) => ({
           doctorId: doctor.id,
@@ -196,6 +212,7 @@ export async function PUT(req: Request) {
           startTime: s.startTime,
           endTime: s.endTime,
           isActive: true,
+          slotCapacity: s.slotCapacity ?? 1,
         }));
         const { error: slotErr } = await supabaseAdmin.from("TimeSlot").insert(slotRows);
         if (slotErr) {

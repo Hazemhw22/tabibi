@@ -4,18 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import {
-  Menu,
-  X,
-  Heart,
-  Calendar,
-  User,
-  LogOut,
-  ChevronDown,
-  Moon,
-  Sun,
-  Settings,
-} from "lucide-react";
+import IconSun from "@/components/icon/icon-sun";
+import IconMoon from "@/components/icon/icon-moon";
+import IconUser from "@/components/icon/icon-user";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconSettings from "@/components/icon/icon-settings";
+import IconLogout from "@/components/icon/icon-logout";
+import IconCaretDown from "@/components/icon/icon-caret-down";
+import IconHeart from "@/components/icon/icon-heart";
+import IconMenuWidgets from "@/components/icon/menu/icon-menu-widgets";
+import IconXCircle from "@/components/icon/icon-x-circle";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,7 +55,9 @@ export default function Navbar() {
       case "PLATFORM_ADMIN":
         return "/dashboard/admin";
       case "CLINIC_ADMIN":
-        return "/dashboard/clinic";
+        return "/dashboard/admin";
+      case "MEDICAL_CENTER_ADMIN":
+        return "/dashboard/medical-center";
       default:
         return "/dashboard/patient";
     }
@@ -81,6 +81,12 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
+            <Link
+              href="/medical-centers"
+              className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              المراكز الطبية
+            </Link>
             <Link
               href="/doctors"
               className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
@@ -110,9 +116,9 @@ export default function Navbar() {
               onClick={toggleTheme}
             >
               {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
+                <IconSun className="h-5 w-5" />
               ) : (
-                <Moon className="h-5 w-5" />
+                <IconMoon className="h-5 w-5" />
               )}
             </Button>
             {session ? (
@@ -134,10 +140,16 @@ export default function Navbar() {
                         {session.user.name}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {role === "DOCTOR" ? "طبيب" : role === "PLATFORM_ADMIN" ? "مشرف" : "مريض"}
+                        {role === "DOCTOR"
+                          ? "طبيب"
+                          : role === "PLATFORM_ADMIN"
+                            ? "مشرف"
+                            : role === "MEDICAL_CENTER_ADMIN"
+                              ? "مركز طبي"
+                              : "مريض"}
                       </p>
                     </div>
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <IconCaretDown className="h-4 w-4 text-gray-400" />
                   </button>
 
                   {dropdownOpen && (
@@ -149,7 +161,7 @@ export default function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setDropdownOpen(false)}
                           >
-                            <User className="h-4 w-4" />
+                            <IconUser className="h-4 w-4" />
                             صفحتي
                           </Link>
                           <Link
@@ -157,7 +169,7 @@ export default function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setDropdownOpen(false)}
                           >
-                            <Calendar className="h-4 w-4" />
+                            <IconCalendar className="h-4 w-4" />
                             مواعيدي
                           </Link>
                           <Link
@@ -165,7 +177,7 @@ export default function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setDropdownOpen(false)}
                           >
-                            <Heart className="h-4 w-4" />
+                            <IconHeart className="h-4 w-4" />
                             معاملاتي
                           </Link>
                           <hr className="my-1 border-gray-100" />
@@ -177,7 +189,7 @@ export default function Navbar() {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                           onClick={() => setDropdownOpen(false)}
                         >
-                          <Settings className="h-4 w-4" />
+                          <IconSettings className="h-4 w-4" />
                           الإعدادات
                         </Link>
                       ) : (
@@ -186,7 +198,7 @@ export default function Navbar() {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                           onClick={() => setDropdownOpen(false)}
                         >
-                          <Calendar className="h-4 w-4" />
+                          <IconCalendar className="h-4 w-4" />
                           لوحة التحكم
                         </Link>
                       )}
@@ -195,7 +207,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setDropdownOpen(false)}
                       >
-                        <User className="h-4 w-4" />
+                        <IconUser className="h-4 w-4" />
                         الملف الشخصي
                       </Link>
                       <hr className="my-1 border-gray-100" />
@@ -203,7 +215,7 @@ export default function Navbar() {
                         onClick={() => signOut({ callbackUrl: "/" })}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-right"
                       >
-                        <LogOut className="h-4 w-4" />
+                        <IconLogout className="h-4 w-4" />
                         تسجيل الخروج
                       </button>
                     </div>
@@ -230,9 +242,9 @@ export default function Navbar() {
               aria-label="تبديل الوضع الليلي"
             >
               {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
+                <IconSun className="h-5 w-5" />
               ) : (
-                <Moon className="h-5 w-5" />
+                <IconMoon className="h-5 w-5" />
               )}
             </button>
             {session && <NotificationBell theme="light" />}
@@ -241,7 +253,7 @@ export default function Navbar() {
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="فتح القائمة"
             >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {menuOpen ? <IconXCircle className="h-5 w-5" /> : <IconMenuWidgets className="h-5 w-5" />}
             </button>
           </div>
         </div>
@@ -255,6 +267,13 @@ export default function Navbar() {
         )}
       >
         <div className="px-4 py-3 space-y-2">
+          <Link
+            href="/medical-centers"
+            className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+            onClick={() => setMenuOpen(false)}
+          >
+            المراكز الطبية
+          </Link>
           <Link
             href="/doctors"
             className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"

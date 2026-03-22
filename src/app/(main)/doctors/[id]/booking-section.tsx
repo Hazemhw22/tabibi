@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { DAYS_AR } from "@/lib/utils";
+import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { format, addDays, startOfToday, getDay } from "date-fns";
 
 interface TimeSlot {
@@ -16,6 +17,8 @@ interface TimeSlot {
   startTime: string;
   endTime: string;
   clinicId?: string | null;
+  /** عدد الحجوزات المسموحة لنفس الدور */
+  slotCapacity?: number;
 }
 
 interface Clinic {
@@ -50,6 +53,8 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  /** رقم الدور 1..slotCapacity ضمن الفترة */
+  const [selectedSlotTurn, setSelectedSlotTurn] = useState<number | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<string>(clinics[0]?.id || "");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,6 +62,8 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
   const [bookedData, setBookedData] = useState<{
     bookedTimeSlotIds: string[];
     bookedStartTimes: string[];
+    bookedCounts?: Record<string, number>;
+    occupiedTurnsBySlot?: Record<string, number[]>;
   } | null>(null);
   const [, setStep] = useState<"date" | "slot" | "confirm">("date");
   const [dateOffset, setDateOffset] = useState(0);
@@ -65,62 +72,99 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
   const visibleDates = dates.slice(dateOffset, dateOffset + 7);
 
   useEffect(() => {
-    if (!selectedDate || !isLoggedIn) {
-      setBookedData(null);
-      return;
-    }
-    setSlotsLoading(true);
-    const dateStr = format(selectedDate, "yyyy-MM-dd");
-    fetch(`/api/doctors/${doctor.id}/booked-slots?date=${dateStr}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.bookedTimeSlotIds !== undefined && data.bookedStartTimes !== undefined) {
-          setBookedData({
-            bookedTimeSlotIds: data.bookedTimeSlotIds ?? [],
-            bookedStartTimes: data.bookedStartTimes ?? [],
-          });
-        } else {
-          setBookedData(null);
-        }
-      })
-      .catch(() => setBookedData(null))
-      .finally(() => setSlotsLoading(false));
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (!selectedDate || !isLoggedIn) {
+        setBookedData(null);
+        return;
+      }
+      setSlotsLoading(true);
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      fetch(`/api/doctors/${doctor.id}/booked-slots?date=${dateStr}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (data.bookedTimeSlotIds !== undefined) {
+            setBookedData({
+              bookedTimeSlotIds: data.bookedTimeSlotIds ?? [],
+              bookedStartTimes: data.bookedStartTimes ?? [],
+              bookedCounts: data.bookedCounts ?? {},
+              occupiedTurnsBySlot: data.occupiedTurnsBySlot ?? {},
+            });
+          } else {
+            setBookedData(null);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setBookedData(null);
+        })
+        .finally(() => {
+          if (!cancelled) setSlotsLoading(false);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedDate, doctor.id, isLoggedIn]);
 
-  const { allSlotsSorted, availableWithTurn } = useMemo(() => {
-    if (!selectedDate) return { allSlotsSorted: [], availableWithTurn: [] };
+  const clinicOptions = useMemo(
+    () =>
+      clinics.map((c) => ({
+        value: c.id,
+        label: `${c.name} — ${c.address}`,
+      })),
+    [clinics]
+  );
+
+  const availableWithTurn = useMemo(() => {
+    if (!selectedDate) return [] as { slot: TimeSlot; turnNumber: number }[];
     const dayNum = getDay(selectedDate);
     const slots = timeSlots.filter(
       (slot) =>
         slot.dayOfWeek === dayNum &&
         (!selectedClinic || !slot.clinicId || slot.clinicId === selectedClinic)
     );
-    const sorted = [...slots].sort(
-      (a, b) => a.startTime.localeCompare(b.startTime)
-    );
-    if (sorted.length === 0) return { allSlotsSorted: sorted, availableWithTurn: [] };
-    const bookedIds = new Set(bookedData?.bookedTimeSlotIds ?? []);
-    const bookedTimes = new Set(bookedData?.bookedStartTimes ?? []);
-    const available = sorted.filter(
-      (s) =>
-        !bookedIds.has(s.id) &&
-        !bookedTimes.has(s.startTime)
-    );
-    const withTurn = available.map((slot) => {
-      const turnIndex = sorted.findIndex((s) => s.id === slot.id) + 1;
-      return { slot, turnNumber: turnIndex };
-    });
-    return { allSlotsSorted: sorted, availableWithTurn: withTurn };
+    const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    if (sorted.length === 0) return [];
+
+    const occupiedMap = bookedData?.occupiedTurnsBySlot ?? {};
+    const out: { slot: TimeSlot; turnNumber: number }[] = [];
+
+    for (const slot of sorted) {
+      const cap = Math.min(100, Math.max(1, slot.slotCapacity ?? 1));
+      const taken = new Set(occupiedMap[slot.id] ?? []);
+      for (let turn = 1; turn <= cap; turn++) {
+        if (!taken.has(turn)) {
+          out.push({ slot, turnNumber: turn });
+        }
+      }
+    }
+    return out;
   }, [selectedDate, selectedClinic, timeSlots, bookedData]);
+
+  /** تجميع الأدوار حسب فترة الحجز لعرض «من — إلى» فوق كل مجموعة */
+  const turnsByTimeSlot = useMemo(() => {
+    const map = new Map<string, { slot: TimeSlot; turns: number[] }>();
+    for (const { slot, turnNumber } of availableWithTurn) {
+      if (!map.has(slot.id)) {
+        map.set(slot.id, { slot, turns: [] });
+      }
+      map.get(slot.id)!.turns.push(turnNumber);
+    }
+    return Array.from(map.values());
+  }, [availableWithTurn]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setSelectedSlot(null);
+    setSelectedSlotTurn(null);
     setStep("slot");
   };
 
-  const handleSlotSelect = (slot: TimeSlot) => {
+  const handleSlotSelect = (slot: TimeSlot, turnNumber: number) => {
     setSelectedSlot(slot);
+    setSelectedSlotTurn(turnNumber);
     setStep("confirm");
   };
 
@@ -130,8 +174,8 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
       return;
     }
 
-    if (!selectedDate || !selectedSlot) {
-      toast.error("يرجى اختيار التاريخ والوقت");
+    if (!selectedDate || !selectedSlot || selectedSlotTurn == null) {
+      toast.error("يرجى اختيار التاريخ والدور");
       return;
     }
 
@@ -149,6 +193,7 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
           endTime: selectedSlot.endTime,
           notes,
           fee: doctor.consultationFee,
+          slotTurn: selectedSlotTurn,
         }),
       });
 
@@ -222,21 +267,20 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 اختر العيادة التي تريد الذهاب إليها
               </label>
-              <select
-                value={selectedClinic}
-                onChange={(e) => {
-                  setSelectedClinic(e.target.value);
-                  setSelectedDate(null);
-                  setSelectedSlot(null);
-                }}
-                className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                {clinics.map((clinic) => (
-                  <option key={clinic.id} value={clinic.id}>
-                    {clinic.name} - {clinic.address}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full min-w-0">
+                <DropdownSelect
+                  value={selectedClinic}
+                  onChange={(v) => {
+                    setSelectedClinic(v);
+                    setSelectedDate(null);
+                    setSelectedSlot(null);
+                    setSelectedSlotTurn(null);
+                  }}
+                  options={clinicOptions}
+                  placeholder="اختر العيادة"
+                  buttonClassName="h-10 border-gray-300"
+                />
+              </div>
             </div>
           ) : clinics.length === 1 ? (
             <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -321,20 +365,29 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
                   لا توجد أدوار متاحة
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {availableWithTurn.map(({ slot, turnNumber }) => (
-                    <button
-                      key={slot.id}
-                      onClick={() => handleSlotSelect(slot)}
-                      className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
-                        selectedSlot?.id === slot.id
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
-                      }`}
-                    >
-                      <Clock className="h-3.5 w-3.5" />
-                      دور {turnNumber}
-                    </button>
+                <div className="space-y-5">
+                  {turnsByTimeSlot.map(({ slot, turns }) => (
+                    <div key={slot.id}>
+                      <p className="text-sm font-medium text-gray-800 mb-2">
+                        من الساعة {slot.startTime} إلى الساعة {slot.endTime}
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {turns.map((turnNumber) => (
+                          <button
+                            key={`${slot.id}-${turnNumber}`}
+                            type="button"
+                            onClick={() => handleSlotSelect(slot, turnNumber)}
+                            className={`flex items-center justify-center py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                              selectedSlot?.id === slot.id && selectedSlotTurn === turnNumber
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
+                            }`}
+                          >
+                            دور {turnNumber}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -368,7 +421,12 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>{selectedSlot.startTime} - {selectedSlot.endTime}</span>
+                  <span>
+                    {selectedSlot.startTime} - {selectedSlot.endTime}
+                    {selectedSlotTurn != null && (
+                      <span className="font-semibold mr-1"> — دور {selectedSlotTurn}</span>
+                    )}
+                  </span>
                 </div>
                 {selectedClinic && clinics.find((c) => c.id === selectedClinic) && (
                   <div className="flex items-center gap-2">
@@ -389,7 +447,7 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
             onClick={handleBooking}
             className="w-full"
             size="lg"
-            disabled={!selectedDate || !selectedSlot || loading}
+            disabled={!selectedDate || !selectedSlot || selectedSlotTurn == null || loading}
           >
             {loading ? (
               <>

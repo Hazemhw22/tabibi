@@ -43,6 +43,19 @@ export async function createNotification(params: CreateNotificationParams) {
   }
 }
 
+/** إشعار جميع مشرفي المنصة (مثلاً تسجيل مركز جديد) */
+export async function notifyPlatformAdmins(title: string, message: string, link?: string) {
+  try {
+    const { data: admins } = await supabaseAdmin.from("User").select("id").eq("role", "PLATFORM_ADMIN");
+    for (const row of admins ?? []) {
+      const id = (row as { id: string }).id;
+      await createNotification({ userId: id, title, message, type: "info", link });
+    }
+  } catch (e) {
+    console.error("[notifyPlatformAdmins]", e);
+  }
+}
+
 /**
  * Finds a User.id by email or phone (for linking clinic patients to platform accounts).
  */

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -23,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import PatientRegionSelect from "@/components/patient/patient-region-select";
+import { MedicalCentersPreview } from "@/components/home/medical-centers-preview";
 import { doctorServesLocation, getLocationById, getLocationFullName } from "@/data/west-bank-locations";
 
 const STATUS_CONFIG = {
@@ -234,6 +236,8 @@ export default async function PatientDashboard() {
         </Link>
       </div>
 
+    
+
       {!patientRegionId && <PatientRegionSelect />}
       {patientRegionId && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -331,7 +335,9 @@ export default async function PatientDashboard() {
           </div>
         </div>
       )}
-
+         <Suspense fallback={null}>
+        <MedicalCentersPreview />
+      </Suspense>
       {mostVisitedDoctors.length > 0 && (
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">الأطباء الأكثر زيارة</h2>

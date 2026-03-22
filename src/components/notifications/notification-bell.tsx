@@ -60,11 +60,18 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
     }
   }, []);
 
-  /* initial load + polling */
+  /* initial load + polling (defer first fetch to avoid sync setState-in-effect lint) */
   useEffect(() => {
-    fetchNotifications();
-    const id = setInterval(fetchNotifications, pollInterval);
-    return () => clearInterval(id);
+    const t = window.setTimeout(() => {
+      void fetchNotifications();
+    }, 0);
+    const id = window.setInterval(() => {
+      void fetchNotifications();
+    }, pollInterval);
+    return () => {
+      window.clearTimeout(t);
+      window.clearInterval(id);
+    };
   }, [fetchNotifications, pollInterval]);
 
   /* close on outside click */
@@ -128,7 +135,7 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
       <button type="button" onClick={() => setOpen((o) => !o)} className={btnClass} title="الإشعارات">
         <Bell className="h-[18px] w-[18px]" />
         {unread > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+          <span className="absolute right-1.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
           </span>
         )}

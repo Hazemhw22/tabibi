@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   Star,
@@ -27,44 +27,59 @@ type Doctor = {
   clinics?: { address?: string; phone?: string }[];
 };
 
+function subscribeRegion(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("tabibi-region-changed", onStoreChange);
+  return () => window.removeEventListener("tabibi-region-changed", onStoreChange);
+}
+
+function getServerRegionSnapshot() {
+  return null as string | null;
+}
+
 export default function FeaturedDoctorsByRegion() {
-  const [regionId, setRegionId] = useState<string | null>(null);
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const regionId = useSyncExternalStore(
+    subscribeRegion,
+    getStoredRegionId,
+    getServerRegionSnapshot
+  );
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!isClient) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (!regionId) {
+        setDoctors([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      fetch(`/api/doctors/featured?regionId=${encodeURIComponent(regionId)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!cancelled) setDoctors(Array.isArray(data.doctors) ? data.doctors : []);
+        })
+        .catch(() => {
+          if (!cancelled) setDoctors([]);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, regionId]);
 
-  useEffect(() => {
-    if (!mounted) return;
-    const stored = getStoredRegionId();
-    setRegionId(stored);
-
-    const handler = () => setRegionId(getStoredRegionId());
-    window.addEventListener("tabibi-region-changed", handler);
-    return () => window.removeEventListener("tabibi-region-changed", handler);
-  }, [mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    setLoading(true);
-    if (!regionId) {
-      setDoctors([]);
-      setLoading(false);
-      return;
-    }
-    fetch(`/api/doctors/featured?regionId=${encodeURIComponent(regionId)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setDoctors(Array.isArray(data.doctors) ? data.doctors : []);
-      })
-      .catch(() => setDoctors([]))
-      .finally(() => setLoading(false));
-  }, [mounted, regionId]);
-
-  if (!mounted) {
+  if (!isClient) {
     return (
       <section className="py-10 sm:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">

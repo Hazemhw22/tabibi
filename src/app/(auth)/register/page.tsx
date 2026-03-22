@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Stethoscope } from "lucide-react";
+import { Heart, Stethoscope, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   return (
-    <Card className="w-full max-w-md shadow-xl border-0 overflow-hidden">
+    <Card className="w-full max-w-4xl shadow-xl border-0 overflow-hidden">
       <CardHeader className="text-center pb-1">
         <CardTitle className="text-2xl font-bold text-gray-900">إنشاء حساب جديد</CardTitle>
         <CardDescription className="text-sm text-gray-500">اختر نوع حسابك</CardDescription>
       </CardHeader>
       <CardContent className="pt-4 pb-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link
             href="/register/patient"
             className={cn(
@@ -43,6 +43,20 @@ export default function RegisterPage() {
             </div>
             <span className="relative text-lg font-bold text-gray-800">طبيب</span>
             <span className="relative text-xs text-violet-700/80 text-center">انضم لشبكة طبيبي</span>
+          </Link>
+          <Link
+            href="/register/medical-center"
+            className={cn(
+              "group relative overflow-hidden rounded-2xl p-6 flex flex-col items-center justify-center gap-3",
+              "bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-100",
+              "hover:border-sky-400 hover:shadow-lg hover:shadow-sky-100/50 transition-all duration-300 sm:col-span-1"
+            )}
+          >
+            <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-sky-100 group-hover:scale-105 transition-transform">
+              <Building2 className="h-10 w-10 text-sky-600" />
+            </div>
+            <span className="relative text-lg font-bold text-gray-800">مركز طبي</span>
+            <span className="relative text-xs text-sky-700/80 text-center">لوحة إدارة المركز</span>
           </Link>
         </div>
         <div className="mt-6 pt-4 border-t border-gray-100 text-center">

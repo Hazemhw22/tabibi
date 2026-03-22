@@ -113,8 +113,10 @@ function LoginPatientForm() {
               إنشاء حساب مريض
             </Link>
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            <Link href="/login" className="hover:underline">تسجيل دخول الطبيب</Link>
+          <p className="text-sm text-gray-500 mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
+            <Link href="/login/doctor" className="hover:underline">تسجيل دخول الطبيب</Link>
+            <span className="text-gray-300">·</span>
+            <Link href="/login/medical-center" className="hover:underline text-sky-600">مركز طبي</Link>
           </p>
         </div>
       </CardContent>

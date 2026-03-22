@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# Local History / editor backups
+.history/
+
 # Windows reserved name (created by mistake, e.g. redirect to nul)
 /nul
 nul

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { DAYS_AR } from "@/lib/utils";
+import { DAYS_AR, formatDateLong } from "@/lib/utils";
 import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 function getDateForDayOfWeek(dayOfWeek: number): Date {
@@ -21,7 +21,7 @@ function getDateForDayOfWeek(dayOfWeek: number): Date {
 }
 
 function formatDateAr(d: Date): string {
-  return d.toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" });
+  return formatDateLong(d);
 }
 
 interface Specialty {

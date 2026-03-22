@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { Heart, Stethoscope, AlertCircle } from "lucide-react";
+import { Heart, Stethoscope, Building2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -12,7 +12,7 @@ function LoginCard() {
   const rateLimited = searchParams.get("error") === "rate_limited";
 
   return (
-    <Card className="w-full max-w-md shadow-xl border-0 overflow-hidden">
+    <Card className="w-full max-w-4xl shadow-xl border-0 overflow-hidden">
       {rateLimited && (
         <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center gap-2">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -24,7 +24,7 @@ function LoginCard() {
         <CardDescription className="text-sm text-gray-500">اختر نوع حسابك</CardDescription>
       </CardHeader>
       <CardContent className="pt-4 pb-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link
             href="/login/patient"
             className={cn(
@@ -55,12 +55,32 @@ function LoginCard() {
             <span className="relative text-lg font-bold text-gray-800">طبيب</span>
             <span className="relative text-xs text-violet-700/80 text-center">لوحة التحكم</span>
           </Link>
+          <Link
+            href="/login/medical-center"
+            className={cn(
+              "group relative overflow-hidden rounded-2xl p-6 flex flex-col items-center justify-center gap-3",
+              "bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-100",
+              "hover:border-sky-400 hover:shadow-lg hover:shadow-sky-100/50 transition-all duration-300"
+            )}
+          >
+            <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-sky-100 group-hover:scale-105 transition-transform">
+              <Building2 className="h-10 w-10 text-sky-600" />
+            </div>
+            <span className="relative text-lg font-bold text-gray-800">مركز طبي</span>
+            <span className="relative text-xs text-sky-700/80 text-center">إدارة المركز</span>
+          </Link>
         </div>
-        <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+        <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
           <p className="text-sm text-gray-500">
             ليس لديك حساب؟{" "}
             <Link href="/register" className="text-emerald-600 font-semibold hover:underline">
               إنشاء حساب جديد
+            </Link>
+          </p>
+          <p className="text-sm text-gray-500">
+            مركز طبي جديد؟{" "}
+            <Link href="/register/medical-center" className="text-sky-600 font-semibold hover:underline">
+              التسجيل كمركز طبي
             </Link>
           </p>
         </div>

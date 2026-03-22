@@ -12,12 +12,9 @@ export default async function DashboardLayout({
   const isPatient = session?.user?.role === "PATIENT";
   const isDoctor = session?.user?.role === "DOCTOR";
 
+  /** المريض: نفس تجربة الموقع العام — Navbar + Footer من (main) فقط، بدون سايدبار/هيدر لوحة التحكم */
   if (isPatient) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="w-full">{children}</main>
-      </div>
-    );
+    return <div className="w-full min-h-0 flex-1 bg-gray-50 dark:bg-gray-950">{children}</div>;
   }
 
   return (

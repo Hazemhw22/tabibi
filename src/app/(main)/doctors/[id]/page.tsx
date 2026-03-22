@@ -16,7 +16,7 @@ async function getDoctor(id: string) {
       user:User(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain, locationId),
-      timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId)
+      timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId, slotCapacity)
     `)
     .eq("id", id)
     .single();
@@ -121,16 +121,6 @@ export default async function DoctorProfilePage({
       return acc;
     },
     {} as Record<number, SlotItem[]>
-  );
-  /** لكل يوم: عرض "من X إلى Y" فقط (أول بداية إلى آخر نهاية) */
-  const hoursRangeByDay = Object.fromEntries(
-    Object.entries(slotsByDay).map(([day, slots]) => {
-      const starts = slots.map((s) => s.startTime || "00:00").filter(Boolean);
-      const ends = slots.map((s) => s.endTime || "23:59").filter(Boolean);
-      const from = starts.length ? starts.sort()[0] : "";
-      const to = ends.length ? ends.sort().reverse()[0] : "";
-      return [day, { from, to }];
-    })
   );
 
   const clinicsForView =

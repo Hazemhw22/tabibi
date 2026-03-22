@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DAYS_AR, cn } from "@/lib/utils";
+import { EXTRA_CLINIC_ANNUAL_FEE_NIS } from "@/lib/subscription-pricing";
 import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 interface Clinic {
@@ -41,12 +42,21 @@ export default function DoctorClinicsPage() {
   /** حسب الساعات = أوقات محددة | حسب الدور = عدد أدوار خلال فترة */
   const [scheduleMode, setScheduleMode] = useState<"hours" | "turns">("hours");
   const [turnForm, setTurnForm] = useState({ dayOfWeek: 0, fromTime: "09:00", toTime: "17:00", turnsCount: 10 });
+  const [centerFlags, setCenterFlags] = useState<{
+    medicalCenterId: string | null;
+    canAddExtraClinics: boolean;
+  }>({ medicalCenterId: null, canAddExtraClinics: false });
+  const [requestingExtra, setRequestingExtra] = useState(false);
 
   useEffect(() => {
     fetch("/api/doctor/profile")
       .then((r) => r.json())
       .then((data) => {
         if (data.doctor) {
+          setCenterFlags({
+            medicalCenterId: data.doctor.medicalCenterId ?? null,
+            canAddExtraClinics: Boolean(data.doctor.canAddExtraClinics),
+          });
           setDoctorLocationId(data.doctor.locationId ?? null);
           if (Array.isArray(data.doctor.clinics) && data.doctor.clinics.length > 0) {
             const normalizedClinics = data.doctor.clinics.map((c: Clinic) => ({
@@ -95,6 +105,16 @@ export default function DoctorClinicsPage() {
   }, []);
 
   const addClinic = () => {
+    if (
+      centerFlags.medicalCenterId &&
+      !centerFlags.canAddExtraClinics &&
+      clinics.length >= 1
+    ) {
+      toast.error(
+        "أطباء المركز: عيادة واحدة مضمّنة في اشتراك المركز. لإضافة عيادة أخرى يجب موافقة إدارة المنصة (رسوم إضافية سنوية)."
+      );
+      return;
+    }
     const newClinic: Clinic = {
       name: "",
       address: "",
@@ -242,6 +262,23 @@ export default function DoctorClinicsPage() {
     }
   };
 
+  const requestExtraClinicFromAdmin = async () => {
+    setRequestingExtra(true);
+    try {
+      const res = await fetch("/api/doctor/request-extra-clinic", { method: "POST" });
+      const j = await res.json();
+      if (!res.ok) {
+        toast.error(j.error || "فشل الإرسال");
+        return;
+      }
+      toast.success(j.message || "تم إرسال الطلب");
+    } catch {
+      toast.error("حدث خطأ");
+    } finally {
+      setRequestingExtra(false);
+    }
+  };
+
   const getLocationLabel = (locId: string | null | undefined) => {
     if (!locId) return "اختر المنطقة";
     const loc = getLocationById(locId);
@@ -258,6 +295,26 @@ export default function DoctorClinicsPage() {
         </p>
       </div>
 
+      {centerFlags.medicalCenterId && !centerFlags.canAddExtraClinics && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          <p className="font-medium">أنت مرتبط بمركز طبي</p>
+          <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
+            إضافة عيادة إضافية تتطلب موافقة مشرف المنصة لأنها تزيد الرسوم ({EXTRA_CLINIC_ANNUAL_FEE_NIS} ₪
+            سنوياً). لا يمكنك إضافة أكثر من عيادة من هنا حتى يفعّل المشرف الخيار من لوحة الإدارة.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3 border-amber-300"
+            disabled={requestingExtra}
+            onClick={requestExtraClinicFromAdmin}
+          >
+            {requestingExtra ? "جاري الإرسال..." : "إرسال طلب لإدارة المنصة"}
+          </Button>
+        </div>
+      )}
+
       <div className="space-y-8">
         {/* Clinics */}
         <Card>
@@ -266,7 +323,17 @@ export default function DoctorClinicsPage() {
               <MapPin className="h-4 w-4" />
               العيادات
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={addClinic} className="gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={addClinic}
+              className="gap-1"
+              disabled={
+                Boolean(centerFlags.medicalCenterId) &&
+                !centerFlags.canAddExtraClinics &&
+                clinics.length >= 1
+              }
+            >
               <Plus className="h-3.5 w-3.5" />
               إضافة عيادة
             </Button>

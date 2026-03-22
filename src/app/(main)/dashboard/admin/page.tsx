@@ -14,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import AdminDoctorActions from "./admin-doctor-actions";
 
+function formatSubscriptionLabel(d: { medicalCenterId?: string | null; subscriptionPeriod?: string | null }) {
+  if (d.medicalCenterId) return "ضمن اشتراك المركز (تلقائي)";
+  if (d.subscriptionPeriod === "monthly") return "شهري ₪80";
+  if (d.subscriptionPeriod === "half_year") return "نصف سنة ₪400";
+  if (d.subscriptionPeriod === "yearly") return "سنة ₪800";
+  return "لا يوجد";
+}
+
 export default async function AdminDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
@@ -27,7 +35,9 @@ export default async function AdminDashboard() {
     supabaseAdmin.from("Doctor").select("id", { count: "exact", head: true }),
     supabaseAdmin
       .from("Doctor")
-      .select("id, userId, status, subscriptionPeriod, subscriptionEndDate, createdAt, user:User(name, email), specialty:Specialty(nameAr)")
+      .select(
+        "id, userId, status, subscriptionPeriod, subscriptionEndDate, medicalCenterId, canAddExtraClinics, createdAt, user:User(name, email), specialty:Specialty(nameAr)"
+      )
       .order("createdAt", { ascending: false }),
     supabaseAdmin.from("SubscriptionPayment").select("amount"),
   ]);
@@ -42,6 +52,8 @@ export default async function AdminDashboard() {
     subscriptionPlan?: string;
     subscriptionPeriod?: string;
     subscriptionEndDate?: string;
+    medicalCenterId?: string | null;
+    canAddExtraClinics?: boolean;
     createdAt?: string;
   }[]);
 
@@ -124,16 +136,7 @@ export default async function AdminDashboard() {
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
-                  <span>
-                    الاشتراك:{" "}
-                    {d.subscriptionPeriod === "monthly"
-                      ? "شهري ₪80"
-                      : d.subscriptionPeriod === "half_year"
-                      ? "نصف سنة ₪400"
-                      : d.subscriptionPeriod === "yearly"
-                      ? "سنة ₪800"
-                      : "لا يوجد"}
-                  </span>
+                  <span>الاشتراك: {formatSubscriptionLabel(d)}</span>
                   <span className="whitespace-nowrap">
                     {d.createdAt ? format(new Date(d.createdAt), "dd/MM/yyyy") : "—"}
                   </span>
@@ -150,6 +153,8 @@ export default async function AdminDashboard() {
                     status={d.status}
                     isPending={d.status === "PENDING"}
                     showSubscription={d.status === "APPROVED"}
+                    medicalCenterId={d.medicalCenterId}
+                    canAddExtraClinics={Boolean(d.canAddExtraClinics)}
                   />
                 </div>
               </div>
@@ -207,29 +212,39 @@ export default async function AdminDashboard() {
                       </Badge>
                     </td>
                     <td className="py-3 align-top">
-                      {d.subscriptionPeriod ? (
+                      {d.medicalCenterId ? (
+                        <div className="flex flex-col gap-0.5 text-xs sm:text-sm">
+                          <span className="inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 bg-sky-50 text-sky-800 border border-sky-100">
+                            {formatSubscriptionLabel(d)}
+                          </span>
+                          {d.subscriptionEndDate && (
+                            <span className="text-[11px] text-gray-400">
+                              ينتهي في {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
+                            </span>
+                          )}
+                        </div>
+                      ) : d.subscriptionPeriod ? (
                         <div className="flex flex-col gap-0.5 text-xs sm:text-sm">
                           <span
                             className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 ${
                               d.subscriptionPeriod === "monthly"
                                 ? "bg-blue-50 text-blue-700"
                                 : d.subscriptionPeriod === "half_year"
-                                ? "bg-amber-50 text-amber-700"
-                                : "bg-emerald-50 text-emerald-700"
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-emerald-50 text-emerald-700"
                             }`}
                           >
                             {d.subscriptionPeriod === "monthly"
                               ? "شهري ₪80"
                               : d.subscriptionPeriod === "half_year"
-                              ? "نصف سنة ₪400"
-                              : d.subscriptionPeriod === "yearly"
-                              ? "سنة ₪800"
-                              : "—"}
+                                ? "نصف سنة ₪400"
+                                : d.subscriptionPeriod === "yearly"
+                                  ? "سنة ₪800"
+                                  : "—"}
                           </span>
                           {d.subscriptionEndDate && (
                             <span className="text-[11px] text-gray-400">
-                              ينتهي في{" "}
-                              {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
+                              ينتهي في {format(new Date(d.subscriptionEndDate), "dd/MM/yyyy")}
                             </span>
                           )}
                         </div>
@@ -247,6 +262,8 @@ export default async function AdminDashboard() {
                         status={d.status}
                         isPending={d.status === "PENDING"}
                         showSubscription={d.status === "APPROVED"}
+                        medicalCenterId={d.medicalCenterId}
+                        canAddExtraClinics={Boolean(d.canAddExtraClinics)}
                       />
                     </td>
                   </tr>
@@ -280,7 +297,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {(pendingDoctors as { id: string; user?: { name?: string }; specialty?: { nameAr?: string }; createdAt?: string; subscriptionPlan?: string; subscriptionPeriod?: string | null }[]).map((doctor) => (
+                {(pendingDoctors as { id: string; user?: { name?: string }; specialty?: { nameAr?: string }; createdAt?: string; subscriptionPlan?: string; subscriptionPeriod?: string | null; medicalCenterId?: string | null; canAddExtraClinics?: boolean }[]).map((doctor) => (
                   <div
                     key={doctor.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
@@ -297,7 +314,15 @@ export default async function AdminDashboard() {
                         {doctor.createdAt ? format(new Date(doctor.createdAt), "dd/MM/yyyy") : ""}
                       </p>
                     </div>
-                    <AdminDoctorActions doctorId={doctor.id} subscriptionPeriod={doctor.subscriptionPeriod} status="PENDING" isPending showSubscription={false} />
+                    <AdminDoctorActions
+                      doctorId={doctor.id}
+                      subscriptionPeriod={doctor.subscriptionPeriod}
+                      status="PENDING"
+                      isPending
+                      showSubscription={false}
+                      medicalCenterId={doctor.medicalCenterId}
+                      canAddExtraClinics={Boolean(doctor.canAddExtraClinics)}
+                    />
                   </div>
                 ))}
               </div>
