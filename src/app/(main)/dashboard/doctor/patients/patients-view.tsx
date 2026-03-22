@@ -6,7 +6,7 @@ import {
   Plus, Search, X, Users, Loader2,
   User, Calendar, TrendingUp, TrendingDown,
   FileText, CheckCircle, Clock, XCircle, Trash2, Pencil, Check,
-  Phone, AlertTriangle, Stethoscope, Receipt,
+  Phone, AlertTriangle, Stethoscope, Receipt, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { format, differenceInYears } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { PatientListItem, SelectedPatient, AppointmentRow, TransactionRow } from "./page";
+import type { CarePlanType } from "@/lib/specialty-plan-registry";
+import { CarePlanPanel } from "@/components/doctor-care-plans/care-plan-panel";
 
 /* ─── Tab definitions ────────────────────────────────────────────── */
 const BASE_TABS = [
@@ -94,6 +96,7 @@ type Props = {
   doctorId: string;
   defaultFee: number;
   isDentist: boolean;
+  carePlanType: CarePlanType;
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -107,6 +110,7 @@ export default function PatientsView({
   doctorId,
   defaultFee,
   isDentist,
+  carePlanType,
 }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -226,11 +230,14 @@ export default function PatientsView({
   }, [selectedPatient?.id, selectedPatient?.source, isDentist]);
 
   const tabs = useMemo(() => {
-    if (!isDentist) return BASE_TABS;
-    return [
-      ...BASE_TABS,
-      { id: "dental", label: "خطة علاج الأسنان", icon: Stethoscope },
-    ];
+    const t = [...BASE_TABS];
+    if (!isDentist) {
+      t.push({ id: "careplan", label: "خطة العلاج", icon: ClipboardList });
+    }
+    if (isDentist) {
+      t.push({ id: "dental", label: "خطة علاج الأسنان", icon: Stethoscope });
+    }
+    return t;
   }, [isDentist]);
 
   const handleToothClick = (id: string) => {
@@ -1534,6 +1541,13 @@ export default function PatientsView({
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* ── خطة العلاج حسب التخصص (مرضى العيادة، غير أطباء الأسنان) ─ */}
+              {activeTab === "careplan" && !isDentist && selectedPatient.source === "clinic" && (
+                <div className="space-y-4">
+                  <CarePlanPanel clinicPatientId={selectedPatient.id} carePlanType={carePlanType} />
                 </div>
               )}
 

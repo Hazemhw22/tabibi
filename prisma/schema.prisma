@@ -208,6 +208,7 @@ model Doctor {
   clinicPatients     ClinicPatient[]
   clinicAppointments ClinicAppointment[]
   medicalNotes       ClinicMedicalNote[]
+  patientCarePlans   ClinicPatientCarePlan[]
 }
 
 model Clinic {
@@ -347,6 +348,24 @@ model ClinicPatient {
   transactions       ClinicTransaction[]
   clinicAppointments ClinicAppointment[]
   medicalNotes       ClinicMedicalNote[]
+  carePlan           ClinicPatientCarePlan?
+}
+
+/// خطة علاجية حسب تخصص الطبيب (بيانات مرنة JSON + ملاحظات الطبيب)
+model ClinicPatientCarePlan {
+  id              String   @id @default(cuid())
+  doctorId        String
+  clinicPatientId String   @unique
+  /// OB_GYN | PEDIATRICS | ORTHOPEDICS | UROLOGY_NEPHROLOGY | CARDIOLOGY | DENTAL | GENERIC
+  planType        String
+  /// بيانات الخطة حسب planType (حاسبة الحمل، أعضاء، إصابات، إلخ)
+  data            Json     @default("{}")
+  doctorNotes     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  doctor        Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
 }
 
 /// المعاملات المالية: خدمات (دين سالب) أو دفعات (موجب)

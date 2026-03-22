@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { resolveCarePlanType, type CarePlanType } from "@/lib/specialty-plan-registry";
 import PatientsView from "./patients-view";
 
 export type AppointmentRow = {
@@ -79,9 +80,11 @@ export default async function DoctorPatientsPage({
     .single();
   if (!doctor) redirect("/dashboard/doctor/setup");
 
-  const isDentist =
-    ((doctor as { specialty?: { nameAr?: string | null } | null }).specialty?.nameAr ?? "").trim() ===
-    "طب أسنان";
+  const specialtyNameAr = (
+    (doctor as { specialty?: { nameAr?: string | null } | null }).specialty?.nameAr ?? ""
+  ).trim();
+  const isDentist = specialtyNameAr === "طب أسنان";
+  const carePlanType: CarePlanType = resolveCarePlanType(specialtyNameAr);
 
   const { q, id: selectedId, source: selectedSource } = await searchParams;
 
@@ -256,6 +259,7 @@ export default async function DoctorPatientsPage({
         doctorId={doctor.id}
         defaultFee={(doctor as { consultationFee?: number }).consultationFee ?? 0}
         isDentist={isDentist}
+        carePlanType={carePlanType}
       />
     </div>
   );
