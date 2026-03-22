@@ -5,7 +5,7 @@ import { Moon, Sun } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -22,15 +22,21 @@ export default function DashboardHeader() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return "dark";
-    const stored = window.localStorage.getItem("tabibi-theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-    const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
-    document.documentElement.dataset.theme = initial;
-    return initial;
-  });
+  /** نفس القيمة على الـ SSR والعميل (للتصيير الأول) — ثم المزامنة من localStorage بعد mount */
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const userMenuRef = useRef<DropdownHandle>(null);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("tabibi-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
+      setTheme(initial);
+      document.documentElement.dataset.theme = initial;
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";

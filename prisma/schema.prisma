@@ -75,6 +75,8 @@ model User {
   doctorProfile Doctor?
   appointments  Appointment[] @relation("PatientAppointments")
   reviews       Review[]
+  /// خطط علاج من أطباء المنصة (مريض مسجل User)
+  platformPatientCarePlans PlatformPatientCarePlan[]
 
   /// عند role = MEDICAL_CENTER_ADMIN: المركز الذي يديره المستخدم
   medicalCenterId String?
@@ -209,6 +211,7 @@ model Doctor {
   clinicAppointments ClinicAppointment[]
   medicalNotes       ClinicMedicalNote[]
   patientCarePlans   ClinicPatientCarePlan[]
+  platformPatientCarePlans PlatformPatientCarePlan[]
 }
 
 model Clinic {
@@ -366,6 +369,23 @@ model ClinicPatientCarePlan {
 
   doctor        Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   clinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
+}
+
+/// خطة علاج لمريض المنصة (حساب User) لدى طبيب محدد
+model PlatformPatientCarePlan {
+  id            String   @id @default(cuid())
+  doctorId      String
+  patientUserId String
+  planType      String
+  data          Json     @default("{}")
+  doctorNotes   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  doctor  Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient User   @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, patientUserId])
 }
 
 /// المعاملات المالية: خدمات (دين سالب) أو دفعات (موجب)

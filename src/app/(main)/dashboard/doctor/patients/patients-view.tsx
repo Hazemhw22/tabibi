@@ -231,6 +231,7 @@ export default function PatientsView({
 
   const tabs = useMemo(() => {
     const t = [...BASE_TABS];
+    /* خطة العلاج حسب التخصص — مريض عيادة أو مريض منصة */
     if (!isDentist) {
       t.push({ id: "careplan", label: "خطة العلاج", icon: ClipboardList });
     }
@@ -1544,10 +1545,14 @@ export default function PatientsView({
                 </div>
               )}
 
-              {/* ── خطة العلاج حسب التخصص (مرضى العيادة، غير أطباء الأسنان) ─ */}
-              {activeTab === "careplan" && !isDentist && selectedPatient.source === "clinic" && (
+              {/* ── خطة العلاج حسب التخصص (عيادة + منصة، غير أطباء الأسنان) ─ */}
+              {activeTab === "careplan" && !isDentist && (
                 <div className="space-y-4">
-                  <CarePlanPanel clinicPatientId={selectedPatient.id} carePlanType={carePlanType} />
+                  <CarePlanPanel
+                    patientId={selectedPatient.id}
+                    patientSource={selectedPatient.source}
+                    carePlanType={carePlanType}
+                  />
                 </div>
               )}
 

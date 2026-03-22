@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format, differenceInDays, addDays } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, Plus, Trash2, CheckCircle, ClipboardList } from "lucide-react";
+import { Loader2, Plus, Trash2, CheckCircle, ClipboardList, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,27 +19,42 @@ import { CardiologyHeartSvg, CARDIO_ZONES, type CardiologyZoneId } from "./cardi
 import { cn } from "@/lib/utils";
 
 type Props = {
-  clinicPatientId: string;
   carePlanType: CarePlanType;
+  /** مريض عيادة: معرف ClinicPatient | مريض منصة: معرف User (المريض) */
+  patientId: string;
+  patientSource: "clinic" | "platform";
 };
 
 function newId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function CarePlanPanel({ clinicPatientId, carePlanType }: Props) {
+function carePlanApiUrl(patientId: string, source: "clinic" | "platform") {
+  if (source === "clinic") return `/api/clinic/patients/${patientId}/care-plan`;
+  return `/api/doctor/platform-patients/${patientId}/care-plan`;
+}
+
+export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props) {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [doctorNotes, setDoctorNotes] = useState("");
   const [data, setData] = useState<Record<string, unknown>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const res = await fetch(`/api/clinic/patients/${clinicPatientId}/care-plan`);
-      const j = await res.json();
+      const res = await fetch(carePlanApiUrl(patientId, patientSource));
+      const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(j.error || "فشل التحميل");
+        const msg =
+          (j as { error?: string }).error ||
+          (res.status === 500
+            ? "خطأ في الخادم — غالباً لم تُنفَّذ ترحيلة قاعدة البيانات (جدول خطة العلاج). نفّذ: npx prisma db push"
+            : "فشل التحميل");
+        setLoadError(msg);
+        toast.error(msg);
         return;
       }
       const plan = j.plan as {
@@ -55,11 +70,13 @@ export function CarePlanPanel({ clinicPatientId, carePlanType }: Props) {
         setData({});
       }
     } catch {
-      toast.error("خطأ في الاتصال");
+      const msg = "خطأ في الاتصال بالخادم";
+      setLoadError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [clinicPatientId]);
+  }, [patientId, patientSource]);
 
   useEffect(() => {
     void load();
@@ -68,7 +85,7 @@ export function CarePlanPanel({ clinicPatientId, carePlanType }: Props) {
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/clinic/patients/${clinicPatientId}/care-plan`, {
+      const res = await fetch(carePlanApiUrl(patientId, patientSource), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,10 +117,23 @@ export function CarePlanPanel({ clinicPatientId, carePlanType }: Props) {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 text-sm text-amber-950">
+        <p className="font-semibold">تعذّر تحميل خطة العلاج</p>
+        <p className="text-amber-900/90 whitespace-pre-wrap">{loadError}</p>
+        <Button type="button" size="sm" variant="outline" onClick={() => void load()} className="gap-2">
+          <RotateCcw className="h-4 w-4" />
+          إعادة المحاولة
+        </Button>
+      </div>
+    );
+  }
+
   const title = CARE_PLAN_LABELS[carePlanType] ?? "خطة العلاج";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-[200px]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
@@ -138,6 +168,16 @@ export function CarePlanPanel({ clinicPatientId, carePlanType }: Props) {
       {(carePlanType === "GENERIC" || carePlanType === "DENTAL") && (
         <GenericBlock data={data} setData={setData} />
       )}
+      {/* احتياط: أي نوع غير معروف يعرض الخطة العامة */}
+      {![
+        "OB_GYN",
+        "PEDIATRICS",
+        "ORTHOPEDICS",
+        "UROLOGY_NEPHROLOGY",
+        "CARDIOLOGY",
+        "GENERIC",
+        "DENTAL",
+      ].includes(carePlanType) && <GenericBlock data={data} setData={setData} />}
 
       <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-2">
         <label className="text-xs font-semibold text-gray-700">ملاحظات الطبيب (عامة)</label>

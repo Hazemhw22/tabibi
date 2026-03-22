@@ -16,7 +16,7 @@ function mapSupabaseError(err: { message?: string; code?: string } | null) {
     return NextResponse.json(
       {
         error:
-          "جدول ClinicPatientCarePlan غير موجود في قاعدة البيانات. نفّذ: npx prisma db push ثم أعد تشغيل السيرفر.",
+          "جدول PlatformPatientCarePlan غير موجود في قاعدة البيانات. نفّذ: npx prisma db push ثم أعد تشغيل السيرفر.",
       },
       { status: 500 },
     );
@@ -29,7 +29,7 @@ function mapSupabaseError(err: { message?: string; code?: string } | null) {
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ patientId: string }> }
 ) {
   try {
     const session = await auth();
@@ -37,7 +37,7 @@ export async function GET(
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    const { id: clinicPatientId } = await params;
+    const { patientId: patientUserId } = await params;
 
     const { data: doctor, error: docErr } = await supabaseAdmin
       .from("Doctor")
@@ -49,25 +49,26 @@ export async function GET(
       return NextResponse.json({ plan: null }, { status: 200 });
     }
 
-    const { data: patient } = await supabaseAdmin
-      .from("ClinicPatient")
+    const { data: apts } = await supabaseAdmin
+      .from("Appointment")
       .select("id")
-      .eq("id", clinicPatientId)
       .eq("doctorId", doctor.id)
-      .maybeSingle();
+      .eq("patientId", patientUserId)
+      .limit(1);
 
-    if (!patient) {
-      return NextResponse.json({ error: "المريض غير موجود" }, { status: 404 });
+    if (!apts?.length) {
+      return NextResponse.json({ error: "المريض غير مرتبط بحجوزاتك" }, { status: 404 });
     }
 
     const { data: plan, error: planErr } = await supabaseAdmin
-      .from("ClinicPatientCarePlan")
+      .from("PlatformPatientCarePlan")
       .select("id, planType, data, doctorNotes, updatedAt")
-      .eq("clinicPatientId", clinicPatientId)
+      .eq("doctorId", doctor.id)
+      .eq("patientUserId", patientUserId)
       .maybeSingle();
 
     if (planErr) {
-      console.error("ClinicPatientCarePlan GET:", planErr);
+      console.error("PlatformPatientCarePlan GET:", planErr);
       return mapSupabaseError(planErr);
     }
 
@@ -86,14 +87,14 @@ export async function GET(
         : null,
     });
   } catch (e) {
-    console.error("care-plan GET:", e);
+    console.error("platform care-plan GET:", e);
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
   }
 }
 
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ patientId: string }> }
 ) {
   try {
     const session = await auth();
@@ -101,7 +102,7 @@ export async function PUT(
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    const { id: clinicPatientId } = await params;
+    const { patientId: patientUserId } = await params;
     const body = putSchema.parse(await req.json());
 
     const { data: doctor, error: docErr } = await supabaseAdmin
@@ -114,15 +115,15 @@ export async function PUT(
       return NextResponse.json({ error: "الطبيب غير موجود" }, { status: 404 });
     }
 
-    const { data: patient } = await supabaseAdmin
-      .from("ClinicPatient")
+    const { data: aptsPut } = await supabaseAdmin
+      .from("Appointment")
       .select("id")
-      .eq("id", clinicPatientId)
       .eq("doctorId", doctor.id)
-      .maybeSingle();
+      .eq("patientId", patientUserId)
+      .limit(1);
 
-    if (!patient) {
-      return NextResponse.json({ error: "المريض غير موجود أو غير مصرح" }, { status: 404 });
+    if (!aptsPut?.length) {
+      return NextResponse.json({ error: "المريض غير مرتبط بحجوزاتك" }, { status: 404 });
     }
 
     const dataJson =
@@ -133,9 +134,10 @@ export async function PUT(
     const now = new Date().toISOString();
 
     const { data: existing } = await supabaseAdmin
-      .from("ClinicPatientCarePlan")
+      .from("PlatformPatientCarePlan")
       .select("id")
-      .eq("clinicPatientId", clinicPatientId)
+      .eq("doctorId", doctor.id)
+      .eq("patientUserId", patientUserId)
       .maybeSingle();
 
     let saved: {
@@ -148,7 +150,7 @@ export async function PUT(
 
     if (existing?.id) {
       const { data: row, error: upErr } = await supabaseAdmin
-        .from("ClinicPatientCarePlan")
+        .from("PlatformPatientCarePlan")
         .update({
           planType: body.planType,
           data: dataJson,
@@ -160,17 +162,17 @@ export async function PUT(
         .single();
 
       if (upErr) {
-        console.error("ClinicPatientCarePlan UPDATE:", upErr);
+        console.error("PlatformPatientCarePlan UPDATE:", upErr);
         return mapSupabaseError(upErr);
       }
       saved = row;
     } else {
       const { data: row, error: insErr } = await supabaseAdmin
-        .from("ClinicPatientCarePlan")
+        .from("PlatformPatientCarePlan")
         .insert({
           id: randomUUID(),
           doctorId: doctor.id,
-          clinicPatientId,
+          patientUserId,
           planType: body.planType,
           data: dataJson,
           doctorNotes: body.doctorNotes ?? null,
@@ -181,7 +183,7 @@ export async function PUT(
         .single();
 
       if (insErr) {
-        console.error("ClinicPatientCarePlan INSERT:", insErr);
+        console.error("PlatformPatientCarePlan INSERT:", insErr);
         return mapSupabaseError(insErr);
       }
       saved = row;
@@ -207,7 +209,7 @@ export async function PUT(
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
     }
-    console.error("care-plan PUT:", e);
+    console.error("platform care-plan PUT:", e);
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
   }
 }

@@ -211,13 +211,19 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return "dark";
-    const stored = window.localStorage.getItem("tabibi-theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-    return stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
-  });
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [doctorStatus, setDoctorStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("tabibi-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
+      setTheme(initial);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     const handler = (e: CustomEvent<"light" | "dark">) => setTheme(e.detail);
