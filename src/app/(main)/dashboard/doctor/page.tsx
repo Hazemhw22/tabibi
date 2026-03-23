@@ -88,6 +88,7 @@ export default async function DoctorDashboard() {
     platformTxListRes,
     { data: upcomingPlatform },
     { data: upcomingClinic },
+    { count: totalClinicAptCount },
   ] = await Promise.all([
     /* today platform */
     supabaseAdmin
@@ -107,8 +108,8 @@ export default async function DoctorDashboard() {
       .lt("date", tomorrow.toISOString())
       .order("time"),
 
-    /* all appointments (status only for stats) */
-    supabaseAdmin.from("Appointment").select("status").eq("doctorId", doctor.id),
+    /* all appointments (status + patientId for stats) */
+    supabaseAdmin.from("Appointment").select("status, patientId").eq("doctorId", doctor.id),
 
     /* paid payments */
     supabaseAdmin
@@ -164,6 +165,14 @@ export default async function DoctorDashboard() {
       .in("status", ["SCHEDULED"])
       .order("date", { ascending: true })
       .limit(60),
+
+    /* total clinic appointments count */
+    cpIds.length > 0
+      ? supabaseAdmin
+          .from("ClinicAppointment")
+          .select("id", { count: "exact", head: true })
+          .in("clinicPatientId", cpIds)
+      : Promise.resolve({ count: 0, data: null, error: null }),
   ]);
 
   /* ─────────────── Finance calculations ─────────────── */
@@ -280,8 +289,17 @@ export default async function DoctorDashboard() {
   );
 
   /* ─────────────── Stats cards ─────────────── */
-  const totalPatientsCount = (allAppointments ?? []).length;
+  // عدد المرضى الفريدين = مرضى المنصة (حجوزات فريدة) + مرضى العيادة المسجلين يدوياً
+  const uniquePlatformPatients = new Set(
+    (allAppointments ?? [])
+      .map((a: { patientId?: string }) => a.patientId)
+      .filter(Boolean)
+  ).size;
+  const clinicPatientsCount = cpIds.length;
+  const totalPatientsCount = uniquePlatformPatients + clinicPatientsCount;
   const completedCount = statsMap["COMPLETED"] || 0;
+  // إجمالي المواعيد = مواعيد المنصة + مواعيد العيادة
+  const totalAllAppointments = (allAppointments ?? []).length + (totalClinicAptCount ?? 0);
 
   /* ─────────────── Subscription ─────────────── */
   const subDaysLeft = doctor.subscriptionEndDate
@@ -325,8 +343,8 @@ export default async function DoctorDashboard() {
             valueFmt: (v: number | string) => `₪${Number(v).toFixed(0)}`,
           },
           {
-            label: "مواعيد اليوم",
-            value: todayAppointments.length,
+            label: "إجمالي المواعيد",
+            value: totalAllAppointments,
             icon: IconCalendar,
             bg: "bg-teal-50",
             iconColor: "text-teal-500",

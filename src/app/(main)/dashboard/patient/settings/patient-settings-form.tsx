@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export function PatientSettingsForm({ defaultName, defaultPhone, defaultImage }:
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(defaultName ?? "");
   const [phone, setPhone] = useState(defaultPhone ?? "");
   const [image, setImage] = useState<string | null>(defaultImage ?? null);
@@ -85,32 +86,38 @@ export function PatientSettingsForm({ defaultName, defaultPhone, defaultImage }:
               )}
             </div>
             <div className="flex items-center gap-2">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      setUploading(true);
-                      const url = await uploadAvatar(file);
-                      setImage(url);
-                      toast.success("تم رفع الصورة بنجاح");
-                    } catch (err) {
-                      toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
-                    } finally {
-                      setUploading(false);
-                      e.currentTarget.value = "";
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" disabled={uploading} className="gap-2">
-                  {uploading ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
-                  تغيير الصورة
-                </Button>
-              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  const input = e.currentTarget;
+                  if (!file) return;
+                  try {
+                    setUploading(true);
+                    const url = await uploadAvatar(file);
+                    setImage(url);
+                    toast.success("تم رفع الصورة بنجاح، اضغط حفظ لتثبيتها");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
+                  } finally {
+                    setUploading(false);
+                    if (input) input.value = "";
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploading}
+                className="gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
+                {uploading ? "جاري الرفع..." : "تغيير الصورة"}
+              </Button>
               {image ? (
                 <Button type="button" variant="ghost" onClick={() => setImage(null)}>
                   إزالة

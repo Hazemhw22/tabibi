@@ -13,7 +13,7 @@ export async function GET() {
     const { data: doctor, error: docError } = await supabaseAdmin
       .from("Doctor")
       .select(
-        "*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*), medicalCenterId, canAddExtraClinics"
+        "*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*), medicalCenterId, canAddExtraClinics, user:User(name, image, phone)"
       )
       .eq("userId", session.user.id)
       .single();

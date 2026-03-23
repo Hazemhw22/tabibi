@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import IconBuilding from "@/components/icon/icon-building";
@@ -42,6 +42,7 @@ export default function MedicalCenterSettingsPage() {
   const [locationId, setLocationId] = useState("");
   const [imageUrl, setImageUrl] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [hours, setHours] = useState<HoursRow[]>([{ dayOfWeek: 0, startTime: "08:00", endTime: "16:00" }]);
 
   useEffect(() => {
@@ -167,35 +168,40 @@ export default function MedicalCenterSettingsPage() {
                 <Image src={imageUrl} alt="صورة المركز" fill className="object-cover" unoptimized />
               ) : null}
             </div>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    setUploadingImage(true);
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
-                    const data = await res.json();
-                    if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
-                    setImageUrl(data.url);
-                    toast.success("تم رفع صورة المركز");
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
-                  } finally {
-                    setUploadingImage(false);
-                    e.currentTarget.value = "";
-                  }
-                }}
-              />
-              <Button type="button" variant="outline" disabled={uploadingImage}>
-                {uploadingImage ? "جاري الرفع..." : "رفع صورة المركز"}
-              </Button>
-            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                const input = e.currentTarget;
+                if (!file) return;
+                try {
+                  setUploadingImage(true);
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
+                  const data = await res.json();
+                  if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
+                  setImageUrl(data.url);
+                  toast.success("تم رفع صورة المركز، اضغط حفظ لتثبيتها");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
+                } finally {
+                  setUploadingImage(false);
+                  if (input) input.value = "";
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploadingImage}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploadingImage ? "جاري الرفع..." : "رفع صورة المركز"}
+            </Button>
             {imageUrl ? (
               <Button type="button" variant="ghost" onClick={() => setImageUrl("")}>
                 إزالة

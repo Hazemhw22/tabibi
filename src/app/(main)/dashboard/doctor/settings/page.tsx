@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -51,11 +51,9 @@ export default function DoctorSettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (session?.user?.image) {
-      setAvatarUrl(session.user.image);
-    }
     fetch("/api/doctor/profile")
       .then((r) => r.json())
       .then((data) => {
@@ -69,6 +67,9 @@ export default function DoctorSettingsPage() {
             setSelectedSpecialtyId(data.doctor.specialty.id);
           }
           if (data.doctor.gender) setGender(data.doctor.gender as "MALE" | "FEMALE");
+          // تحميل صورة الطبيب من قاعدة البيانات أولاً، ثم من الـ session
+          const dbImage = data.doctor.user?.image ?? data.doctor.User?.image ?? null;
+          setAvatarUrl(dbImage || session?.user?.image || null);
         }
       });
 
@@ -164,36 +165,43 @@ export default function DoctorSettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        setUploadingAvatar(true);
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
-                        const data = await res.json();
-                        if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
-                        setAvatarUrl(data.url);
-                        toast.success("تم رفع الصورة");
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
-                      } finally {
-                        setUploadingAvatar(false);
-                        e.currentTarget.value = "";
-                      }
-                    }}
-                  />
-                  <Button type="button" variant="outline" size="sm" disabled={uploadingAvatar} className="gap-2">
-                    {uploadingAvatar ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
-                    رفع صورة مخصصة
-                  </Button>
-                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    const input = e.currentTarget;
+                    if (!file) return;
+                    try {
+                      setUploadingAvatar(true);
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
+                      const data = await res.json();
+                      if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
+                      setAvatarUrl(data.url);
+                      toast.success("تم رفع الصورة، اضغط حفظ لتثبيتها");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
+                    } finally {
+                      setUploadingAvatar(false);
+                      if (input) input.value = "";
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadingAvatar}
+                  className="gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploadingAvatar ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
+                  {uploadingAvatar ? "جاري الرفع..." : "رفع صورة مخصصة"}
+                </Button>
                 {avatarUrl && (
                   <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarUrl(null)} className="text-red-500">
                     إزالة الصورة المخصصة
