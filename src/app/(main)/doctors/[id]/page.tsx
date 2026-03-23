@@ -1,19 +1,25 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { notFound } from "next/navigation";
-import { Star, MapPin, Clock, Phone, Calendar, MessageCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DAYS_AR } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
+import IconStar from "@/components/icon/icon-star";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconPhone from "@/components/icon/icon-phone";
+import IconMessage from "@/components/icon/icon-message";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
+import IconShare from "@/components/icon/icon-share";
 import BookingSection from "./booking-section";
 import { auth } from "@/lib/auth";
 import { doctorServesLocation, getLocationFullName } from "@/data/west-bank-locations";
+import FavoriteButton from "@/components/ui/favorite-button";
+import { getDoctorAvatar } from "@/lib/avatar";
 
 async function getDoctor(id: string) {
   const { data: doctor, error } = await supabaseAdmin
     .from("Doctor")
     .select(`
-      id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients, locationId,
-      user:User(name, phone),
+      id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients, locationId, gender,
+      user:User(name, phone, image),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain, locationId),
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId, slotCapacity)
@@ -34,11 +40,11 @@ async function getDoctor(id: string) {
       .select("id, rating, comment, patient:User(name)")
       .eq("doctorId", id)
       .order("createdAt", { ascending: false })
-      .limit(10),
+      .limit(5),
   ]);
 
   type ClinicItem = { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean; locationId?: string | null };
-  type DoctorRow = { whatsapp?: string | null; user?: { name?: string; phone?: string }; User?: { name?: string; phone?: string }; specialty?: { nameAr?: string }; Specialty?: { nameAr?: string }; clinics?: ClinicItem[] };
+  type DoctorRow = { whatsapp?: string | null; gender?: string | null; user?: { name?: string; phone?: string; image?: string | null }; User?: { name?: string; phone?: string; image?: string | null }; specialty?: { nameAr?: string }; Specialty?: { nameAr?: string }; clinics?: ClinicItem[] };
   const d = doctor as DoctorRow;
   const user = d.user ?? d.User;
   const specialty = d.specialty ?? d.Specialty;
@@ -46,9 +52,7 @@ async function getDoctor(id: string) {
   const contactNumber = d.whatsapp || user?.phone || clinics?.[0]?.phone;
   type ReviewRow = { id: string; rating?: number; comment?: string | null; patient?: { name?: string }; Patient?: { name?: string } };
   const reviewsList = ((reviews ?? []) as ReviewRow[]).map((r) => ({
-    id: r.id,
-    rating: r.rating,
-    comment: r.comment,
+    id: r.id, rating: r.rating, comment: r.comment,
     patient: { name: (r.patient ?? r.Patient)?.name ?? "مريض" },
   }));
 
@@ -62,8 +66,9 @@ async function getDoctor(id: string) {
     experienceYears: doctor.experienceYears ?? 0,
     bio: doctor.bio,
     status: doctor.status,
+    gender: d.gender ?? "MALE",
     contactNumber: contactNumber ?? null,
-    user: { name: user?.name ?? "" },
+    user: { name: user?.name ?? "", image: user?.image ?? null },
     specialty: { nameAr: specialty?.nameAr ?? "" },
     clinics,
     timeSlots: slots,
@@ -88,40 +93,19 @@ export default async function DoctorProfilePage({
   let patientRegionId: string | null = null;
   if (session?.user?.role === "PATIENT" && session.user.id) {
     const { data: userRow } = await supabaseAdmin
-      .from("User")
-      .select("regionId")
-      .eq("id", session.user.id)
-      .single();
+      .from("User").select("regionId").eq("id", session.user.id).single();
     patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
-    // المريض المسجّل: إخفاء صفحة الطبيب إذا كان الطبيب لا يخدم منطقته (أو ليس له موقع)
     if (patientRegionId && !doctorServesLocation(doctorLocationId, patientRegionId)) notFound();
   } else if (!isGuest) {
-    // مستخدم مسجّل (مثلاً طبيب/أدمن): الطبيب يجب أن يكون له موقع للعرض
     if (!doctorLocationId) notFound();
   }
-  // الضيف (قبل تسجيل الدخول): يمكنه فتح صفحة أي طبيب معتمد دون شرط المنطقة
 
-  // الطبيب غير ظاهر للمرضى: فقط مرضى العيادة يمكنهم الوصول
   if (doctor.visibleToPatients === false) {
     if (!session?.user?.id) notFound();
     const { data: clinicPatient } = await supabaseAdmin
-      .from("ClinicPatient")
-      .select("id")
-      .eq("doctorId", id)
-      .eq("userId", session.user.id)
-      .maybeSingle();
+      .from("ClinicPatient").select("id").eq("doctorId", id).eq("userId", session.user.id).maybeSingle();
     if (!clinicPatient) notFound();
   }
-
-  type SlotItem = { id?: string; dayOfWeek: number; startTime?: string; endTime?: string; clinicId?: string | null };
-  const slotsByDay = (doctor.timeSlots ?? []).reduce(
-    (acc: Record<number, SlotItem[]>, slot: SlotItem) => {
-      if (!acc[slot.dayOfWeek]) acc[slot.dayOfWeek] = [];
-      acc[slot.dayOfWeek].push(slot);
-      return acc;
-    },
-    {} as Record<number, SlotItem[]>
-  );
 
   const clinicsForView =
     patientRegionId && doctor.clinics?.length
@@ -131,220 +115,190 @@ export default async function DoctorProfilePage({
         )
       : doctor.clinics ?? [];
 
+  const waNum = doctor.contactNumber ? doctor.contactNumber.replace(/\D/g, "") : "";
+  const doctorAvatarSrc = getDoctorAvatar(
+    (doctor.user as { image?: string | null }).image,
+    doctor.gender
+  );
+
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center text-5xl font-bold text-blue-600 shrink-0">
-                  {doctor.user?.name?.charAt(0) || "D"}
-                </div>
+    <div className="bg-gray-50 dark:bg-slate-900 min-h-screen">
 
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900">
-                        د. {doctor.user?.name}
-                      </h1>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="default">{doctor.specialty?.nameAr}</Badge>
-                        <Badge variant="success">متاح للحجز</Badge>
-                      </div>
-                    </div>
-                    <div className="text-left sm:text-right flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-                      {doctor.contactNumber && (
-                        <a
-                          href={`https://wa.me/${doctor.contactNumber.replace(/\D/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 rounded-xl bg-green-100 px-4 py-2.5 text-green-700 font-medium hover:bg-green-200 transition-colors sm:justify-end"
-                        >
-                          <MessageCircle className="h-5 w-5" />
-                          تواصل عبر واتساب
-                        </a>
-                      )}
-                      <div>
-                        <div className="text-xl sm:text-2xl font-bold text-green-600">
-                          ₪{doctor.consultationFee}
-                        </div>
-                        <div className="text-xs text-gray-500">رسوم الاستشارة</div>
-                      </div>
-                    </div>
-                  </div>
+      {/* ===== BLUE HERO SECTION ===== */}
+      <div className="relative bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 overflow-hidden pb-6">
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/10 -translate-y-1/3 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/10 translate-y-1/3 -translate-x-1/3" />
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-5">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-yellow-50 p-1.5 rounded-lg">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">
-                          {(doctor.rating ?? 0).toFixed(1)}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {doctor._count.reviews} تقييم
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-blue-50 p-1.5 rounded-lg">
-                        <Clock className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">
-                          {doctor.experienceYears}
-                        </div>
-                        <div className="text-xs text-gray-500">سنوات خبرة</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-green-50 p-1.5 rounded-lg">
-                        <Calendar className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">
-                          {doctor._count.appointments}
-                        </div>
-                        <div className="text-xs text-gray-500">موعد منجز</div>
-                      </div>
-                    </div>
-                    {doctor.locationId && (
-                      <div className="flex items-center gap-2 col-span-2 sm:col-span-3">
-                        <div className="bg-emerald-50 p-1.5 rounded-lg">
-                          <MapPin className="h-4 w-4 text-emerald-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">
-                            {getLocationFullName(doctor.locationId)}
-                          </div>
-                          <div className="text-xs text-gray-500">منطقة العمل</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+        {/* Header bar */}
+        <div className="relative max-w-2xl mx-auto px-4 pt-4 pb-2 flex items-center justify-between">
+          <Link
+            href="/doctors"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+          >
+            <IconArrowLeft className="h-5 w-5 text-white" />
+          </Link>
+          <h1 className="font-bold text-white text-base">تفاصيل الطبيب</h1>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+              <IconShare className="h-4 w-4 text-white" />
+            </button>
+            <FavoriteButton id={doctor.id} type="doctor" size="sm"
+              className="!bg-white/20 !border-0 !text-white hover:!bg-white/30"
+            />
+          </div>
+        </div>
+
+        {/* Doctor info + photo */}
+        <div className="relative max-w-2xl mx-auto px-4 pt-2 " >
+          <div className="flex items-end justify-between">
+            {/* RIGHT (first in RTL): Doctor photo — تأتي أولاً في RTL فتظهر على اليمين */}
+            <div className="shrink-0 w-44 h-44 relative self-end">
+              <Image
+                src={doctorAvatarSrc}
+                alt={doctor.user?.name || "طبيب"}
+                fill
+                className="object-contain object-bottom drop-shadow-2xl"
+                unoptimized
+              />
+            </div>
+
+            {/* LEFT (second in RTL): text info */}
+            <div className="flex-1 pb-4 pl-3 absolute left-0">
+              {/* Specialty badge */}
+              <div className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full mb-3">
+                {doctor.specialty?.nameAr}
               </div>
+              {/* Name */}
+              <h2 className="text-xl font-extrabold text-white leading-tight mb-2">
+                د. {doctor.user?.name}
+              </h2>
+              {/* Rating */}
+              <div className="flex items-center gap-1.5">
+                <IconStar className="h-4 w-4 fill-yellow-300 text-yellow-300" />
+                <span className="text-white font-bold text-sm">{doctor.rating.toFixed(1)}</span>
+                <span className="text-white/70 text-xs">({doctor._count.reviews}+ تقييم)</span>
+              </div>
+              {/* Fee */}
+              <div className="mt-3 inline-flex items-center gap-1.5 bg-white/20 rounded-xl px-3 py-1.5">
+                <span className="text-white font-bold text-sm">₪{doctor.consultationFee}</span>
+                <span className="text-white/70 text-xs">/ استشارة</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {doctor.bio && (
-                <div className="mt-5 pt-5 border-t border-gray-100">
-                  <h3 className="font-semibold text-gray-800 mb-2">نبذة عن الطبيب</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{doctor.bio}</p>
-                </div>
+      {/* ===== STATS ROW ===== */}
+      <div className="max-w-2xl mx-auto px-4 -mt-1">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 grid grid-cols-3 divide-x divide-x-reverse divide-gray-100 dark:divide-slate-700 overflow-hidden">
+          <div className="text-center py-4 px-2">
+            <p className="text-lg font-extrabold text-gray-900 dark:text-slate-100">{doctor.experienceYears}+</p>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-tight">سنوات<br />الخبرة</p>
+          </div>
+          <div className="text-center py-4 px-2">
+            <p className="text-lg font-extrabold text-gray-900 dark:text-slate-100">{doctor._count.reviews}+</p>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-tight">التقييمات</p>
+          </div>
+          <div className="text-center py-4 px-2">
+            <p className="text-lg font-extrabold text-blue-600 dark:text-blue-400">{doctor.rating.toFixed(1)}</p>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-tight">التقييم</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <div className="max-w-2xl mx-auto px-4 pt-4 pb-10 space-y-4">
+
+        {/* About */}
+        {doctor.bio && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
+            <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-2 text-sm">نبذة عن الطبيب</h3>
+            <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed">{doctor.bio}</p>
+          </div>
+        )}
+
+        {/* Location */}
+        {doctor.locationId && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl px-4 py-3 border border-gray-100 dark:border-slate-700 shadow-sm flex items-center gap-2">
+            <IconMapPin className="h-4 w-4 text-blue-500 shrink-0" />
+            <span className="text-sm text-gray-700 dark:text-slate-300">{getLocationFullName(doctor.locationId)}</span>
+          </div>
+        )}
+
+        {/* ===== BOOKING SECTION ===== */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
+          <BookingSection
+            doctor={doctor}
+            timeSlots={doctor.timeSlots ?? []}
+            clinics={clinicsForView}
+            isLoggedIn={!!session}
+            callbackUrl={`/doctors/${id}`}
+          />
+        </div>
+
+        {/* Contact */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-gray-100 dark:border-slate-700 shadow-sm">
+          <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-3 text-sm">التواصل مع الطبيب</h3>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-blue-100 dark:bg-blue-900/40 shrink-0 relative">
+              <Image src={doctorAvatarSrc} alt={doctor.user?.name || "طبيب"} fill className="object-cover object-top" unoptimized />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 dark:text-slate-100 text-sm">د. {doctor.user?.name}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">{doctor.specialty?.nameAr}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {waNum.length >= 9 && (
+                <a href={`https://wa.me/${waNum}`} target="_blank" rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors">
+                  <IconMessage className="h-4.5 w-4.5" />
+                </a>
               )}
-            </CardContent>
-          </Card>
+              {doctor.contactNumber && (
+                <a href={`tel:${doctor.contactNumber}`}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors">
+                  <IconPhone className="h-4.5 w-4.5" />
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
 
-          {clinicsForView.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">العيادات</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-0">
-                {clinicsForView.map((clinic: { id: string; name: string; address: string; city: string; phone?: string; isMain?: boolean }) => (
-                  <div
-                    key={clinic.id}
-                    className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl"
-                  >
-                    <div className="bg-blue-100 p-2 rounded-lg shrink-0">
-                      <MapPin className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-gray-800 text-sm">{clinic.name}</h4>
-                        {clinic.isMain && (
-                          <Badge variant="secondary" className="text-xs">رئيسية</Badge>
-                        )}
+        {/* Reviews */}
+        {doctor.reviews?.length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
+            <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-3 text-sm flex items-center gap-2">
+              <IconStar className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              تقييمات المرضى ({doctor._count.reviews})
+            </h3>
+            <div className="space-y-3">
+              {doctor.reviews.map((review: { id: string; rating?: number; comment?: string | null; patient: { name: string } }) => (
+                <div key={review.id} className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400">
+                        {review.patient?.name?.charAt(0) || "م"}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {clinic.address}، {clinic.city}
-                      </p>
-                      {clinic.phone && (
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <Phone className="h-3.5 w-3.5 text-gray-400" />
-                          <span className="text-xs text-gray-500 dir-ltr">{clinic.phone}</span>
-                        </div>
-                      )}
+                      <span className="text-sm font-medium text-gray-800 dark:text-slate-200">{review.patient?.name || "مريض"}</span>
+                    </div>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <IconStar key={s}
+                          className={`h-3 w-3 ${s <= (review.rating ?? 0) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 dark:fill-slate-600 text-gray-200 dark:text-slate-600"}`}
+                        />
+                      ))}
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {Object.keys(slotsByDay).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">ساعات العمل</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {Object.entries(slotsByDay).map(([day, slots]) => {
-                    const arr = slots as { startTime: string; endTime: string }[];
-                    const minStart = arr.reduce((m, s) => (s.startTime < m ? s.startTime : m), arr[0]?.startTime ?? "23:59");
-                    const maxEnd = arr.reduce((m, s) => (s.endTime > m ? s.endTime : m), arr[0]?.endTime ?? "00:00");
-                    return (
-                      <div
-                        key={day}
-                        className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                      >
-                        <span className="text-sm font-medium text-gray-700">
-                          {DAYS_AR[Number(day)]}
-                        </span>
-                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                          من {minStart} إلى {maxEnd}
-                        </span>
-                      </div>
-                    );
-                  })}
+                  {review.comment && (
+                    <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed">{review.comment}</p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ))}
+            </div>
+          </div>
+        )}
 
-          {doctor.reviews?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  تقييمات المرضى ({doctor._count.reviews})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                {doctor.reviews.map((review: { id: string; rating?: number; comment?: string | null; patient: { name: string } }) => (
-                  <div key={review.id} className="p-4 bg-gray-50 rounded-xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
-                          {review.patient?.name?.charAt(0) || "م"}
-                        </div>
-                        <span className="text-sm font-medium text-gray-800">
-                          {review.patient?.name || "مريض"}
-                        </span>
-                      </div>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`h-3.5 w-3.5 ${s <= (review.rating ?? 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    {review.comment && (
-                      <p className="text-sm text-gray-600">{review.comment}</p>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="lg:col-span-1">
-          <BookingSection doctor={doctor} timeSlots={doctor.timeSlots ?? []} clinics={clinicsForView} isLoggedIn={!!session} callbackUrl={`/doctors/${id}`} />
-        </div>
       </div>
     </div>
   );

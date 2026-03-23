@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
-import { ArrowLeft, Bell } from "lucide-react";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
+import IconBell from "@/components/icon/icon-bell";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -23,12 +24,12 @@ export default async function NotificationsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-8">
-        <ArrowLeft className="h-4 w-4" />
+        <IconArrowLeft className="h-4 w-4" />
         العودة
       </Link>
 
       <div className="flex items-center gap-3 mb-8">
-        <Bell className="h-10 w-10 text-blue-600" />
+        <IconBell className="h-10 w-10 text-blue-600" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900">الإشعارات</h1>
           <p className="text-gray-500 text-sm">آخر التحديثات والرسائل</p>

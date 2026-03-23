@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Settings, ArrowRight } from "lucide-react";
+import IconSettings from "@/components/icon/icon-settings";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function SettingsPage() {
@@ -24,8 +25,8 @@ export default async function SettingsPage() {
             إعدادات حسابك مرتبطة بلوحة التحكم حسب دورك. انقر أدناه للانتقال إلى صفحة الإعدادات المناسبة.
           </p>
           <Link href={dashboardUrl} className="inline-flex items-center gap-2 text-blue-600 font-medium">
-            <Settings className="h-4 w-4" />
-            <ArrowRight className="h-4 w-4" />
+            <IconSettings className="h-4 w-4" />
+            <IconArrowForward className="h-4 w-4" />
             فتح إعدادات لوحة التحكم
           </Link>
         </CardContent>

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Star, Loader2, Send } from "lucide-react";
+import IconStar from "@/components/icon/icon-star";
+import IconLoader from "@/components/icon/icon-loader";
+import IconSend from "@/components/icon/icon-send";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -69,7 +71,7 @@ export default function ReviewPage() {
                   onMouseLeave={() => setHoveredRating(0)}
                   className="transition-transform hover:scale-110"
                 >
-                  <Star
+                  <IconStar
                     className={`h-10 w-10 transition-colors ${
                       star <= (hoveredRating || rating)
                         ? "fill-yellow-400 text-yellow-400"
@@ -112,12 +114,12 @@ export default function ReviewPage() {
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <IconLoader className="h-4 w-4 animate-spin" />
                 جاري الإرسال...
               </>
             ) : (
               <>
-                <Send className="h-4 w-4" />
+                <IconSend className="h-4 w-4" />
                 إرسال التقييم
               </>
             )}

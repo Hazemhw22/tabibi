@@ -6,6 +6,7 @@ import { z } from "zod";
 const updateProfileSchema = z.object({
   name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل").max(100),
   phone: z.string().max(30).optional(),
+  image: z.string().url().optional().nullable(),
 });
 
 export async function PATCH(req: Request) {
@@ -26,10 +27,12 @@ export async function PATCH(req: Request) {
     // 1) تحديث user_metadata في Auth (دمج مع الموجود)
     const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
     const existingMeta = (authUser?.user?.user_metadata as Record<string, unknown>) || {};
+    const imageToSave = data.image === null ? null : data.image?.trim() || undefined;
     const newMeta = {
       ...existingMeta,
       name: nameToSave,
       phone: phoneToSave,
+      image: imageToSave ?? existingMeta.image ?? null,
       role: role ?? existingMeta.role ?? "PATIENT",
     };
 
@@ -45,7 +48,7 @@ export async function PATCH(req: Request) {
     // 2) تحديث جدول User
     const { error: dbError } = await supabaseAdmin
       .from("User")
-      .update({ name: nameToSave, phone: phoneToSave })
+      .update({ name: nameToSave, phone: phoneToSave, image: imageToSave ?? null })
       .eq("id", userId);
 
     if (dbError) {
@@ -57,6 +60,7 @@ export async function PATCH(req: Request) {
       message: "تم حفظ التعديلات",
       name: nameToSave,
       phone: phoneToSave,
+      image: imageToSave ?? null,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

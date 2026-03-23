@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Loader2 } from "lucide-react";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconLoader from "@/components/icon/icon-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
@@ -71,7 +72,7 @@ export default function PatientRegionSelect({
     <Card className={compact ? "" : "border-2 border-emerald-200 bg-emerald-50/50 mb-8"}>
       <CardHeader className={compact ? "pb-2" : ""}>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <MapPin className="h-5 w-5 text-emerald-600" />
+          <IconMapPin className="h-5 w-5 text-emerald-600" />
           {title}
         </CardTitle>
         {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
@@ -87,7 +88,7 @@ export default function PatientRegionSelect({
           />
         </div>
         <Button onClick={handleSave} disabled={!regionId || loading} className="gap-2">
-          {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الحفظ...</> : compact ? "حفظ المنطقة" : "حفظ وعرض الأطباء"}
+          {loading ? <><IconLoader className="h-4 w-4 animate-spin" /> جاري الحفظ...</> : compact ? "حفظ المنطقة" : "حفظ وعرض الأطباء"}
         </Button>
       </CardContent>
     </Card>

@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Users, Phone, Mail } from "lucide-react";
+import IconUsers from "@/components/icon/icon-users";
+import IconPhone from "@/components/icon/icon-phone";
+import IconMail from "@/components/icon/icon-mail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,7 +63,7 @@ export default function CenterPatientsPage() {
         ← الرئيسية
       </Link>
       <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-        <Users className="h-6 w-6 text-blue-600 shrink-0" />
+        <IconUsers className="h-6 w-6 text-blue-600 shrink-0" />
         مرضى المركز
       </h1>
       {err && <p className="text-red-600 text-sm mb-4">{err}</p>}
@@ -134,13 +136,13 @@ export default function CenterPatientsPage() {
                     <p className="font-semibold text-gray-900 dark:text-white">{r.patient?.name ?? "—"}</p>
                     {r.patient?.phone && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        <IconPhone className="h-3.5 w-3.5 shrink-0" />
                         <span dir="ltr">{r.patient.phone}</span>
                       </p>
                     )}
                     {r.patient?.email && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 truncate">
-                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        <IconMail className="h-3.5 w-3.5 shrink-0" />
                         <span dir="ltr" className="truncate">
                           {r.patient.email}
                         </span>

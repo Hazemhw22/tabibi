@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
+import { Tajawal, El_Messiri } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 
-const cairo = Cairo({
+const tajawal = Tajawal({
   subsets: ["arabic", "latin"],
-  variable: "--font-cairo",
+  weight: ["300", "400", "500", "700", "800"],
+  variable: "--font-tajawal",
+  display: "swap",
+});
+
+const elMessiri = El_Messiri({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-messiri",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -32,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`${cairo.variable} font-sans antialiased bg-gray-50`}>
+      <body className={`${tajawal.variable} ${elMessiri.variable} font-sans antialiased bg-gray-50`}>
         <SessionProvider>
           {children}
           <Toaster position="top-center" richColors dir="rtl" />

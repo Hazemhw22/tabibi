@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Stethoscope, Plus, Trash2, ExternalLink } from "lucide-react";
+import IconHeart from "@/components/icon/icon-heart";
+import IconPlus from "@/components/icon/icon-plus";
+import IconTrash from "@/components/icon/icon-trash";
+import IconLink from "@/components/icon/icon-link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -183,7 +186,7 @@ export default function CenterDoctorDetailPage() {
         ← أطباء المركز
       </Link>
       <h1 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-        <Stethoscope className="h-6 w-6 text-blue-600" />
+        <IconHeart className="h-6 w-6 text-blue-600" />
         د. {doctor.user?.name ?? "—"}
       </h1>
       <p className="text-sm text-gray-500 mb-6">{doctor.user?.email}</p>
@@ -196,7 +199,7 @@ export default function CenterDoctorDetailPage() {
           className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
         >
           صفحة الحجز العامة للمريض
-          <ExternalLink className="h-3.5 w-3.5" />
+          <IconLink className="h-3.5 w-3.5" />
         </a>
       </div>
 
@@ -261,7 +264,7 @@ export default function CenterDoctorDetailPage() {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <Label>أوقات العمل (عيادة المركز)</Label>
                 <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addSlot}>
-                  <Plus className="h-4 w-4" />
+                  <IconPlus className="h-4 w-4" />
                   يوم آخر
                 </Button>
               </div>
@@ -316,7 +319,7 @@ export default function CenterDoctorDetailPage() {
                       onClick={() => removeSlot(i)}
                       disabled={slots.length <= 1}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <IconTrash className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

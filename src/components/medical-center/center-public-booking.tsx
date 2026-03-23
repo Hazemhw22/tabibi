@@ -3,16 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  CreditCard,
-  Stethoscope,
-  LogIn,
-  Clock,
-} from "lucide-react";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconLoader from "@/components/icon/icon-loader";
+import IconCreditCard from "@/components/icon/icon-credit-card";
+import IconHeart from "@/components/icon/icon-heart";
+import IconLogin from "@/components/icon/icon-login";
+import IconClock from "@/components/icon/icon-clock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -226,7 +224,7 @@ export default function CenterPublicBooking({
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Stethoscope className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <IconHeart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           أطباء المركز
         </h2>
 
@@ -312,7 +310,7 @@ export default function CenterPublicBooking({
         <Card className="border-blue-100 dark:border-slate-600 dark:bg-slate-800/80">
           <CardContent className="p-4 sm:p-6 space-y-5">
             <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
+              <IconCalendar className="h-4 w-4 text-blue-600" />
               حجز مع د. {selectedDoctor.name}
             </h3>
 
@@ -321,7 +319,7 @@ export default function CenterPublicBooking({
                 <p className="mb-3">سجّل دخولك كمريض لإكمال الحجز.</p>
                 <Button asChild size="sm" className="gap-2">
                   <Link href={loginHref}>
-                    <LogIn className="h-4 w-4" />
+                    <IconLogin className="h-4 w-4" />
                     تسجيل دخول المرضى
                   </Link>
                 </Button>
@@ -349,7 +347,7 @@ export default function CenterPublicBooking({
                       disabled={dateOffset === 0}
                       className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <IconArrowForward className="h-4 w-4" />
                     </button>
                     <div className="flex-1 grid grid-cols-7 gap-0.5 sm:gap-1 min-w-0">
                       {visibleDates.map((date) => {
@@ -386,7 +384,7 @@ export default function CenterPublicBooking({
                       disabled={dateOffset + 7 >= 21}
                       className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <IconArrowLeft className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -398,7 +396,7 @@ export default function CenterPublicBooking({
                     </label>
                     {slotsLoading ? (
                       <p className="text-sm text-gray-500 flex items-center justify-center gap-2 py-4 bg-gray-50 dark:bg-slate-900 rounded-lg">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <IconLoader className="h-4 w-4 animate-spin" />
                         جاري التحميل...
                       </p>
                     ) : availableWithTurn.length === 0 ? (
@@ -458,12 +456,12 @@ export default function CenterPublicBooking({
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <IconLoader className="h-4 w-4 animate-spin" />
                       جاري التأكيد...
                     </>
                   ) : (
                     <>
-                      <CreditCard className="h-4 w-4" />
+                      <IconCreditCard className="h-4 w-4" />
                       تأكيد الحجز
                     </>
                   )}

@@ -2,12 +2,27 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTransition, useState, useMemo, useEffect } from "react";
-import {
-  Plus, Search, X, Users, Loader2,
-  User, Calendar, TrendingUp, TrendingDown,
-  FileText, CheckCircle, Clock, XCircle, Trash2, Pencil, Check,
-  Phone, AlertTriangle, Stethoscope, Receipt, ClipboardList,
-} from "lucide-react";
+import IconPlus from "@/components/icon/icon-plus";
+import IconSearch from "@/components/icon/icon-search";
+import IconX from "@/components/icon/icon-x";
+import IconUsers from "@/components/icon/icon-users";
+import IconLoader from "@/components/icon/icon-loader";
+import IconUser from "@/components/icon/icon-user";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconTrendingDown from "@/components/icon/icon-trending-down";
+import IconDocument from "@/components/icon/icon-document";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconClock from "@/components/icon/icon-clock";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconTrash from "@/components/icon/icon-trash";
+import IconPencil from "@/components/icon/icon-pencil";
+import IconCheck from "@/components/icon/icon-check";
+import IconPhone from "@/components/icon/icon-phone";
+import IconExclamationTriangle from "@/components/icon/icon-exclamation-triangle";
+import IconHeart from "@/components/icon/icon-heart";
+import IconReceipt from "@/components/icon/icon-receipt";
+import IconClipboardText from "@/components/icon/icon-clipboard-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +36,10 @@ import { CarePlanPanel } from "@/components/doctor-care-plans/care-plan-panel";
 
 /* ─── Tab definitions ────────────────────────────────────────────── */
 const BASE_TABS = [
-  { id: "info",         label: "البيانات",       icon: User },
-  { id: "visits",       label: "سجل الزيارات",   icon: Calendar },
-  { id: "transactions", label: "المعاملات",       icon: Receipt },
-  { id: "medical",      label: "الملفات الطبية", icon: FileText },
+  { id: "info",         label: "البيانات",       icon: IconUser },
+  { id: "visits",       label: "سجل الزيارات",   icon: IconCalendar },
+  { id: "transactions", label: "المعاملات",       icon: IconReceipt },
+  { id: "medical",      label: "الملفات الطبية", icon: IconDocument },
 ];
 
 const DENTAL_PROBLEMS: { id: string; label: string; color: string }[] = [
@@ -79,12 +94,12 @@ const DENTAL_CHART_LAYOUT: { num: number; cx: number; cy: number; w: number; h: 
 ];
 
 const APT_STATUS: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  SCHEDULED:  { label: "مجدول",   color: "text-blue-600 bg-blue-50",    icon: Clock },
-  DRAFT:      { label: "مسودة",   color: "text-gray-600 bg-gray-100",   icon: Clock },
-  CONFIRMED:  { label: "مؤكد",    color: "text-indigo-600 bg-indigo-50", icon: CheckCircle },
-  COMPLETED:  { label: "منجز",    color: "text-green-600 bg-green-50",  icon: CheckCircle },
-  CANCELLED:  { label: "ملغي",    color: "text-red-500 bg-red-50",      icon: XCircle },
-  NO_SHOW:    { label: "لم يحضر", color: "text-yellow-600 bg-yellow-50", icon: XCircle },
+  SCHEDULED:  { label: "مجدول",   color: "text-blue-600 bg-blue-50",    icon: IconClock },
+  DRAFT:      { label: "مسودة",   color: "text-gray-600 bg-gray-100",   icon: IconClock },
+  CONFIRMED:  { label: "مؤكد",    color: "text-indigo-600 bg-indigo-50", icon: IconCircleCheck },
+  COMPLETED:  { label: "منجز",    color: "text-green-600 bg-green-50",  icon: IconCircleCheck },
+  CANCELLED:  { label: "ملغي",    color: "text-red-500 bg-red-50",      icon: IconXCircle },
+  NO_SHOW:    { label: "لم يحضر", color: "text-yellow-600 bg-yellow-50", icon: IconXCircle }, 
 };
 
 /* ─── Props ──────────────────────────────────────────────────────── */
@@ -233,10 +248,10 @@ export default function PatientsView({
     const t = [...BASE_TABS];
     /* خطة العلاج حسب التخصص — مريض عيادة أو مريض منصة */
     if (!isDentist) {
-      t.push({ id: "careplan", label: "خطة العلاج", icon: ClipboardList });
+      t.push({ id: "careplan", label: "خطة العلاج", icon: IconClipboardText });
     }
     if (isDentist) {
-      t.push({ id: "dental", label: "خطة علاج الأسنان", icon: Stethoscope });
+      t.push({ id: "dental", label: "خطة علاج الأسنان", icon: IconDocument });
     }
     return t;
   }, [isDentist]);
@@ -698,11 +713,11 @@ export default function PatientsView({
               onClick={() => setAddOpen(true)}
               className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" /> إضافة
+              <IconPlus className="h-3.5 w-3.5" /> إضافة
             </button>
           </div>
           <div className="relative">
-            <Search className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <IconSearch className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={search}
@@ -713,7 +728,7 @@ export default function PatientsView({
             {search && (
               <button type="button" onClick={() => handleSearch("")}
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <X className="h-3.5 w-3.5" />
+                <IconX className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
@@ -723,7 +738,7 @@ export default function PatientsView({
         <ul className="flex-1 overflow-y-auto divide-y divide-gray-50">
           {filtered.length === 0 ? (
             <li className="flex flex-col items-center justify-center py-12 text-center px-4 h-full">
-              <Users className="h-10 w-10 text-gray-200 mb-2" />
+              <IconUsers className="h-10 w-10 text-gray-200 mb-2" />
               <p className="text-sm text-gray-400">{search ? "لا توجد نتائج" : "لا يوجد مرضى"}</p>
             </li>
           ) : filtered.map((p) => {
@@ -742,7 +757,7 @@ export default function PatientsView({
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
                     active ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
                   )}>
-                    <User className="h-4 w-4" />
+                    <IconUser className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={cn("truncate text-sm font-medium", active ? "text-white" : "text-gray-900")}>
@@ -790,7 +805,7 @@ export default function PatientsView({
                         onClick={openEdit}
                         className="gap-1"
                       >
-                        <Pencil className="h-3.5 w-3.5" /> تعديل
+                        <IconPencil className="h-3.5 w-3.5" /> تعديل
                       </Button>
                     )}
                   </div>
@@ -798,12 +813,12 @@ export default function PatientsView({
                     {age != null && <span>العمر: {age} سنة</span>}
                     {selectedPatient.whatsapp && (
                       <span className="flex items-center gap-1" dir="ltr">
-                        <Phone className="h-3.5 w-3.5 text-gray-400" />{selectedPatient.whatsapp}
+                        <IconPhone className="h-3.5 w-3.5 text-gray-400" />{selectedPatient.whatsapp}
                       </span>
                     )}
                     {selectedPatient.allergies && (
                       <span className="flex items-center gap-1 text-amber-600 text-xs font-medium">
-                        <AlertTriangle className="h-3.5 w-3.5" />{selectedPatient.allergies}
+                        <IconExclamationTriangle className="h-3.5 w-3.5" />{selectedPatient.allergies}
                       </span>
                     )}
                   </div>
@@ -861,7 +876,7 @@ export default function PatientsView({
                         onClick={openEdit}
                         className="h-7 px-3 text-xs gap-1"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <IconPencil className="h-3.5 w-3.5" />
                         تعديل البيانات
                       </Button>
                     )}
@@ -906,7 +921,7 @@ export default function PatientsView({
                     {!addingApt && (
                       <Button size="sm" variant="outline" onClick={() => setAddingApt(true)}
                         className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50">
-                        <Plus className="h-3.5 w-3.5" /> موعد جديد
+                        <IconPlus className="h-3.5 w-3.5" /> موعد جديد
                       </Button>
                     )}
                   </div>
@@ -946,7 +961,7 @@ export default function PatientsView({
                       />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveApt} disabled={savingApt}>
-                          {savingApt ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                          {savingApt ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setAddingApt(false)}>إلغاء</Button>
                       </div>
@@ -1019,13 +1034,13 @@ export default function PatientsView({
                     {!addingService && (
                       <Button size="sm" variant="outline" onClick={() => setAddingService(true)}
                         className="gap-1 border-red-200 text-red-600 hover:bg-red-50">
-                        <Plus className="h-3.5 w-3.5" /> خدمة جديدة
+                        <IconPlus className="h-3.5 w-3.5" /> خدمة جديدة
                       </Button>
                     )}
                     {!addingPayment && (
                       <Button size="sm" variant="outline" onClick={() => setAddingPayment(true)}
                         className="gap-1 border-green-200 text-green-600 hover:bg-green-50">
-                        <Plus className="h-3.5 w-3.5" /> تسجيل دفعة
+                        <IconPlus className="h-3.5 w-3.5" /> تسجيل دفعة
                       </Button>
                     )}
                   </div>
@@ -1045,7 +1060,7 @@ export default function PatientsView({
                         className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-red-400" />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveService} disabled={savingService} className="bg-red-600 hover:bg-red-700">
-                          {savingService ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                          {savingService ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setAddingService(false)}>إلغاء</Button>
                       </div>
@@ -1067,7 +1082,7 @@ export default function PatientsView({
                         className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-green-400" />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={savePayment} disabled={savingPayment} className="bg-green-600 hover:bg-green-700">
-                          {savingPayment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                          {savingPayment ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setAddingPayment(false)}>إلغاء</Button>
                       </div>
@@ -1133,12 +1148,12 @@ export default function PatientsView({
                                         <button onClick={saveEdit} disabled={savingEdit}
                                           className="rounded-lg bg-blue-600 p-1.5 text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
                                           title="حفظ">
-                                          {savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                                          {savingEdit ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : <IconCheck className="h-3.5 w-3.5" />}
                                         </button>
                                         <button onClick={() => setEditTx(null)}
                                           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                                           title="إلغاء">
-                                          <X className="h-3.5 w-3.5" />
+                                          <IconX className="h-3.5 w-3.5" />
                                         </button>
                                       </div>
                                     </td>
@@ -1152,8 +1167,8 @@ export default function PatientsView({
                                     <td className="px-4 py-3">
                                       <div className="flex items-center gap-2">
                                         {t.type === "SERVICE"
-                                          ? <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
-                                          : <TrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
+                                          ? <IconTrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                                          : <IconTrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
                                         <span className="font-medium text-gray-900">{t.description}</span>
                                       </div>
                                       {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400">{t.notes}</p>}
@@ -1171,7 +1186,7 @@ export default function PatientsView({
                                           title="تعديل"
                                           className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
                                         >
-                                          <Pencil className="h-3 w-3" />
+                                          <IconPencil className="h-3 w-3" />
                                           تعديل
                                         </button>
                                         <button
@@ -1179,7 +1194,7 @@ export default function PatientsView({
                                           title="حذف"
                                           className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-100"
                                         >
-                                          <Trash2 className="h-3 w-3" />
+                                          <IconTrash className="h-3 w-3" />
                                           حذف
                                         </button>
                                       </div>
@@ -1220,7 +1235,7 @@ export default function PatientsView({
                               }}
                               className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
                             >
-                              <Plus className="h-3.5 w-3.5" /> إضافة تفاصيل
+                              <IconPlus className="h-3.5 w-3.5" /> إضافة تفاصيل
                             </Button>
                           )}
                         </div>
@@ -1302,7 +1317,7 @@ export default function PatientsView({
                                 disabled={savingMedical}
                               >
                                 {savingMedical ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  <IconLoader className="h-3.5 w-3.5 animate-spin" />
                                 ) : (
                                   "حفظ"
                                 )}
@@ -1344,7 +1359,7 @@ export default function PatientsView({
                                           }}
                                           className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-100"
                                         >
-                                          <Pencil className="h-3 w-3" /> تعديل
+                                          <IconPencil className="h-3 w-3" /> تعديل
                                         </button>
                                       )}
                                       <button
@@ -1352,7 +1367,7 @@ export default function PatientsView({
                                         onClick={() => setConfirmDeleteId(`note_${note.id}`)}
                                         className="inline-flex items_center gap-1 rounded-lg border border-red-100 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
                                       >
-                                        <Trash2 className="h-3 w-3" /> حذف
+                                        <IconTrash className="h-3 w-3" /> حذف
                                       </button>
                                     </div>
                                   </div>
@@ -1426,7 +1441,7 @@ export default function PatientsView({
                                           disabled={savingMedicalEdit}
                                         >
                                           {savingMedicalEdit ? (
-                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            <IconLoader className="h-3.5 w-3.5 animate-spin" />
                                           ) : (
                                             "حفظ"
                                           )}
@@ -1444,7 +1459,7 @@ export default function PatientsView({
                                     <div className="flex flex-col gap-2 md:flex-row md:gap-3 text-xs sm:text-sm">
                                       {note.allergies && (
                                         <div className="flex-1 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 flex items-start gap-2">
-                                          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                          <IconExclamationTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                                           <div>
                                             <div className="text-xs font-semibold text-amber-900 mb-0.5">
                                               الحساسيات / التنبيهات
@@ -1457,7 +1472,7 @@ export default function PatientsView({
                                       )}
                                       {note.diagnosis && (
                                         <div className="flex-1 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 flex items-start gap-2">
-                                          <Stethoscope className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                                          <IconHeart className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                                           <div>
                                             <div className="text-xs font-semibold text-blue-900 mb-0.5">
                                               الحالة المرضية الأساسية
@@ -1470,7 +1485,7 @@ export default function PatientsView({
                                       )}
                                       {note.treatment && (
                                         <div className="flex-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 flex items-start gap-2">
-                                          <FileText className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                          <IconDocument className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                                           <div>
                                             <div className="text-xs font-semibold text-emerald-900 mb-0.5">
                                               ما قام به الطبيب / العلاج
@@ -1537,7 +1552,7 @@ export default function PatientsView({
                       !selectedPatient.notes &&
                       !selectedPatient.appointments.some((a) => a.notes) && (
                       <div className="py-12 text-center text-sm text-gray-400">
-                        <Stethoscope className="mx-auto mb-3 h-10 w-10 text-gray-200" />
+                        <IconHeart className="mx-auto mb-3 h-10 w-10 text-gray-200" />
                         لا توجد ملفات طبية
                       </div>
                     )}
@@ -1560,7 +1575,7 @@ export default function PatientsView({
               {activeTab === "dental" && isDentist && (
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4 text-blue-600" />
+                    <IconHeart className="h-4 w-4 text-blue-600" />
                     مخطط الأسنان وخطة العلاج
                   </h3>
                   <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
@@ -1690,7 +1705,7 @@ export default function PatientsView({
                         disabled={selectedTeeth.length === 0}
                         className="gap-1.5"
                       >
-                        <CheckCircle className="h-3.5 w-3.5" />
+                        <IconCircleCheck className="h-3.5 w-3.5" />
                         {selectedTeeth.some((id) => toothDone[id]) ? "إزالة إشارة الإنجاز" : "تم ✓ إنجاز العلاج"}
                       </Button>
                       {Object.keys(toothProblems).filter((id) => toothProblems[id]).length > 0 && (
@@ -1734,7 +1749,7 @@ export default function PatientsView({
                                     )}
                                     onClick={() => setToothDone((prev) => ({ ...prev, [id]: !prev[id] }))}
                                   >
-                                    <CheckCircle className="h-3 w-3" />
+                                    <IconCircleCheck className="h-3 w-3" />
                                     {toothDone[id] ? "تم" : "إنجاز"}
                                   </Button>
                                 </div>
@@ -1752,12 +1767,12 @@ export default function PatientsView({
                         >
                           {dentalSaving ? (
                             <>
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              جاري الحفظ...
+                              <IconLoader className="h-3.5 w-3.5 animate-spin" />
+                              جاري الحفظ... 
                             </>
                           ) : (
                             <>
-                              <CheckCircle className="h-3.5 w-3.5" />
+                              <IconCircleCheck className="h-3.5 w-3.5" />
                               حفظ مخطط الأسنان للمريض
                             </>
                           )}
@@ -1772,7 +1787,7 @@ export default function PatientsView({
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-center text-gray-300">
-            <Users className="mb-4 h-16 w-16" />
+            <IconUsers className="mb-4 h-16 w-16" />
             <p className="text-sm text-gray-400">اختر مريضاً من القائمة</p>
             <p className="mt-1 text-xs text-gray-300">أو أضف مريضاً جديداً</p>
           </div>
@@ -1813,7 +1828,7 @@ export default function PatientsView({
               <h2 className="text-lg font-semibold text-gray-900">إضافة مريض جديد</h2>
               <button type="button" onClick={() => setAddOpen(false)}
                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                <X className="h-5 w-5" />
+                <IconX className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleAddPatient} className="space-y-4 p-5">
@@ -1846,7 +1861,7 @@ export default function PatientsView({
               <Input label="العنوان" placeholder="الخليل، حي البلد" value={addForm.address} onChange={(e) => setAdd("address", e.target.value)} />
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={addLoading}>
-                  {addLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "إضافة المريض"}
+                  {addLoading ? <><IconLoader className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "إضافة المريض"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>إلغاء</Button>
               </div>
@@ -1863,7 +1878,7 @@ export default function PatientsView({
               <h2 className="text-lg font-semibold text-gray-900">تعديل بيانات المريض</h2>
               <button type="button" onClick={() => setEditOpen(false)}
                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                <X className="h-5 w-5" />
+                <IconX className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleEditPatient} className="space-y-4 p-5">
@@ -1896,7 +1911,7 @@ export default function PatientsView({
               <Input label="العنوان" placeholder="الخليل، حي البلد" value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} />
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={editLoading}>
-                  {editLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "حفظ التعديلات"}
+                  {editLoading ? <><IconLoader className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "حفظ التعديلات"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>إلغاء</Button>
               </div>
@@ -1946,7 +1961,7 @@ export default function PatientsView({
             {/* Header */}
             <div className="flex items-center gap-3 border-b border-gray-100 bg-red-50 px-5 py-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
-                <Trash2 className="h-5 w-5 text-red-600" />
+                <IconTrash className="h-5 w-5 text-red-600" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">تأكيد الحذف</p>
@@ -1971,7 +1986,7 @@ export default function PatientsView({
                 disabled={deleting}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
               >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {deleting ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconTrash className="h-4 w-4" />}
                 {deleting ? "جاري الحذف..." : "نعم، احذف"}
               </button>
               <button

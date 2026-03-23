@@ -131,6 +131,7 @@ export async function POST(req: Request) {
     }
 
     const fin = await getAppointmentFinanceSnapshot(data.doctorId);
+    const isBookedByDoctor = session.user.role === "DOCTOR";
     const insertRow: Record<string, unknown> = {
       patientId,
       doctorId: data.doctorId,
@@ -141,7 +142,8 @@ export async function POST(req: Request) {
       endTime: data.endTime,
       notes: data.notes ?? null,
       fee: data.fee,
-      status: "CONFIRMED",
+      // حجز المريض يحتاج موافقة الطبيب أولاً
+      status: isBookedByDoctor ? "CONFIRMED" : "DRAFT",
       paymentStatus: "UNPAID",
     };
     if (resolvedSlotTurn !== null) {
@@ -193,7 +195,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { appointmentId: appointment.id, message: "تم تأكيد الموعد. الدفع عند الوصول للعيادة." },
+      {
+        appointmentId: appointment.id,
+        message: isBookedByDoctor
+          ? "تم تأكيد الموعد بنجاح."
+          : "تم إرسال طلب الحجز بنجاح، وبانتظار موافقة الطبيب.",
+      },
       { status: 201 }
     );
   } catch (error) {

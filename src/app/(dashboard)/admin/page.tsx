@@ -1,7 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Users, Stethoscope, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+import IconUsers from "@/components/icon/icon-users";
+import IconHeart from "@/components/icon/icon-heart";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -43,10 +47,10 @@ export default async function AdminDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "أطباء معتمدون", value: totalDoctors, icon: Stethoscope, color: "text-blue-600 bg-blue-50", border: "border-blue-100" },
-          { label: "بانتظار الموافقة", value: pendingCount, icon: AlertCircle, color: "text-orange-600 bg-orange-50", border: "border-orange-100" },
-          { label: "المرضى المسجلون", value: totalUsers, icon: Users, color: "text-purple-600 bg-purple-50", border: "border-purple-100" },
-          { label: "إجمالي الإيرادات", value: `₪${(revenue._sum.amount || 0).toFixed(0)}`, icon: TrendingUp, color: "text-green-600 bg-green-50", border: "border-green-100" },
+          { label: "أطباء معتمدون", value: totalDoctors, icon: IconHeart, color: "text-blue-600 bg-blue-50", border: "border-blue-100" },
+          { label: "بانتظار الموافقة", value: pendingCount, icon: IconInfoCircle, color: "text-orange-600 bg-orange-50", border: "border-orange-100" },
+          { label: "المرضى المسجلون", value: totalUsers, icon: IconUsers, color: "text-purple-600 bg-purple-50", border: "border-purple-100" },
+          { label: "إجمالي الإيرادات", value: `₪${(revenue._sum.amount || 0).toFixed(0)}`, icon: IconTrendingUp, color: "text-green-600 bg-green-50", border: "border-green-100" },
         ].map((s, i) => (
           <Card key={i} className={`border ${s.border}`}>
             <CardContent className="p-5">
@@ -65,14 +69,14 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <IconInfoCircle className="h-4 w-4 text-orange-500" />
               أطباء بانتظار الموافقة ({pendingCount})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             {pendingDoctors.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
-                <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-300" />
+                <IconCircleCheck className="h-8 w-8 mx-auto mb-2 text-green-300" />
                 <p className="text-sm">لا يوجد طلبات معلقة</p>
               </div>
             ) : (

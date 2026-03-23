@@ -4,36 +4,47 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import Link from "next/link";
-import {
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Star,
-  Plus,
-  MapPin,
-  Wallet,
-  CreditCard,
-  Receipt,
-  MessageCircle,
-  Eye,
-} from "lucide-react";
+import Image from "next/image";
+import { getDoctorAvatar } from "@/lib/avatar";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconClock from "@/components/icon/icon-clock";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
+import IconStar from "@/components/icon/icon-star";
+import IconSearch from "@/components/icon/icon-search";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconCashBanknotes from "@/components/icon/icon-cash-banknotes";
+import IconCreditCard from "@/components/icon/icon-credit-card";
+import IconReceipt from "@/components/icon/icon-receipt";
+import IconMessage from "@/components/icon/icon-message";
+import IconEye from "@/components/icon/icon-eye";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import PatientRegionSelect from "@/components/patient/patient-region-select";
-import { MedicalCentersPreview } from "@/components/home/medical-centers-preview";
-import { doctorServesLocation, getLocationById, getLocationFullName } from "@/data/west-bank-locations";
+import { doctorServesLocation, getLocationById } from "@/data/west-bank-locations";
 
 const STATUS_CONFIG = {
-  DRAFT: { label: "مسودة", variant: "secondary" as const, icon: AlertCircle, color: "text-gray-500" },
-  CONFIRMED: { label: "مؤكد", variant: "default" as const, icon: CheckCircle, color: "text-blue-500" },
-  COMPLETED: { label: "منجز", variant: "success" as const, icon: CheckCircle, color: "text-green-500" },
-  CANCELLED: { label: "ملغي", variant: "destructive" as const, icon: XCircle, color: "text-red-500" },
-  NO_SHOW: { label: "لم يحضر", variant: "secondary" as const, icon: AlertCircle, color: "text-yellow-500" },
+  DRAFT: { label: "بانتظار الموافقة", variant: "secondary" as const, icon: IconInfoCircle, color: "text-gray-500" },
+  CONFIRMED: { label: "مؤكد", variant: "default" as const, icon: IconCircleCheck, color: "text-blue-500" },
+  COMPLETED: { label: "منجز", variant: "success" as const, icon: IconCircleCheck, color: "text-green-500" },
+  CANCELLED: { label: "ملغي", variant: "destructive" as const, icon: IconXCircle, color: "text-red-500" },
+  NO_SHOW: { label: "لم يحضر", variant: "secondary" as const, icon: IconInfoCircle, color: "text-yellow-500" },
 };
+
+const SPECIALTY_ICONS: Record<string, string> = {
+  "طب عام": "🩺", "طب أسنان": "🦷", "طب أطفال": "👶", "طب قلب": "❤️",
+  "طب جلدية": "🌿", "جراحة عظام": "🦴", "نسائية وتوليد": "🌸",
+  "طب أعصاب": "🧠", "طب عيون": "👁️", "أنف وأذن وحنجرة": "👂",
+};
+
+const SCROLL_GRADIENTS = [
+  "from-blue-500 to-indigo-600", "from-teal-500 to-cyan-600",
+  "from-violet-500 to-purple-600", "from-rose-500 to-pink-600",
+  "from-amber-500 to-orange-600", "from-emerald-500 to-green-600",
+];
 
 export default async function PatientDashboard() {
   const session = await auth();
@@ -51,666 +62,541 @@ export default async function PatientDashboard() {
     .from("Appointment")
     .select(`
       id, appointmentDate, startTime, endTime, status, fee, paymentStatus,
-      doctor:Doctor(User(name), Specialty(nameAr)),
+      doctor:Doctor(rating, gender, User(name, image), Specialty(nameAr)),
       clinic:Clinic(name),
       Review(id)
     `)
     .eq("patientId", session.user.id)
     .order("appointmentDate", { ascending: false });
 
-  // معاملات المريض (دفعات + خدمات) من العيادة ومن المنصة
-  // 1) معاملات مرضى المنصة المرتبطة مباشرة بحساب المريض
   const { data: platformTxRes } = await supabaseAdmin
     .from("PlatformPatientTransaction")
     .select(`id, type, description, amount, date, doctor:Doctor(User(name))`)
     .eq("patientId", session.user.id)
     .order("date", { ascending: false });
 
-  // 2) مرضى العيادة المرتبطون بهذا الحساب (ClinicPatient.userId = user.id) ثم جلب معاملات ClinicTransaction لهم
   const { data: clinicPatients } = await supabaseAdmin
     .from("ClinicPatient")
     .select("id")
     .eq("userId", session.user.id);
 
-  let clinicTxList:
-    | Array<{
-        id: string;
-        type: string;
-        description: string;
-        amount: number;
-        date: string;
-        clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
-      }>
-    | null = null;
+  let clinicTxList: Array<{
+    id: string; type: string; description: string; amount: number; date: string;
+    clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
+  }> | null = null;
 
   const cpIds = (clinicPatients ?? []).map((p: { id: string }) => p.id);
   if (cpIds.length > 0) {
     const { data: clinicTxData } = await supabaseAdmin
       .from("ClinicTransaction")
-      .select(
-        `id, type, description, amount, date,
-         clinicPatient:ClinicPatient(name, doctor:Doctor(User(name)))`
-      )
+      .select(`id, type, description, amount, date, clinicPatient:ClinicPatient(name, doctor:Doctor(User(name)))`)
       .in("clinicPatientId", cpIds)
       .order("date", { ascending: false });
-    clinicTxList = clinicTxData as Array<{
-      id: string;
-      type: string;
-      description: string;
-      amount: number;
-      date: string;
-      clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
-    }> | null;
+    clinicTxList = clinicTxData as typeof clinicTxList;
   }
 
   type PatientTxRow = {
-    id: string;
-    date: string;
-    type: string;
-    description: string;
-    amount: number;
-    doctorName: string;
-    source: "منصة" | "عيادة";
+    id: string; date: string; type: string; description: string;
+    amount: number; doctorName: string; source: "منصة" | "عيادة";
   };
 
   const platformTxList = (platformTxRes ?? []) as Array<{
-    id: string;
-    type: string;
-    description: string;
-    amount: number;
-    date: string;
+    id: string; type: string; description: string; amount: number; date: string;
     doctor?: { User?: { name?: string } };
   }>;
 
   const txRows: PatientTxRow[] = [
     ...platformTxList.map((t) => ({
-      id: t.id,
-      date: t.date,
-      type: t.type,
-      description: t.description,
-      amount: t.amount,
-      doctorName: t.doctor?.User?.name ?? "—",
-      source: "منصة" as const,
+      id: t.id, date: t.date, type: t.type, description: t.description,
+      amount: t.amount, doctorName: t.doctor?.User?.name ?? "—", source: "منصة" as const,
     })),
     ...((clinicTxList ?? []) as Array<{
-      id: string;
-      type: string;
-      description: string;
-      amount: number;
-      date: string;
+      id: string; type: string; description: string; amount: number; date: string;
       clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
     }>).map((t) => ({
-      id: t.id,
-      date: t.date,
-      type: t.type,
-      description: t.description,
+      id: t.id, date: t.date, type: t.type, description: t.description,
       amount: t.amount,
-      doctorName:
-        (t.clinicPatient as { doctor?: { User?: { name?: string } } })?.doctor?.User?.name ?? "—",
+      doctorName: (t.clinicPatient as { doctor?: { User?: { name?: string } } })?.doctor?.User?.name ?? "—",
       source: "عيادة" as const,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // جلب الأطباء (مع locationId) وتصفيتهم حسب منطقة المريض
   const { data: doctorsData } = await supabaseAdmin
     .from("Doctor")
-    .select(
-      `id, consultationFee, rating, createdAt, whatsapp, locationId,
-       user:User(name, phone),
-       specialty:Specialty(nameAr),
-       clinics:Clinic(address, phone),
-       reviews:Review(id)`
-    )
+    .select(`id, consultationFee, rating, createdAt, whatsapp, locationId, gender,
+       user:User(name, phone, image), specialty:Specialty(nameAr),
+       clinics:Clinic(address, phone), reviews:Review(id)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true);
+
   const allDoctors = (doctorsData ?? []) as Array<{
-    id: string;
-    consultationFee?: number | null;
-    rating?: number | null;
-    createdAt?: string | null;
-    whatsapp?: string | null;
-    locationId?: string | null;
-    user?: { name?: string | null };
+    id: string; consultationFee?: number | null; rating?: number | null;
+    createdAt?: string | null; whatsapp?: string | null; locationId?: string | null;
+    gender?: string | null; user?: { name?: string | null; image?: string | null };
     specialty?: { nameAr?: string | null };
-    clinics?: { address?: string | null }[];
+    clinics?: { address?: string | null; phone?: string | null }[];
     reviews?: { id: string }[];
   }>;
-  const doctors =
-    patientRegionId
-      ? allDoctors.filter((d) => doctorServesLocation(d.locationId ?? null, patientRegionId))
-      : [];
+
+  const doctors = patientRegionId
+    ? allDoctors.filter((d) => doctorServesLocation(d.locationId ?? null, patientRegionId))
+    : allDoctors;
+
+  const topRatedDoctors = [...doctors].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 10);
   const suggestedDoctors = [...doctors]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-    )
+    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
     .slice(0, 10);
-  const topRatedDoctors = [...doctors]
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-    .slice(0, 10);
-  const mostVisitedDoctors = [...doctors]
-    .sort((a, b) => (b.reviews?.length ?? 0) - (a.reviews?.length ?? 0))
-    .slice(0, 10);
+
+  const { data: specialtiesData } = await supabaseAdmin.from("Specialty").select("id, nameAr, icon").limit(8);
+  const specialties = (specialtiesData ?? []) as Array<{ id: string; nameAr: string }>;
 
   const list = appointments ?? [];
-  const statsMap = list.reduce(
-    (acc: Record<string, number>, a: { status: string }) => {
-      acc[a.status] = (acc[a.status] || 0) + 1;
-      return acc;
-    },
-    {}
-  );
+  const statsMap = list.reduce((acc: Record<string, number>, a: { status: string }) => {
+    acc[a.status] = (acc[a.status] || 0) + 1;
+    return acc;
+  }, {});
   const upcoming = list.filter(
     (a: { status: string; appointmentDate: string }) =>
-      ["CONFIRMED", "DRAFT"].includes(a.status) &&
-      new Date(a.appointmentDate) >= new Date()
+      ["CONFIRMED", "DRAFT"].includes(a.status) && new Date(a.appointmentDate) >= new Date()
   );
 
-  // مجموع الدفعات = الدفعات اليدوية فقط (التي يضيفها الطبيب) — بدون مدفوعات المواعيد
-  const totalPaidFromManual = txRows
-    .filter((t) => t.type === "PAYMENT")
-    .reduce((sum, t) => sum + (t.amount ?? 0), 0);
-
-  // مجموع الديون = إجمالي الخدمات - إجمالي الدفعات (من المعاملات فقط، بدون المواعيد)
-  const totalServices = txRows
-    .filter((t) => t.type === "SERVICE")
-    .reduce((sum, t) => sum + (t.amount ?? 0), 0);
+  const totalPaidFromManual = txRows.filter((t) => t.type === "PAYMENT").reduce((sum, t) => sum + (t.amount ?? 0), 0);
+  const totalServices = txRows.filter((t) => t.type === "SERVICE").reduce((sum, t) => sum + (t.amount ?? 0), 0);
   const totalDebts = Math.max(0, totalServices - totalPaidFromManual);
-
   const latestAppointments = list.slice(0, 5);
+  const nextAppointment = (upcoming[0] ?? null) as Record<string, unknown> | null;
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-            مرحباً، {session.user.name} 👋
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">إدارة مواعيدك الطبية — حساب مريض</p>
-        </div>
-        <Link href={patientRegionId ? `/doctors?locationId=${patientRegionId}` : "/doctors"} className="w-full sm:w-auto shrink-0">
-          <Button className="gap-2 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            حجز موعد جديد
-          </Button>
-        </Link>
-      </div>
+    <div className="bg-gray-50 dark:bg-slate-900 min-h-screen">
 
-    
+      {/* ===== HEADER ===== */}
+      <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-5 shadow-sm dark:shadow-slate-900/50">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                {session.user.name?.charAt(0) ?? "م"}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 dark:text-slate-500">مرحباً 👋</p>
+                <h1 className="text-base font-bold text-gray-900 dark:text-slate-100 leading-tight">{session.user.name}</h1>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/patient/appointments"
+              className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              <IconCalendar className="h-5 w-5 text-gray-600 dark:text-slate-300" />
+              {upcoming.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-600 rounded-full text-white text-[9px] flex items-center justify-center font-bold">
+                  {upcoming.length}
+                </span>
+              )}
+            </Link>
+          </div>
 
-      {!patientRegionId && <PatientRegionSelect />}
-      {patientRegionId && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <p className="text-sm text-gray-600 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-emerald-600" />
-            عرض الأطباء في: <span className="font-medium text-gray-900">{getLocationById(patientRegionId)?.nameAr ?? patientRegionId}</span>
-          </p>
-          <Link
-            href="/dashboard/patient/settings"
-            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
-          >
-            تعديل الموقع
+          <Link href="/doctors" className="block">
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-700 rounded-2xl px-4 py-3">
+              <IconSearch className="h-4 w-4 text-gray-400 dark:text-slate-500 shrink-0" />
+              <span className="text-gray-400 dark:text-slate-500 text-sm">ابحث عن الطبيب المناسب لك...</span>
+            </div>
           </Link>
         </div>
-      )}
-
-      {/* Stats: مواعيد + مجموع الدفعات + مجموع الديون */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        {[
-          { label: "إجمالي المواعيد", value: list.length, color: "bg-blue-50 text-blue-600" },
-          { label: "مواعيد قادمة", value: upcoming.length, color: "bg-indigo-50 text-indigo-600" },
-          { label: "مواعيد منجزة", value: statsMap["COMPLETED"] || 0, color: "bg-green-50 text-green-600" },
-          { label: "مواعيد ملغاة", value: statsMap["CANCELLED"] || 0, color: "bg-red-50 text-red-600" },
-          { label: "مجموع الدفعات", value: `₪${totalPaidFromManual.toFixed(0)}`, color: "bg-emerald-50 text-emerald-600", icon: CreditCard },
-          { label: "مجموع الديون", value: `₪${totalDebts.toFixed(0)}`, color: "bg-amber-50 text-amber-600", icon: Wallet },
-        ].map((stat, i) => (
-          <Card key={i}>
-            <CardContent className="p-5">
-              {stat.icon && (
-                <div className="mb-2 text-gray-400">
-                  <stat.icon className="h-5 w-5" />
-                </div>
-              )}
-              <div className={`text-2xl font-bold ${stat.color.split(" ")[1]}`}>
-                {stat.value}
-              </div>
-              <div className="text-sm text-gray-500">{stat.label}</div>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
-      {upcoming.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">المواعيد القادمة</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {upcoming.map((apt: Record<string, unknown>) => {
-              const config = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.DRAFT;
-              const doctor = apt.doctor as { User?: { name?: string }; Specialty?: { nameAr?: string }; user?: { name?: string }; specialty?: { nameAr?: string } } | undefined;
-              const clinic = apt.clinic as { name?: string } | undefined;
-              return (
-                <Card key={apt.id as string} className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-600 shrink-0">
-                          {(doctor?.User?.name ?? doctor?.user?.name)?.charAt(0) || "D"}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900">
-                            د. {doctor?.User?.name ?? doctor?.user?.name}
-                          </h3>
-                          <p className="text-sm text-blue-600">
-                            {doctor?.Specialty?.nameAr ?? doctor?.specialty?.nameAr}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant={config.variant}>{config.label}</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(apt.appointmentDate as string), "dd/MM/yyyy")}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5" />
-                        {String(apt.startTime)} - {String(apt.endTime)}
-                      </div>
-                      {clinic?.name && (
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {clinic.name}
-                        </div>
-                      )}
-                    </div>
-                    {apt.status === "DRAFT" && (
-                      <Link href={`/appointments/${apt.id}/payment`} className="block mt-3">
-                        <Button size="sm" className="w-full">أكمل الدفع لتأكيد الموعد</Button>
-                      </Link>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+      <div className="max-w-2xl mx-auto px-4 py-5 space-y-6 pb-24">
+
+        {/* ===== LOCATION PROMPT ===== */}
+        {!patientRegionId && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0">📍</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-amber-900 dark:text-amber-300 text-sm mb-0.5">حدد موقعك</p>
+                <p className="text-amber-700 dark:text-amber-400 text-xs mb-3">لعرض الأطباء القريبين منك</p>
+                <PatientRegionSelect />
+              </div>
+            </div>
           </div>
+        )}
+
+        {patientRegionId && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 border border-gray-100 dark:border-slate-700 shadow-sm">
+            <IconMapPin className="h-4 w-4 text-blue-500 shrink-0" />
+            <span>عرض الأطباء في: <span className="font-semibold text-gray-900 dark:text-slate-100">{getLocationById(patientRegionId)?.nameAr ?? patientRegionId}</span></span>
+            <Link href="/dashboard/patient/settings" className="mr-auto text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline shrink-0">تعديل</Link>
+          </div>
+        )}
+
+        {/* ===== QUICK STATS ===== */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "مواعيد قادمة", value: upcoming.length, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", emoji: "📅" },
+            { label: "تم إنجازها", value: statsMap["COMPLETED"] || 0, color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-950/40", emoji: "✅" },
+            { label: "ديون", value: `₪${totalDebts.toFixed(0)}`, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", emoji: "💰" },
+          ].map((s) => (
+            <div key={s.label} className={`${s.bg} rounded-2xl p-3 text-center`}>
+              <div className="text-xl mb-0.5">{s.emoji}</div>
+              <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
+              <div className="text-[10px] text-gray-500 dark:text-slate-400 leading-tight mt-0.5">{s.label}</div>
+            </div>
+          ))}
         </div>
-      )}
-         <Suspense fallback={null}>
-        <MedicalCentersPreview />
-      </Suspense>
-      {mostVisitedDoctors.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">الأطباء الأكثر زيارة</h2>
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-1 sm:px-1 snap-x snap-mandatory scrollbar-hide">
-            {mostVisitedDoctors.map((doctor) => (
-              <Link
-                key={doctor.id}
-                href={`/doctors/${doctor.id}`}
-                className="snap-start shrink-0 w-[260px] sm:w-60"
-              >
-                <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-600 shrink-0">
-                        {doctor.user?.name?.charAt(0) || "D"}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          د. {doctor.user?.name}
-                        </p>
-                        <p className="text-xs text-blue-600 truncate">
-                          {doctor.specialty?.nameAr}
-                        </p>
-                        {(doctor as { locationId?: string | null }).locationId && (
-                          <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
-                            {getLocationFullName((doctor as { locationId: string }).locationId)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-gray-800">
-                          {(doctor.rating ?? 0).toFixed(1)}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          ({doctor.reviews?.length ?? 0} زيارة)
-                        </span>
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {(doctor as { whatsapp?: string | null }).whatsapp && (
-                          <a
-                            href={`https://wa.me/${(doctor as { whatsapp?: string }).whatsapp!.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                            title="تواصل عبر واتساب"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </a>
-                        )}
-                        {doctor.consultationFee != null && (
-                          <span className="font-semibold text-emerald-600">
-                            ₪{doctor.consultationFee}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-base">أحدث 5 مواعيد</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 px-0 sm:px-6 overflow-hidden">
-          {latestAppointments.length === 0 ? (
-            <div className="text-center py-12 px-6">
-              <div className="text-5xl mb-4">📅</div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">لا توجد مواعيد بعد</h3>
-              <p className="text-gray-500 mb-6 text-sm">ابدأ بحجز موعدك الأول مع أحد أطبائنا</p>
-              <Link href="/doctors">
-                <Button>احجز موعدك الأول</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="table-scroll-mobile w-full min-w-0 -mx-3 px-3 sm:mx-0 sm:px-0">
-              <table className="w-full text-sm min-w-[560px]">
-                <thead>
-                  <tr className="text-right text-xs text-gray-500 border-b border-gray-100">
-                    <th className="pb-3 pr-4 font-medium">الطبيب</th>
-                    <th className="pb-3 font-medium">التاريخ</th>
-                    <th className="pb-3 font-medium">الوقت</th>
-                    <th className="pb-3 font-medium">الحالة</th>
-                    <th className="pb-3 font-medium">المبلغ</th>
-                    <th className="pb-3 font-medium">إجراء</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {latestAppointments.map((apt: Record<string, unknown>) => {
-                    const config = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.DRAFT;
-                    const doctor = apt.doctor as { User?: { name?: string }; Specialty?: { nameAr?: string }; user?: { name?: string }; specialty?: { nameAr?: string } } | undefined;
-                    const review = apt.Review as { id?: string }[] | { id?: string } | null | undefined;
-                    const hasReview = review && (Array.isArray(review) ? review.length > 0 : !!review.id);
-                    return (
-                      <tr key={apt.id as string} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 pr-4">
-                          <div>
-                            <p className="font-medium text-gray-900">د. {doctor?.User?.name ?? doctor?.user?.name}</p>
-                            <p className="text-xs text-gray-500">{doctor?.Specialty?.nameAr ?? doctor?.specialty?.nameAr}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 text-gray-700">
-                          {format(new Date(apt.appointmentDate as string), "dd/MM/yyyy")}
-                        </td>
-                        <td className="py-3 text-gray-700">{String(apt.startTime)}</td>
-                        <td className="py-3">
-                          <Badge variant={config.variant}>{config.label}</Badge>
-                        </td>
-                        <td className="py-3 font-semibold text-gray-900">₪{Number(apt.fee)}</td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Link
-                              href={`/appointments/${apt.id}/success`}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors"
-                              title="عرض"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                            {apt.status === "CONFIRMED" && (
-                              <CancelAppointmentButton
-                                appointmentId={apt.id as string}
-                                appointmentDate={apt.appointmentDate as string}
-                                startTime={String(apt.startTime)}
-                                iconOnly
-                              />
-                            )}
-                            {apt.status === "COMPLETED" && !hasReview && (
-                              <Link href={`/appointments/${apt.id}/review`}>
-                                <Button size="sm" variant="outline" className="gap-1 text-xs">
-                                  <Star className="h-3 w-3" /> تقييم
-                                </Button>
-                              </Link>
-                            )}
-                            {apt.status === "DRAFT" && (
-                              <Link href={`/appointments/${apt.id}/payment`}>
-                                <Button size="sm" variant="default" className="text-xs">ادفع</Button>
-                              </Link>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* سكرول الأطباء المقترحين أسفل أحدث 5 مواعيد */}
-      {suggestedDoctors.length > 0 && (
-        <section className="mt-8">
+        {/* ===== NEXT APPOINTMENT ===== */}
+        <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">أطباء مقترحون لك</h2>
-            <Link
-              href="/doctors"
-              className="text-xs text-blue-600 hover:underline"
-            >
-              عرض كل الأطباء
+            <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">المواعيد القادمة</h2>
+            <Link href="/dashboard/patient/appointments" className="text-blue-600 dark:text-blue-400 text-xs font-medium flex items-center gap-1">
+              عرض الكل <IconArrowLeft className="h-3 w-3 rotate-180" />
             </Link>
           </div>
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-1 sm:px-1 snap-x snap-mandatory scrollbar-hide">
-            {suggestedDoctors.map((doctor) => (
-              <Link
-                key={doctor.id}
-                href={`/doctors/${doctor.id}`}
-                className="snap-start shrink-0 w-[260px] sm:w-64"
-              >
-                <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-600 shrink-0">
-                        {doctor.user?.name?.charAt(0) || "D"}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          د. {doctor.user?.name}
-                        </p>
-                        <p className="text-xs text-blue-600 truncate">
-                          {doctor.specialty?.nameAr}
-                        </p>
-                        {(doctor as { locationId?: string | null }).locationId && (
-                          <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
-                            {getLocationFullName((doctor as { locationId: string }).locationId)}
-                          </p>
-                        )}
-                        {doctor.clinics?.[0]?.address && (
-                          <p className="text-[11px] text-gray-400 truncate mt-0.5">
-                            {doctor.clinics[0].address}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-gray-800">
-                          {(doctor.rating ?? 0).toFixed(1)}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          ({doctor.reviews?.length ?? 0} تقييم)
-                        </span>
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {(doctor as { whatsapp?: string | null }).whatsapp && (
-                          <a
-                            href={`https://wa.me/${(doctor as { whatsapp?: string }).whatsapp!.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                            title="تواصل عبر واتساب"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </a>
-                        )}
-                        {doctor.consultationFee != null && (
-                          <span className="font-semibold text-emerald-600">
-                            ₪{doctor.consultationFee}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
-      {/* جدول الدفعات والديون الخاصة بهذا المريض فقط */}
-      <Card className="mt-8 overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <span>الدفعات والديون</span>
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <Receipt className="h-3 w-3" />
-              تظهر هنا الحركات المالية التي تم إدخالها لك عند الأطباء (دفعات وخدمات)
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 overflow-hidden">
-          {txRows.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 text-sm">
-              لا توجد دفعات أو ديون مسجلة لك حتى الآن.
-            </div>
-          ) : (
-            <div className="table-scroll-mobile w-full min-w-0 -mx-3 px-3 sm:mx-0 sm:px-0">
-              <table className="w-full text-sm min-w-[480px]">
-                <thead>
-                  <tr className="text-right text-xs text-gray-500 border-b border-gray-100">
-                    <th className="pb-3 pr-4 font-medium">التاريخ</th>
-                    <th className="pb-3 font-medium">الطبيب</th>
-                    <th className="pb-3 font-medium">النوع</th>
-                    <th className="pb-3 font-medium">المبلغ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {txRows.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3 pr-4 text-gray-700">
-                        {tx.date ? format(new Date(tx.date), "dd/MM/yyyy") : "—"}
-                      </td>
-                      <td className="py-3 text-gray-900 font-medium">
-                        {tx.doctorName !== "—" ? `د. ${tx.doctorName}` : "—"}
-                      </td>
-                      <td className="py-3">
-                        <Badge variant={tx.type === "PAYMENT" ? "default" : "destructive"}>
-                          {tx.type === "PAYMENT" ? "دفعة" : "خدمة / دين"}
-                        </Badge>
-                      </td>
-                      <td
-                        className={`py-3 font-semibold ${
-                          tx.type === "PAYMENT" ? "text-emerald-600" : "text-red-600"
-                        }`}
-                      >
-                        {tx.type === "PAYMENT" ? "+" : "-"}₪{tx.amount}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {nextAppointment ? (() => {
+            const d = nextAppointment.doctor as {
+              rating?: number;
+              gender?: string | null;
+              User?: { name?: string; image?: string | null };
+              user?: { name?: string; image?: string | null };
+              Specialty?: { nameAr?: string };
+              specialty?: { nameAr?: string };
+            } | undefined;
+            const docName = d?.User?.name ?? d?.user?.name ?? "";
+            const docSpecialty = d?.Specialty?.nameAr ?? d?.specialty?.nameAr ?? "";
+            const docRating = typeof d?.rating === "number" ? d.rating : null;
+            const docImage = getDoctorAvatar(d?.User?.image ?? d?.user?.image ?? null, d?.gender ?? null);
+            const config = STATUS_CONFIG[nextAppointment.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.DRAFT;
+            const aptDate = new Date(nextAppointment.appointmentDate as string);
+
+            return (
+              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-gray-100 dark:border-slate-700 overflow-hidden">
+                {/* Top: info + photo */}
+                <div className="p-4 pb-3 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Rating */}
+                    {docRating !== null && (
+                      <div className="flex items-center gap-1 mb-2">
+                        <IconStar className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs font-bold text-gray-700 dark:text-slate-300">{docRating.toFixed(1)}</span>
+                      </div>
+                    )}
+                    {/* Name */}
+                    <h3 className="text-lg font-extrabold text-gray-900 dark:text-slate-100 leading-tight mb-1">
+                      د. {docName}
+                    </h3>
+                    {/* Specialty */}
+                    <div className="flex items-center gap-1.5 text-gray-500 dark:text-slate-400">
+                      <IconMapPin className="h-3.5 w-3.5 shrink-0" />
+                      <span className="text-sm">{docSpecialty}</span>
+                    </div>
+                    {/* Status badge */}
+                    <div className="mt-2">
+                      <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
+                    </div>
+                  </div>
+                  {/* Doctor photo */}
+                  <div className="shrink-0 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/50 dark:to-indigo-900/50 relative">
+                    <Image
+                      src={docImage}
+                      alt={docName}
+                      fill
+                      className="object-cover object-top"
+                      unoptimized
+                    />
+                  </div>
+                </div>
+
+                {/* Bottom: date/time + actions */}
+                <div className="bg-blue-600 dark:bg-blue-700 mx-3 mb-3 rounded-2xl px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-white/90 text-xs">
+                        <IconCalendar className="h-3.5 w-3.5 text-white" />
+                        <span>{format(aptDate, "d MMM yyyy")}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-white/90 text-xs">
+                        <IconClock className="h-3.5 w-3.5 text-white" />
+                        <span>{String(nextAppointment.startTime)}{nextAppointment.endTime ? ` — ${String(nextAppointment.endTime)}` : ""}</span>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/appointments/${String(nextAppointment.id)}/success`}
+                      className="w-9 h-9 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors shrink-0"
+                    >
+                      <IconArrowLeft className="h-4 w-4 text-white rotate-180" />
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 px-3 pb-4">
+                  {nextAppointment.status === "CONFIRMED" && (
+                    <div className="flex-1">
+                      <CancelAppointmentButton
+                        appointmentId={String(nextAppointment.id)}
+                        appointmentDate={String(nextAppointment.appointmentDate)}
+                        startTime={String(nextAppointment.startTime)}
+                      />
+                    </div>
+                  )}
+                  <Link
+                    href={`/appointments/${String(nextAppointment.id)}/success`}
+                    className="flex-1 py-2.5 rounded-2xl bg-blue-600 dark:bg-blue-500 text-white text-sm font-semibold text-center hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                  >
+                    التفاصيل
+                  </Link>
+                </div>
+              </div>
+            );
+          })() : (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-gray-200 dark:border-slate-600 p-6 text-center">
+              <div className="text-3xl mb-2">📅</div>
+              <p className="text-gray-500 dark:text-slate-400 text-sm mb-3">لا توجد مواعيد قادمة</p>
+              <Link href="/doctors" className="inline-block bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
+                احجز موعدك الأول
+              </Link>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* سكرول الأطباء الأعلى تقييماً أسفل الدفعات والديون */}
-      {topRatedDoctors.length > 0 && (
-        <section className="mt-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">الأطباء الأعلى تقييماً</h2>
-            <Link
-              href="/doctors"
-              className="text-xs text-blue-600 hover:underline"
-            >
-              عرض كل الأطباء
-            </Link>
-          </div>
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-1 sm:px-1 snap-x snap-mandatory scrollbar-hide">
-            {topRatedDoctors.map((doctor) => (
-              <Link
-                key={doctor.id}
-                href={`/doctors/${doctor.id}`}
-                className="snap-start shrink-0 w-[260px] sm:w-64"
-              >
-                <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-600 shrink-0">
-                        {doctor.user?.name?.charAt(0) || "D"}
+        {/* ===== DOCTOR SPECIALTIES ===== */}
+        {specialties.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">التخصصات</h2>
+              <Link href="/doctors" className="text-blue-600 dark:text-blue-400 text-xs font-medium flex items-center gap-1">
+                عرض الكل <IconArrowLeft className="h-3 w-3 rotate-180" />
+              </Link>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+              {specialties.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/doctors?specialtyId=${s.id}`}
+                  className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 shrink-0 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <span className="text-lg">{SPECIALTY_ICONS[s.nameAr] || "🏥"}</span>
+                  <span className="text-xs font-medium text-gray-700 dark:text-slate-300 whitespace-nowrap">{s.nameAr}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ===== POPULAR DOCTORS ===== */}
+        {topRatedDoctors.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">أطباء مميزون</h2>
+              <Link href="/doctors" className="text-blue-600 dark:text-blue-400 text-xs font-medium flex items-center gap-1">
+                عرض الكل <IconArrowLeft className="h-3 w-3 rotate-180" />
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+              {topRatedDoctors.map((doctor, idx) => {
+                const gradient = SCROLL_GRADIENTS[idx % SCROLL_GRADIENTS.length];
+                const avatarSrc = getDoctorAvatar(doctor.user?.image, doctor.gender);
+                const waNum = doctor.whatsapp ? doctor.whatsapp.replace(/\D/g, "") : "";
+                return (
+                  <div key={doctor.id} className="snap-start shrink-0 w-40 sm:w-44 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-slate-800 flex flex-col border border-gray-100 dark:border-slate-700">
+                    <div className={`relative bg-gradient-to-br ${gradient} overflow-hidden`} style={{ height: 150 }}>
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/90 dark:bg-slate-800/90 rounded-full px-1.5 py-0.5 shadow-sm">
+                        <IconStar className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-[11px] font-bold text-gray-800 dark:text-slate-100">{(doctor.rating ?? 0).toFixed(1)}</span>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
+                      <Link href={`/doctors/${doctor.id}`} className="block h-full relative">
+                        <Image src={avatarSrc} alt={doctor.user?.name || "طبيب"} fill className="object-cover object-top" unoptimized />
+                      </Link>
+                    </div>
+                    <div className="p-3 flex flex-col flex-1">
+                      <Link href={`/doctors/${doctor.id}`}>
+                        <p className="font-bold text-gray-900 dark:text-slate-100 text-xs leading-tight truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                           د. {doctor.user?.name}
                         </p>
-                        <p className="text-xs text-blue-600 truncate">
-                          {doctor.specialty?.nameAr}
-                        </p>
-                        {(doctor as { locationId?: string | null }).locationId && (
-                          <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
-                            {getLocationFullName((doctor as { locationId: string }).locationId)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-gray-800">
-                          {(doctor.rating ?? 0).toFixed(1)}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          ({doctor.reviews?.length ?? 0} تقييم)
-                        </span>
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {(doctor as { whatsapp?: string | null }).whatsapp && (
-                          <a
-                            href={`https://wa.me/${(doctor as { whatsapp?: string }).whatsapp!.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                            title="تواصل عبر واتساب"
-                          >
-                            <MessageCircle className="h-4 w-4" />
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 truncate">{doctor.specialty?.nameAr}</p>
+                      </Link>
+                      {doctor.consultationFee != null && (
+                        <p className="text-sm font-bold text-green-600 dark:text-green-400 mt-1.5">₪{doctor.consultationFee}</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-2">
+                        {waNum.length >= 9 && (
+                          <a href={`https://wa.me/${waNum}`} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center justify-center w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors shrink-0">
+                            <IconMessage className="h-3.5 w-3.5" />
                           </a>
                         )}
-                        {doctor.consultationFee != null && (
-                          <span className="font-semibold text-emerald-600">
-                            ₪{doctor.consultationFee}
+                        <Link href={`/doctors/${doctor.id}`}
+                          className="flex-1 text-center bg-blue-600 text-white text-[10px] font-bold py-2 rounded-xl hover:bg-blue-700 transition-colors">
+                          احجز
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ===== SUGGESTED DOCTORS ===== */}
+        {suggestedDoctors.length > 0 && suggestedDoctors !== topRatedDoctors && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">أطباء مقترحون</h2>
+              <Link href="/doctors" className="text-blue-600 dark:text-blue-400 text-xs font-medium flex items-center gap-1">
+                عرض الكل <IconArrowLeft className="h-3 w-3 rotate-180" />
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+              {suggestedDoctors.map((doctor, idx) => {
+                const gradient = SCROLL_GRADIENTS[(idx + 2) % SCROLL_GRADIENTS.length];
+                const avatarSrc = getDoctorAvatar(doctor.user?.image, doctor.gender);
+                const waNum = doctor.whatsapp ? doctor.whatsapp.replace(/\D/g, "") : "";
+                return (
+                  <div key={doctor.id} className="snap-start shrink-0 w-40 sm:w-44 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-slate-800 flex flex-col border border-gray-100 dark:border-slate-700">
+                    <div className={`relative bg-gradient-to-br ${gradient} overflow-hidden`} style={{ height: 150 }}>
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/90 dark:bg-slate-800/90 rounded-full px-1.5 py-0.5 shadow-sm">
+                        <IconStar className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-[11px] font-bold text-gray-800 dark:text-slate-100">{(doctor.rating ?? 0).toFixed(1)}</span>
+                      </div>
+                      <Link href={`/doctors/${doctor.id}`} className="block h-full relative">
+                        <Image src={avatarSrc} alt={doctor.user?.name || "طبيب"} fill className="object-cover object-top" unoptimized />
+                      </Link>
+                    </div>
+                    <div className="p-3 flex flex-col flex-1">
+                      <Link href={`/doctors/${doctor.id}`}>
+                        <p className="font-bold text-gray-900 dark:text-slate-100 text-xs leading-tight truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                          د. {doctor.user?.name}
+                        </p>
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 truncate">{doctor.specialty?.nameAr}</p>
+                      </Link>
+                      {doctor.consultationFee != null && (
+                        <p className="text-sm font-bold text-green-600 dark:text-green-400 mt-1.5">₪{doctor.consultationFee}</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-2">
+                        {waNum.length >= 9 && (
+                          <a href={`https://wa.me/${waNum}`} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center justify-center w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors shrink-0">
+                            <IconMessage className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        <Link href={`/doctors/${doctor.id}`}
+                          className="flex-1 text-center bg-blue-600 text-white text-[10px] font-bold py-2 rounded-xl hover:bg-blue-700 transition-colors">
+                          احجز
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ===== APPOINTMENTS TABLE ===== */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">آخر المواعيد</h2>
+            <Link href="/dashboard/patient/appointments" className="text-blue-600 dark:text-blue-400 text-xs font-medium flex items-center gap-1">
+              عرض الكل <IconArrowLeft className="h-3 w-3 rotate-180" />
+            </Link>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+            {latestAppointments.length === 0 ? (
+              <div className="text-center py-10 px-4">
+                <div className="text-4xl mb-3">📅</div>
+                <p className="text-gray-500 dark:text-slate-400 text-sm">لا توجد مواعيد بعد</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50 dark:divide-slate-700">
+                {latestAppointments.map((apt: Record<string, unknown>) => {
+                  const config = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.DRAFT;
+                  const doctor = apt.doctor as { User?: { name?: string }; Specialty?: { nameAr?: string }; user?: { name?: string }; specialty?: { nameAr?: string } } | undefined;
+                  const review = apt.Review as { id?: string }[] | { id?: string } | null | undefined;
+                  const hasReview = review && (Array.isArray(review) ? review.length > 0 : !!review.id);
+                  return (
+                    <div key={apt.id as string} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/40 flex items-center justify-center text-base font-bold text-blue-600 dark:text-blue-400 shrink-0">
+                        {(doctor?.User?.name ?? doctor?.user?.name)?.charAt(0) || "د"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
+                          د. {doctor?.User?.name ?? doctor?.user?.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 dark:text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <IconCalendar className="h-3 w-3" />
+                            {format(new Date(apt.appointmentDate as string), "dd/MM")}
                           </span>
+                          <span className="flex items-center gap-1">
+                            <IconClock className="h-3 w-3" />
+                            {String(apt.startTime)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
+                        <Link
+                          href={`/appointments/${apt.id as string}/success`}
+                          className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                        >
+                          <IconEye className="h-3.5 w-3.5 text-gray-500 dark:text-slate-400" />
+                        </Link>
+                        {apt.status === "CONFIRMED" && (
+                          <CancelAppointmentButton
+                            appointmentId={apt.id as string}
+                            appointmentDate={apt.appointmentDate as string}
+                            startTime={String(apt.startTime)}
+                            iconOnly
+                          />
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
-      )}
+
+        {/* ===== FINANCIAL TRANSACTIONS ===== */}
+        {txRows.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">الدفعات والديون</h2>
+            </div>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+              <div className="grid grid-cols-2 divide-x divide-x-reverse divide-gray-100 dark:divide-slate-700 border-b border-gray-100 dark:border-slate-700">
+                <div className="p-4 text-center">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">مجموع الدفعات</p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">₪{totalPaidFromManual.toFixed(0)}</p>
+                </div>
+                <div className="p-4 text-center">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">مجموع الديون</p>
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">₪{totalDebts.toFixed(0)}</p>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-50 dark:divide-slate-700">
+                {txRows.slice(0, 5).map((tx) => (
+                  <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tx.type === "PAYMENT" ? "bg-green-100 dark:bg-green-900/40" : "bg-red-100 dark:bg-red-900/40"}`}>
+                      {tx.type === "PAYMENT" ? <IconCreditCard className="h-4 w-4 text-green-600 dark:text-green-400" /> : <IconCashBanknotes className="h-4 w-4 text-red-500 dark:text-red-400" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 dark:text-slate-200 truncate">{tx.description || (tx.type === "PAYMENT" ? "دفعة" : "خدمة")}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-slate-500">{tx.date ? format(new Date(tx.date), "dd/MM/yyyy") : "—"}</p>
+                    </div>
+                    <p className={`text-sm font-bold shrink-0 ${tx.type === "PAYMENT" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                      {tx.type === "PAYMENT" ? "+" : "-"}₪{tx.amount}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+      </div>
     </div>
   );
 }

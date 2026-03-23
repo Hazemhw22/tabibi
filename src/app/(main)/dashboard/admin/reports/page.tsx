@@ -2,7 +2,12 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
-import { TrendingUp, Users, Calendar, DollarSign, Stethoscope, ArrowRight } from "lucide-react";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconUsers from "@/components/icon/icon-users";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconDollarSign from "@/components/icon/icon-dollar-sign";
+import IconHeart from "@/components/icon/icon-heart";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminReportsPage() {
@@ -32,7 +37,7 @@ export default async function AdminReportsPage() {
           <p className="text-gray-500">نظرة عامة على المنصة</p>
         </div>
         <Link href="/dashboard/admin" className="text-blue-600 text-sm font-medium flex items-center gap-1">
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
           لوحة التحكم
         </Link>
       </div>
@@ -42,7 +47,7 @@ export default async function AdminReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600">
-                <Stethoscope className="h-5 w-5" />
+                <IconHeart className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{doctorsCount ?? 0}</p>
@@ -55,7 +60,7 @@ export default async function AdminReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-purple-100 text-purple-600">
-                <Users className="h-5 w-5" />
+                <IconUsers className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{usersCount ?? 0}</p>
@@ -68,7 +73,7 @@ export default async function AdminReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-indigo-100 text-indigo-600">
-                <Calendar className="h-5 w-5" />
+                <IconCalendar className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{appointmentsCount ?? 0}</p>
@@ -81,7 +86,7 @@ export default async function AdminReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-green-100 text-green-600">
-                <DollarSign className="h-5 w-5" />
+                <IconDollarSign className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">₪{revenue.toFixed(0)}</p>
@@ -95,7 +100,7 @@ export default async function AdminReportsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+            <IconTrendingUp className="h-5 w-5" />
             ملخص المنصة
           </CardTitle>
         </CardHeader>

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import Link from "next/link";
-import { Stethoscope, ArrowLeft } from "lucide-react";
+import IconHeart from "@/components/icon/icon-heart";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function SpecialtiesPage() {
@@ -14,7 +15,7 @@ export default async function SpecialtiesPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-8">
-        <ArrowLeft className="h-4 w-4" />
+        <IconArrowLeft className="h-4 w-4" />
         العودة للرئيسية
       </Link>
       <h1 className="text-3xl font-bold text-gray-900 mb-2">التخصصات الطبية</h1>
@@ -32,7 +33,7 @@ export default async function SpecialtiesPage() {
                   <h2 className="font-semibold text-gray-900">{s.nameAr}</h2>
                   <p className="text-sm text-gray-500">{s.name}</p>
                 </div>
-                <Stethoscope className="h-5 w-5 text-gray-400 mr-auto" />
+                <IconHeart className="h-5 w-5 text-gray-400 mr-auto" />
               </CardContent>
             </Card>
           </Link>

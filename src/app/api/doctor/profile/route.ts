@@ -67,6 +67,8 @@ const updateSchema = z.object({
   timeSlots: z.array(timeSlotSchema).optional(),
   specialtyId: z.string().optional(),
   newSpecialtyName: z.string().optional(),
+  imageUrl: z.string().url().optional().nullable(),
+  gender: z.enum(["MALE", "FEMALE"]).optional(),
 });
 
 export async function PUT(req: Request) {
@@ -119,6 +121,7 @@ export async function PUT(req: Request) {
       consultationFee?: number;
       locationId?: string | null;
       specialtyId?: string;
+      gender?: string;
       updatedAt?: string;
     } = {};
     if (data.visibleToPatients !== undefined) updatePayload.visibleToPatients = data.visibleToPatients;
@@ -127,6 +130,7 @@ export async function PUT(req: Request) {
     if (data.consultationFee !== undefined) updatePayload.consultationFee = data.consultationFee;
     if (data.locationId !== undefined) updatePayload.locationId = data.locationId;
     if (finalSpecialtyId) updatePayload.specialtyId = finalSpecialtyId;
+    if (data.gender !== undefined) updatePayload.gender = data.gender;
     updatePayload.updatedAt = new Date().toISOString();
 
     const { error: updateErr } = await supabaseAdmin
@@ -220,6 +224,20 @@ export async function PUT(req: Request) {
           return NextResponse.json({ error: "فشل حفظ المواعيد: " + (slotErr.message || "خطأ في الإدراج") }, { status: 500 });
         }
       }
+    }
+
+    if (data.imageUrl !== undefined) {
+      const imageToSave = data.imageUrl ?? null;
+      await supabaseAdmin.from("User").update({ image: imageToSave }).eq("id", session.user.id);
+
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(session.user.id);
+      const existingMeta = (authUser?.user?.user_metadata as Record<string, unknown>) || {};
+      await supabaseAdmin.auth.admin.updateUserById(session.user.id, {
+        user_metadata: {
+          ...existingMeta,
+          image: imageToSave,
+        },
+      });
     }
 
     return NextResponse.json({ message: "تم الحفظ بنجاح" });

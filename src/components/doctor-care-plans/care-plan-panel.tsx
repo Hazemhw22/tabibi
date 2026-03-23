@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format, differenceInDays, addDays } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Loader2, Plus, Trash2, CheckCircle, ClipboardList, RotateCcw } from "lucide-react";
+import IconLoader from "@/components/icon/icon-loader";
+import IconPlus from "@/components/icon/icon-plus";
+import IconTrash from "@/components/icon/icon-trash";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconClipboardText from "@/components/icon/icon-clipboard-text";
+import IconRefresh from "@/components/icon/icon-refresh";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +116,7 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-500 gap-2">
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <IconLoader className="h-5 w-5 animate-spin" />
         جاري تحميل الخطة...
       </div>
     );
@@ -123,7 +128,7 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
         <p className="font-semibold">تعذّر تحميل خطة العلاج</p>
         <p className="text-amber-900/90 whitespace-pre-wrap">{loadError}</p>
         <Button type="button" size="sm" variant="outline" onClick={() => void load()} className="gap-2">
-          <RotateCcw className="h-4 w-4" />
+          <IconRefresh className="h-4 w-4" />
           إعادة المحاولة
         </Button>
       </div>
@@ -137,7 +142,7 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-blue-600" />
+            <IconClipboardText className="h-4 w-4 text-blue-600" />
             {title}
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -145,7 +150,7 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
           </p>
         </div>
         <Button type="button" size="sm" onClick={() => void save()} disabled={saving} className="gap-2">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+          {saving ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconCircleCheck className="h-4 w-4" />}
           حفظ الخطة
         </Button>
       </div>
@@ -191,7 +196,7 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
       </div>
 
       <Button type="button" onClick={() => void save()} disabled={saving} className="gap-2">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+        {saving ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconCircleCheck className="h-4 w-4" />}
         حفظ الخطة
       </Button>
     </div>
@@ -279,7 +284,7 @@ function ObGynBlock({
               }))
             }
           >
-            <Plus className="h-3.5 w-3.5" /> مراجعة
+            <IconPlus className="h-3.5 w-3.5" /> مراجعة
           </Button>
         </div>
         <div className="space-y-2">
@@ -326,7 +331,7 @@ function ObGynBlock({
                   }))
                 }
               >
-                <Trash2 className="h-4 w-4" />
+                <IconTrash className="h-4 w-4" />
               </Button>
             </div>
           ))}
@@ -447,7 +452,7 @@ function OrthopedicsBlock({
             }))
           }
         >
-          <Plus className="h-3.5 w-3.5" /> إصابة
+          <IconPlus className="h-3.5 w-3.5" /> إصابة
         </Button>
       </div>
       {injuries.map((row) => (
@@ -511,7 +516,7 @@ function OrthopedicsBlock({
               }))
             }
           >
-            <Trash2 className="h-4 w-4" />
+            <IconTrash className="h-4 w-4" />
           </Button>
         </div>
       ))}
@@ -547,7 +552,7 @@ function UrologyBlock({
             }))
           }
         >
-          <Plus className="h-3.5 w-3.5" /> صف
+          <IconPlus className="h-3.5 w-3.5" /> صف
         </Button>
       </div>
       {issues.map((row) => (
@@ -590,7 +595,7 @@ function UrologyBlock({
               }))
             }
           >
-            <Trash2 className="h-4 w-4" />
+            <IconTrash className="h-4 w-4" />
           </Button>
         </div>
       ))}
@@ -700,7 +705,7 @@ function GenericBlock({
             }))
           }
         >
-          <Plus className="h-3.5 w-3.5" /> بند
+          <IconPlus className="h-3.5 w-3.5" /> بند
         </Button>
       </div>
       {items.map((row) => (
@@ -754,7 +759,7 @@ function GenericBlock({
               }))
             }
           >
-            <Trash2 className="h-4 w-4" />
+            <IconTrash className="h-4 w-4" />
           </Button>
         </div>
       ))}

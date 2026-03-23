@@ -2,11 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, UserX, Loader2 } from "lucide-react";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconLoader from "@/components/icon/icon-loader";
+import IconUsers from "@/components/icon/icon-users";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export default function DoctorActions({ appointmentId }: { appointmentId: string }) {
+export default function DoctorActions({
+  appointmentId,
+  mode = "visit",
+}: {
+  appointmentId: string;
+  mode?: "visit" | "approval";
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -21,7 +30,13 @@ export default function DoctorActions({ appointmentId }: { appointmentId: string
 
       if (res.ok) {
         toast.success(
-          status === "COMPLETED" ? "تم تحديد الموعد كمنجز" : "تم تحديد المريض كغائب"
+          status === "COMPLETED"
+            ? "تم تحديد الموعد كمنجز"
+            : status === "NO_SHOW"
+              ? "تم تحديد المريض كغائب"
+              : status === "CONFIRMED"
+                ? "تمت الموافقة على الحجز"
+                : "تم رفض الحجز"
         );
         router.refresh();
       } else {
@@ -36,6 +51,40 @@ export default function DoctorActions({ appointmentId }: { appointmentId: string
 
   return (
     <div className="flex gap-1.5">
+      {mode === "approval" && (
+        <>
+          <Button
+            size="sm"
+            variant="success"
+            onClick={() => updateStatus("CONFIRMED")}
+            disabled={!!loading}
+            className="text-xs gap-1"
+          >
+            {loading === "CONFIRMED" ? (
+              <IconLoader className="h-3 w-3 animate-spin" />
+            ) : (
+              <IconCircleCheck className="h-3 w-3" />
+            )}
+            قبول
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => updateStatus("CANCELLED")}
+            disabled={!!loading}
+            className="text-xs gap-1"
+          >
+            {loading === "CANCELLED" ? (
+              <IconLoader className="h-3 w-3 animate-spin" />
+            ) : (
+              <IconXCircle className="h-3 w-3" />
+            )}
+            رفض
+          </Button>
+        </>
+      )}
+      {mode === "visit" && (
+        <>
       <Button
         size="sm"
         variant="success"
@@ -44,9 +93,9 @@ export default function DoctorActions({ appointmentId }: { appointmentId: string
         className="text-xs gap-1"
       >
         {loading === "COMPLETED" ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
+          <IconLoader className="h-3 w-3 animate-spin" />
         ) : (
-          <CheckCircle className="h-3 w-3" />
+          <IconCircleCheck className="h-3 w-3" />
         )}
         منجز
       </Button>
@@ -58,12 +107,14 @@ export default function DoctorActions({ appointmentId }: { appointmentId: string
         className="text-xs gap-1"
       >
         {loading === "NO_SHOW" ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
+          <IconLoader className="h-3 w-3 animate-spin" />
         ) : (
-          <UserX className="h-3 w-3" />
+          <IconUsers className="h-3 w-3" />
         )}
         غائب
       </Button>
+        </>
+      )}
     </div>
   );
 }

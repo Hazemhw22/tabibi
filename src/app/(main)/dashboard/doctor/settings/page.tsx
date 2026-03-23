@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, MapPin, Stethoscope } from "lucide-react";
+import Image from "next/image";
+import IconLoader from "@/components/icon/icon-loader";
+import IconSave from "@/components/icon/icon-save";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconHeart from "@/components/icon/icon-heart";
+import { DOCTOR_AVATAR_MALE, DOCTOR_AVATAR_FEMALE } from "@/lib/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +36,7 @@ interface Specialty {
 }
 
 export default function DoctorSettingsPage() {
-  useSession();
+  const { data: session } = useSession();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -43,8 +48,14 @@ export default function DoctorSettingsPage() {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>("");
   const [newSpecialtyName, setNewSpecialtyName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
 
   useEffect(() => {
+    if (session?.user?.image) {
+      setAvatarUrl(session.user.image);
+    }
     fetch("/api/doctor/profile")
       .then((r) => r.json())
       .then((data) => {
@@ -57,6 +68,7 @@ export default function DoctorSettingsPage() {
           if (data.doctor.specialty?.id) {
             setSelectedSpecialtyId(data.doctor.specialty.id);
           }
+          if (data.doctor.gender) setGender(data.doctor.gender as "MALE" | "FEMALE");
         }
       });
 
@@ -73,7 +85,7 @@ export default function DoctorSettingsPage() {
       })
       .catch(() => setSpecialties([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only; selectedSpecialtyId set from response
-  }, []);
+  }, [session?.user?.image]);
 
   const fetchProfile = () => {
     return fetch("/api/doctor/profile")
@@ -86,6 +98,7 @@ export default function DoctorSettingsPage() {
           setConsultationFee(data.doctor.consultationFee || 0);
           if (data.doctor.locationId) setLocationId(data.doctor.locationId);
           if (data.doctor.specialty?.id) setSelectedSpecialtyId(data.doctor.specialty.id);
+          if (data.doctor.gender) setGender(data.doctor.gender as "MALE" | "FEMALE");
         }
       });
   };
@@ -99,6 +112,8 @@ export default function DoctorSettingsPage() {
         bio,
         experienceYears,
         consultationFee,
+        imageUrl: avatarUrl || undefined,
+        gender,
         locationId: locationId || null,
         specialtyId: trimmedNewSpec ? undefined : selectedSpecialtyId || undefined,
         newSpecialtyName: trimmedNewSpec || undefined,
@@ -132,6 +147,114 @@ export default function DoctorSettingsPage() {
       </div>
 
       <div className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">الصورة الشخصية</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Preview */}
+            <div className="flex items-center gap-4">
+              <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-gray-200 bg-gray-100 shrink-0">
+                <Image
+                  src={avatarUrl || (gender === "FEMALE" ? DOCTOR_AVATAR_FEMALE : DOCTOR_AVATAR_MALE)}
+                  alt="صورة الطبيب"
+                  fill
+                  className="object-cover object-top"
+                  unoptimized
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setUploadingAvatar(true);
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
+                        const data = await res.json();
+                        if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
+                        setAvatarUrl(data.url);
+                        toast.success("تم رفع الصورة");
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
+                      } finally {
+                        setUploadingAvatar(false);
+                        e.currentTarget.value = "";
+                      }
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" disabled={uploadingAvatar} className="gap-2">
+                    {uploadingAvatar ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
+                    رفع صورة مخصصة
+                  </Button>
+                </label>
+                {avatarUrl && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarUrl(null)} className="text-red-500">
+                    إزالة الصورة المخصصة
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Gender selection for default avatar */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                أو اختر صورة افتراضية حسب الجنس:
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setGender("MALE"); setAvatarUrl(null); }}
+                  className={`relative rounded-2xl overflow-hidden border-2 transition-all h-36 ${
+                    gender === "MALE" && !avatarUrl
+                      ? "border-blue-500 ring-2 ring-blue-200"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <Image src={DOCTOR_AVATAR_MALE} alt="ذكر" fill className="object-cover object-top" unoptimized />
+                  <div className={`absolute inset-x-0 bottom-0 py-1.5 text-xs font-bold text-center transition-colors ${
+                    gender === "MALE" && !avatarUrl ? "bg-blue-600 text-white" : "bg-white/80 text-gray-700"
+                  }`}>
+                    ذكر
+                  </div>
+                  {gender === "MALE" && !avatarUrl && (
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-[10px]">✓</span>
+                    </div>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setGender("FEMALE"); setAvatarUrl(null); }}
+                  className={`relative rounded-2xl overflow-hidden border-2 transition-all h-36 ${
+                    gender === "FEMALE" && !avatarUrl
+                      ? "border-pink-500 ring-2 ring-pink-200"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <Image src={DOCTOR_AVATAR_FEMALE} alt="أنثى" fill className="object-cover object-top" unoptimized />
+                  <div className={`absolute inset-x-0 bottom-0 py-1.5 text-xs font-bold text-center transition-colors ${
+                    gender === "FEMALE" && !avatarUrl ? "bg-pink-500 text-white" : "bg-white/80 text-gray-700"
+                  }`}>
+                    أنثى
+                  </div>
+                  {gender === "FEMALE" && !avatarUrl && (
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-[10px]">✓</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Basic Info */}
         <Card>
           <CardHeader>
@@ -145,7 +268,7 @@ export default function DoctorSettingsPage() {
               </label>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Stethoscope className="h-4 w-4 text-blue-500" />
+                  <IconHeart className="h-4 w-4 text-blue-500" />
                   <select
                     value={selectedSpecialtyId}
                     onChange={(e) => setSelectedSpecialtyId(e.target.value)}
@@ -248,7 +371,7 @@ export default function DoctorSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-violet-600" />
+              <IconMapPin className="h-4 w-4 text-violet-600" />
               منطقتك (مكان العمل)
             </CardTitle>
             <p className="text-sm text-gray-500 mt-1">
@@ -274,12 +397,12 @@ export default function DoctorSettingsPage() {
         <Button onClick={handleSave} size="lg" className="w-full" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <IconLoader className="h-4 w-4 animate-spin" />
               جاري الحفظ...
             </>
           ) : (
             <>
-              <Save className="h-4 w-4" />
+              <IconSave className="h-4 w-4" />
               حفظ التغييرات
             </>
           )}

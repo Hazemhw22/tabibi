@@ -4,7 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import Link from "next/link";
-import { Star, Stethoscope, ArrowRight } from "lucide-react";
+import IconStar from "@/components/icon/icon-star";
+import IconHeart from "@/components/icon/icon-heart";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function PatientReviewsPage() {
@@ -32,7 +34,7 @@ export default async function PatientReviewsPage() {
           <p className="text-gray-500">تقييماتك للأطباء</p>
         </div>
         <Link href="/dashboard/patient" className="text-blue-600 text-sm font-medium flex items-center gap-1">
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
           لوحة التحكم
         </Link>
       </div>
@@ -40,14 +42,14 @@ export default async function PatientReviewsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-amber-500" />
+            <IconStar className="h-5 w-5 text-amber-500" />
             التقييمات ({list.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           {list.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              <Stethoscope className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <IconHeart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p>لم تقيّم أي طبيب بعد.</p>
               <p className="text-sm mt-1">بعد إتمام المواعيد يمكنك إضافة تقييم من صفحة المواعيد.</p>
             </div>
@@ -76,7 +78,7 @@ export default async function PatientReviewsPage() {
                       </div>
                       <div className="flex items-center gap-1 text-amber-500">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
+                          <IconStar
                             key={i}
                             className={`h-4 w-4 ${i < Number(r.rating ?? 0) ? "fill-current" : "text-gray-200"}`}
                           />

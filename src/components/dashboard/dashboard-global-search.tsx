@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, X, Stethoscope, User, Calendar, Users } from "lucide-react";
+import IconSearch from "@/components/icon/icon-search";
+import IconX from "@/components/icon/icon-x";
+import IconHeart from "@/components/icon/icon-heart";
+import IconUser from "@/components/icon/icon-user";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconUsers from "@/components/icon/icon-users";
 import { cn } from "@/lib/utils";
 import type { DashboardSearchResult } from "@/lib/dashboard-search-types";
 
@@ -10,10 +15,10 @@ const typeMeta: Record<
   DashboardSearchResult["type"],
   { label: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  doctor: { label: "طبيب", icon: Stethoscope },
-  patient: { label: "مريض", icon: User },
-  appointment: { label: "موعد", icon: Calendar },
-  user: { label: "مستخدم", icon: Users },
+  doctor: { label: "طبيب", icon: IconHeart },
+  patient: { label: "مريض", icon: IconUser },
+  appointment: { label: "موعد", icon: IconCalendar },
+  user: { label: "مستخدم", icon: IconUsers },
 };
 
 export default function DashboardGlobalSearch({ isDark }: { isDark: boolean }) {
@@ -96,7 +101,7 @@ export default function DashboardGlobalSearch({ isDark }: { isDark: boolean }) {
   return (
     <div ref={wrapRef} className="relative w-full max-w-md">
       <div className="relative">
-        <Search
+        <IconSearch
           className={cn(
             "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400",
             "right-3"
@@ -129,7 +134,7 @@ export default function DashboardGlobalSearch({ isDark }: { isDark: boolean }) {
             className="absolute left-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             aria-label="مسح"
           >
-            <X className="h-4 w-4" />
+            <IconX className="h-4 w-4" />
           </button>
         )}
       </div>

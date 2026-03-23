@@ -2,7 +2,8 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTransition, useState } from "react";
-import { Search, X } from "lucide-react";
+import IconSearch from "@/components/icon/icon-search";
+import IconX from "@/components/icon/icon-x";
 
 export default function PatientSearch({ defaultValue }: { defaultValue?: string }) {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function PatientSearch({ defaultValue }: { defaultValue?: string 
 
   return (
     <div className="relative">
-      <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
       <input
         type="text"
         value={value}
@@ -34,7 +35,7 @@ export default function PatientSearch({ defaultValue }: { defaultValue?: string 
           onClick={() => handleSearch("")}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
         >
-          <X className="h-4 w-4" />
+          <IconX className="h-4 w-4" />
         </button>
       )}
     </div>

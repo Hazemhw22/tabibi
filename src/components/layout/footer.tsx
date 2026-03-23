@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Phone, Mail, MapPin } from "lucide-react";
+import IconPhone from "@/components/icon/icon-phone";
+import IconMail from "@/components/icon/icon-mail";
+import IconMapPin from "@/components/icon/icon-map-pin";
 
 export default function Footer() {
   return (
@@ -22,15 +24,15 @@ export default function Footer() {
             </p>
             <div className="flex flex-col gap-2 mt-4 text-sm">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-blue-400 shrink-0" />
+                <IconMapPin className="h-4 w-4 text-blue-400 shrink-0" />
                 <span>الخليل، فلسطين</span>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-blue-400 shrink-0" />
+                <IconPhone className="h-4 w-4 text-blue-400 shrink-0" />
                 <span dir="ltr">+972 507795580</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-blue-400 shrink-0" />
+                <IconMail className="h-4 w-4 text-blue-400 shrink-0" />
                 <span>info@tabibi.ps</span>
               </div>
             </div>

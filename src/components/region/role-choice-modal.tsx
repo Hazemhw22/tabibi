@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { User, Stethoscope } from "lucide-react";
+import IconUser from "@/components/icon/icon-user";
+import IconHeart from "@/components/icon/icon-heart";
 import { cn } from "@/lib/utils";
 
 const ROLE_STORAGE_KEY = "tabibi-user-role";
@@ -67,7 +68,7 @@ export default function RoleChoiceModal() {
             )}
           >
             <div className="p-3 rounded-xl bg-blue-100">
-              <User className="h-8 w-8 text-blue-600" />
+              <IconUser className="h-8 w-8 text-blue-600" />
             </div>
             <span className="font-semibold text-gray-800">مريض</span>
             <span className="text-xs text-gray-500">احجز مواعيد الأطباء</span>
@@ -81,7 +82,7 @@ export default function RoleChoiceModal() {
             )}
           >
             <div className="p-3 rounded-xl bg-indigo-100">
-              <Stethoscope className="h-8 w-8 text-indigo-600" />
+              <IconHeart className="h-8 w-8 text-indigo-600" />
             </div>
             <span className="font-semibold text-gray-800">طبيب</span>
             <span className="text-xs text-gray-500">استقبل المرضى</span>

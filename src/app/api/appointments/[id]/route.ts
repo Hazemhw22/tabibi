@@ -103,7 +103,7 @@ export async function PATCH(
       if (!doctor || appointment.doctorId !== doctor.id) {
         return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
       }
-      if (!["COMPLETED", "NO_SHOW"].includes(statusUpper)) {
+      if (!["CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"].includes(statusUpper)) {
         return NextResponse.json({ error: "حالة غير مسموحة" }, { status: 400 });
       }
     } else if (session.user.role !== "PATIENT") {

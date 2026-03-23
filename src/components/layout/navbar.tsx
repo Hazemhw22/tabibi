@@ -64,7 +64,10 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full bg-white border-b border-gray-200 shadow-sm">
+    <nav className={cn(
+      "sticky top-0 z-40 w-full border-b shadow-sm",
+      theme === "dark" ? "bg-slate-900 border-slate-700" : "bg-white border-gray-200"
+    )}>
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
           {/* Logo */}
@@ -81,30 +84,20 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/medical-centers"
-              className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              المراكز الطبية
-            </Link>
-            <Link
-              href="/doctors"
-              className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              الأطباء
-            </Link>
-            <Link
-              href="/specialties"
-              className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              التخصصات
-            </Link>
-            <Link
-              href="/about"
-              className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              عن المنصة
-            </Link>
+            {[
+              { href: "/medical-centers", label: "المراكز الطبية" },
+              { href: "/doctors", label: "الأطباء" },
+              { href: "/specialties", label: "التخصصات" },
+              { href: "/about", label: "عن المنصة" },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={cn("text-sm font-medium hover:text-blue-500 transition-colors", theme === "dark" ? "text-slate-300" : "text-gray-600")}
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
 
           {/* Auth Section */}
@@ -127,7 +120,7 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-gray-100 transition-colors"
+                    className={cn("flex items-center gap-2 rounded-lg p-1.5 transition-colors", theme === "dark" ? "hover:bg-slate-700" : "hover:bg-gray-100")}
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={session.user.image || ""} />
@@ -136,10 +129,10 @@ export default function Navbar() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-gray-800 leading-none">
+                      <p className={cn("text-sm font-medium leading-none", theme === "dark" ? "text-slate-100" : "text-gray-800")}>
                         {session.user.name}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className={cn("text-xs mt-0.5", theme === "dark" ? "text-slate-400" : "text-gray-500")}>
                         {role === "DOCTOR"
                           ? "طبيب"
                           : role === "PLATFORM_ADMIN"
@@ -153,12 +146,17 @@ export default function Navbar() {
                   </button>
 
                   {dropdownOpen && (
-                    <div className="absolute left-0 top-12 w-48 bg-white rounded-xl border border-gray-200 shadow-lg py-1 z-50">
+                    <div className={cn(
+                      "absolute left-0 top-12 w-48 rounded-xl border shadow-lg py-1 z-50",
+                      theme === "dark"
+                        ? "bg-slate-800 border-slate-700"
+                        : "bg-white border-gray-200"
+                    )}>
                       {role === "PATIENT" && (
                         <>
                           <Link
                             href="/dashboard/patient"
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            className={cn("flex items-center gap-2 px-4 py-2 text-sm", theme === "dark" ? "text-slate-200 hover:bg-slate-700" : "text-gray-700 hover:bg-gray-50")}
                             onClick={() => setDropdownOpen(false)}
                           >
                             <IconUser className="h-4 w-4" />
@@ -166,7 +164,7 @@ export default function Navbar() {
                           </Link>
                           <Link
                             href="/dashboard/patient/appointments"
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            className={cn("flex items-center gap-2 px-4 py-2 text-sm", theme === "dark" ? "text-slate-200 hover:bg-slate-700" : "text-gray-700 hover:bg-gray-50")}
                             onClick={() => setDropdownOpen(false)}
                           >
                             <IconCalendar className="h-4 w-4" />
@@ -174,19 +172,19 @@ export default function Navbar() {
                           </Link>
                           <Link
                             href="/dashboard/patient/transactions"
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            className={cn("flex items-center gap-2 px-4 py-2 text-sm", theme === "dark" ? "text-slate-200 hover:bg-slate-700" : "text-gray-700 hover:bg-gray-50")}
                             onClick={() => setDropdownOpen(false)}
                           >
                             <IconHeart className="h-4 w-4" />
                             معاملاتي
                           </Link>
-                          <hr className="my-1 border-gray-100" />
+                          <hr className={cn("my-1", theme === "dark" ? "border-slate-700" : "border-gray-100")} />
                         </>
                       )}
                       {role === "PATIENT" ? (
                         <Link
                           href="/dashboard/patient/settings"
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          className={cn("flex items-center gap-2 px-4 py-2 text-sm", theme === "dark" ? "text-slate-200 hover:bg-slate-700" : "text-gray-700 hover:bg-gray-50")}
                           onClick={() => setDropdownOpen(false)}
                         >
                           <IconSettings className="h-4 w-4" />
@@ -195,7 +193,7 @@ export default function Navbar() {
                       ) : (
                         <Link
                           href={getDashboardLink()}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          className={cn("flex items-center gap-2 px-4 py-2 text-sm", theme === "dark" ? "text-slate-200 hover:bg-slate-700" : "text-gray-700 hover:bg-gray-50")}
                           onClick={() => setDropdownOpen(false)}
                         >
                           <IconCalendar className="h-4 w-4" />
@@ -204,16 +202,16 @@ export default function Navbar() {
                       )}
                       <Link
                         href="/profile"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className={cn("flex items-center gap-2 px-4 py-2 text-sm", theme === "dark" ? "text-slate-200 hover:bg-slate-700" : "text-gray-700 hover:bg-gray-50")}
                         onClick={() => setDropdownOpen(false)}
                       >
                         <IconUser className="h-4 w-4" />
                         الملف الشخصي
                       </Link>
-                      <hr className="my-1 border-gray-100" />
+                      <hr className={cn("my-1", theme === "dark" ? "border-slate-700" : "border-gray-100")} />
                       <button
                         onClick={() => signOut({ callbackUrl: "/" })}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-right"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 w-full text-right"
                       >
                         <IconLogout className="h-4 w-4" />
                         تسجيل الخروج
@@ -238,7 +236,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center gap-1">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              className={cn("p-2 rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-600 hover:bg-gray-100")}
               aria-label="تبديل الوضع الليلي"
             >
               {theme === "dark" ? (
@@ -247,9 +245,9 @@ export default function Navbar() {
                 <IconMoon className="h-5 w-5" />
               )}
             </button>
-            {session && <NotificationBell theme="light" />}
+            {session && <NotificationBell theme={theme} />}
             <button
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              className={cn("p-2 rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-600 hover:bg-gray-100")}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="فتح القائمة"
             >
@@ -262,70 +260,51 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <div
         className={cn(
-          "md:hidden border-t border-gray-100 bg-white overflow-hidden transition-all duration-300",
+          "md:hidden border-t overflow-hidden transition-all duration-300",
+          theme === "dark" ? "border-slate-700 bg-slate-900" : "border-gray-100 bg-white",
           menuOpen ? "max-h-screen" : "max-h-0"
         )}
       >
-        <div className="px-4 py-3 space-y-2">
-          <Link
-            href="/medical-centers"
-            className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-            onClick={() => setMenuOpen(false)}
-          >
-            المراكز الطبية
-          </Link>
-          <Link
-            href="/doctors"
-            className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-            onClick={() => setMenuOpen(false)}
-          >
-            الأطباء
-          </Link>
-          <Link
-            href="/specialties"
-            className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-            onClick={() => setMenuOpen(false)}
-          >
-            التخصصات
-          </Link>
+        <div className="px-4 py-3 space-y-1">
+          {[
+            { href: "/medical-centers", label: "المراكز الطبية" },
+            { href: "/doctors", label: "الأطباء" },
+            { href: "/specialties", label: "التخصصات" },
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={cn("block px-3 py-2 text-sm font-medium rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-700 hover:bg-gray-100")}
+              onClick={() => setMenuOpen(false)}
+            >
+              {l.label}
+            </Link>
+          ))}
           {session ? (
             <>
               {role === "PATIENT" && (
                 <>
-                  <Link
-                    href="/dashboard/patient"
-                    className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    صفحتي
-                  </Link>
-                  <Link
-                    href="/dashboard/patient/appointments"
-                    className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    مواعيدي
-                  </Link>
-                  <Link
-                    href="/dashboard/patient/transactions"
-                    className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    معاملاتي
-                  </Link>
-                  <Link
-                    href="/dashboard/patient/settings"
-                    className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    الإعدادات
-                  </Link>
+                  {[
+                    { href: "/dashboard/patient", label: "صفحتي" },
+                    { href: "/dashboard/patient/appointments", label: "مواعيدي" },
+                    { href: "/dashboard/patient/transactions", label: "معاملاتي" },
+                    { href: "/dashboard/patient/settings", label: "الإعدادات" },
+                  ].map((l) => (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      className={cn("block px-3 py-2 text-sm font-medium rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-700 hover:bg-gray-100")}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
                 </>
               )}
               {role !== "PATIENT" && (
                 <Link
                   href={getDashboardLink()}
-                  className="block px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+                  className={cn("block px-3 py-2 text-sm font-medium rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-700 hover:bg-gray-100")}
                   onClick={() => setMenuOpen(false)}
                 >
                   لوحة التحكم
@@ -333,7 +312,7 @@ export default function Navbar() {
               )}
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="block w-full text-right px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50"
+                className="block w-full text-right px-3 py-2 text-sm font-medium text-red-500 rounded-lg hover:bg-red-500/10"
               >
                 تسجيل الخروج
               </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import IconCaretDown from "@/components/icon/icon-caret-down";
 import Dropdown, { type DropdownHandle } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +54,7 @@ export function DropdownSelect({
         button={
           <>
             <span className="min-w-0 flex-1 truncate">{selected?.label ?? placeholder}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
+            <IconCaretDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
           </>
         }
       >

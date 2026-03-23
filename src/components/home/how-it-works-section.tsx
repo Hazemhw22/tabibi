@@ -1,24 +1,26 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Calendar, CreditCard } from "lucide-react";
+import IconSearch from "@/components/icon/icon-search";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconCreditCard from "@/components/icon/icon-credit-card";
 
 const STEPS = [
   {
     step: "١",
-    icon: Search,
+    icon: IconSearch,
     title: "ابحث عن طبيب",
     desc: "ابحث بالتخصص، الموقع، أو التقييم للعثور على الطبيب المناسب لك",
     color: "bg-blue-600",
   },
   {
     step: "٢",
-    icon: Calendar,
+    icon: IconCalendar,
     title: "احجز موعدك",
     desc: "اختر الوقت المناسب من المواعيد المتاحة وأضف ملاحظاتك",
     color: "bg-indigo-600",
   },
   {
     step: "٣",
-    icon: CreditCard,
+    icon: IconCreditCard,
     title: "تابع دفعاتك والديون",
     desc: "تابع دفعاتك والديون الخاصة بك من لوحة تحكمك بكل وضوح",
     color: "bg-purple-600",

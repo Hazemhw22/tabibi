@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Plus, Trash2, Loader2, Save, MapPin, Clock, Star } from "lucide-react";
+import IconPlus from "@/components/icon/icon-plus";
+import IconTrash from "@/components/icon/icon-trash";
+import IconLoader from "@/components/icon/icon-loader";
+import IconSave from "@/components/icon/icon-save";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconClock from "@/components/icon/icon-clock";
+import IconStar from "@/components/icon/icon-star";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -320,7 +326,7 @@ export default function DoctorClinicsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
+              <IconMapPin className="h-4 w-4" />
               العيادات
             </CardTitle>
             <Button
@@ -334,7 +340,7 @@ export default function DoctorClinicsPage() {
                 clinics.length >= 1
               }
             >
-              <Plus className="h-3.5 w-3.5" />
+              <IconPlus className="h-3.5 w-3.5" />
               إضافة عيادة
             </Button>
           </CardHeader>
@@ -362,7 +368,7 @@ export default function DoctorClinicsPage() {
                         className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
                         title="تعيين كعيادة رئيسية"
                       >
-                        <Star className="h-3.5 w-3.5" />
+                        <IconStar className="h-3.5 w-3.5" />
                         رئيسية
                       </button>
                     )}
@@ -372,7 +378,7 @@ export default function DoctorClinicsPage() {
                       className="p-1.5 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50"
                       title="حذف العيادة"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <IconTrash className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -427,11 +433,11 @@ export default function DoctorClinicsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+              <IconClock className="h-4 w-4" />
               جدول المواعيد
             </CardTitle>
             <Button size="sm" variant="outline" onClick={addTimeSlot} className="gap-1">
-              <Plus className="h-3.5 w-3.5" />
+              <IconPlus className="h-3.5 w-3.5" />
               إضافة وقت
             </Button>
           </CardHeader>
@@ -531,7 +537,7 @@ export default function DoctorClinicsPage() {
                     className="w-24 h-10"
                   />
                   <Button size="sm" onClick={addTurnsAsSlots} className="gap-1">
-                    <Plus className="h-3.5 w-3.5" />
+                    <IconPlus className="h-3.5 w-3.5" />
                     إضافة الأدوار
                   </Button>
                 </div>
@@ -595,7 +601,7 @@ export default function DoctorClinicsPage() {
                   onClick={() => removeTimeSlot(index)}
                   className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <IconTrash className="h-4 w-4" />
                 </button>
               </div>
             );
@@ -610,12 +616,12 @@ export default function DoctorClinicsPage() {
         <Button onClick={handleSave} size="lg" className="w-full" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <IconLoader className="h-4 w-4 animate-spin" />
               جاري الحفظ...
             </>
           ) : (
             <>
-              <Save className="h-4 w-4" />
+              <IconSave className="h-4 w-4" />
               حفظ التغييرات
             </>
           )}

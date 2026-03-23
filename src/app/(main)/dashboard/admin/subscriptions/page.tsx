@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
-import { CreditCard, TrendingUp } from "lucide-react";
+import IconCreditCard from "@/components/icon/icon-credit-card";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
@@ -40,7 +41,7 @@ export default async function AdminSubscriptionsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-green-100">
-                <TrendingUp className="h-8 w-8 text-green-600" />
+                <IconTrendingUp className="h-8 w-8 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-500">إجمالي إيرادات الاشتراكات</p>
@@ -60,7 +61,7 @@ export default async function AdminSubscriptionsPage() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between gap-2 text-base sm:text-lg">
             <span className="inline-flex items-center gap-2 text-gray-900">
-              <CreditCard className="h-5 w-5 text-blue-600" />
+              <IconCreditCard className="h-5 w-5 text-blue-600" />
               <span>سجل الاشتراكات</span>
             </span>
             <span className="text-xs text-gray-400 hidden sm:inline">
@@ -112,7 +113,7 @@ export default async function AdminSubscriptionsPage() {
           </table>
           {(!payments || payments.length === 0) && (
             <div className="text-center py-12 text-gray-400">
-              <CreditCard className="h-12 w-12 mx-auto mb-2" />
+              <IconCreditCard className="h-12 w-12 mx-auto mb-2" />
               <p>لا توجد اشتراكات مسجلة</p>
               <Link
                 href="/dashboard/admin/doctors"

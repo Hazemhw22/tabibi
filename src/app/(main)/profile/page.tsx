@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, User as UserIcon, Phone } from "lucide-react";
+import IconMail from "@/components/icon/icon-mail";
+import IconUser from "@/components/icon/icon-user";
+import IconPhone from "@/components/icon/icon-phone";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -28,7 +30,7 @@ export default async function ProfilePage() {
           <dl className="space-y-4 border-t border-gray-100 pt-6">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                <UserIcon className="h-5 w-5 text-gray-600" />
+                <IconUser className="h-5 w-5 text-gray-600" />
               </div>
               <div className="min-w-0 flex-1">
                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">الاسم</dt>
@@ -37,7 +39,7 @@ export default async function ProfilePage() {
             </div>
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                <Mail className="h-5 w-5 text-gray-600" />
+                <IconMail className="h-5 w-5 text-gray-600" />
               </div>
               <div className="min-w-0 flex-1">
                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">البريد الإلكتروني</dt>
@@ -47,7 +49,7 @@ export default async function ProfilePage() {
             {phone != null && phone !== "" && (
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                  <Phone className="h-5 w-5 text-gray-600" />
+                  <IconPhone className="h-5 w-5 text-gray-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">رقم الهاتف / الواتساب</dt>

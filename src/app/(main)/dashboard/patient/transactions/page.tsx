@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Receipt } from "lucide-react";
+import IconReceipt from "@/components/icon/icon-receipt";
 
 type PatientTxRow = {
   id: string;
@@ -113,7 +113,7 @@ export default async function PatientTransactionsPage() {
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Receipt className="h-4 w-4 text-blue-500" />
+            <IconReceipt className="h-4 w-4 text-blue-500" />
             <span>سجل المعاملات المالية</span>
           </CardTitle>
         </CardHeader>

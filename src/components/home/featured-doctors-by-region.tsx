@@ -2,14 +2,11 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
-import {
-  Star,
-  MapPin,
-  Clock,
-  MessageCircle,
-  ArrowLeft,
-  MapPinOff,
-} from "lucide-react";
+import IconStar from "@/components/icon/icon-star";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconClock from "@/components/icon/icon-clock";
+import IconMessage from "@/components/icon/icon-message";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getStoredRegionId } from "@/components/region/region-modal";
@@ -107,14 +104,14 @@ export default function FeaturedDoctorsByRegion() {
           </div>
           <Card className="border-dashed border-2 border-gray-200 bg-gray-50/50">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center">
-              <MapPinOff className="h-14 w-14 text-gray-400 mb-4" />
+              <IconMapPin className="h-14 w-14 text-gray-400 mb-4" />
               <p className="text-gray-600 mb-2">
                 لم يتم اختيار منطقة بعد. اختر منطقتك من أعلى الصفحة (بعد اختيار &quot;مريض&quot;) لرؤية الأطباء المتاحين في منطقتك.
               </p>
               <Link href="/doctors">
                 <Button variant="outline" className="gap-2 mt-4">
                   تصفح جميع الأطباء
-                  <ArrowLeft className="h-4 w-4" />
+                  <IconArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
             </CardContent>
@@ -161,7 +158,7 @@ export default function FeaturedDoctorsByRegion() {
           <Link href={`/doctors?locationId=${encodeURIComponent(regionId)}`}>
             <Button variant="outline" className="gap-2">
               عرض الكل
-              <ArrowLeft className="h-4 w-4" />
+              <IconArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -173,7 +170,7 @@ export default function FeaturedDoctorsByRegion() {
               <Link href="/doctors">
                 <Button variant="outline" className="gap-2 mt-2">
                   تصفح الأطباء
-                  <ArrowLeft className="h-4 w-4" />
+                  <IconArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
             </CardContent>
@@ -204,7 +201,7 @@ export default function FeaturedDoctorsByRegion() {
                           </p>
                           {doctor.clinics?.[0] && (
                             <div className="flex items-center gap-1 mt-1.5">
-                              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                              <IconMapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                               <p className="text-xs text-gray-500 truncate">
                                 {doctor.clinics[0].address}
                               </p>
@@ -216,7 +213,7 @@ export default function FeaturedDoctorsByRegion() {
 
                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <IconStar className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm font-semibold text-gray-800">
                           {(doctor.rating ?? 0).toFixed(1)}
                         </span>
@@ -233,14 +230,14 @@ export default function FeaturedDoctorsByRegion() {
                             className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
                             title="تواصل عبر واتساب"
                           >
-                            <MessageCircle className="h-5 w-5" />
+                            <IconMessage className="h-5 w-5" />
                           </a>
                         )}
                         <div className="text-sm font-semibold text-green-600">
                           ₪{doctor.consultationFee ?? 0}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Clock className="h-3.5 w-3.5" />
+                          <IconClock className="h-3.5 w-3.5" />
                           {(doctor.experienceYears ?? 0)} سنوات
                         </div>
                       </div>

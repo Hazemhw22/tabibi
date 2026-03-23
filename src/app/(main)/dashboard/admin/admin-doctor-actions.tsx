@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, Loader2, Building2 } from "lucide-react";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconLoader from "@/components/icon/icon-loader";
+import IconBuilding from "@/components/icon/icon-building";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { EXTRA_CLINIC_ANNUAL_FEE_NIS } from "@/lib/subscription-pricing";
@@ -89,7 +92,7 @@ export default function AdminDoctorActions({
         <>
           {canAddExtraClinics ? (
             <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 inline-flex items-center gap-1">
-              <Building2 className="h-3 w-3 shrink-0" />
+              <IconBuilding className="h-3 w-3 shrink-0" />
               إضافة عيادات مفعّلة (+{EXTRA_CLINIC_ANNUAL_FEE_NIS} ₪/سنة)
             </span>
           ) : (
@@ -102,9 +105,9 @@ export default function AdminDoctorActions({
               title="تفعيل إضافة عيادة ثانية — رسوم إضافية سنوية"
             >
               {loading === "extra_clinic" ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <IconLoader className="h-3 w-3 animate-spin" />
           ) : (
-            <Building2 className="h-3 w-3" />
+            <IconBuilding className="h-3 w-3" />
           )}
               إضافة عيادات (+{EXTRA_CLINIC_ANNUAL_FEE_NIS} ₪/سنة)
             </Button>
@@ -135,7 +138,7 @@ export default function AdminDoctorActions({
             className="text-xs h-8"
             title="موافق"
           >
-            {loading === "APPROVED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+            {loading === "APPROVED" ? <IconLoader className="h-3 w-3 animate-spin" /> : <IconCircleCheck className="h-3 w-3" />}
           </Button>
         </>
       )}
@@ -150,7 +153,7 @@ export default function AdminDoctorActions({
           className="text-xs h-8 gap-1"
           title="قبول — اشتراك تلقائي مع المركز"
         >
-          {loading === "APPROVED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+          {loading === "APPROVED" ? <IconLoader className="h-3 w-3 animate-spin" /> : <IconCircleCheck className="h-3 w-3" />}
           قبول (مع المركز)
         </Button>
       )}
@@ -164,7 +167,7 @@ export default function AdminDoctorActions({
           className="text-xs h-8"
           title="مرفوض"
         >
-          {loading === "REJECTED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+          {loading === "REJECTED" ? <IconLoader className="h-3 w-3 animate-spin" /> : <IconXCircle className="h-3 w-3" />}
         </Button>
       )}
 

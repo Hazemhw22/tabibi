@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { XCircle, Loader2, AlertTriangle, Trash2 } from "lucide-react";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconLoader from "@/components/icon/icon-loader";
+import IconExclamationTriangle from "@/components/icon/icon-exclamation-triangle";
+import IconTrash from "@/components/icon/icon-trash";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -60,7 +63,7 @@ export function CancelAppointmentButton({ appointmentId, appointmentDate, startT
           title="إلغاء الموعد"
           className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
         >
-          <Trash2 className="h-4 w-4" />
+          <IconTrash className="h-4 w-4" />
         </button>
       ) : (
         <Button
@@ -70,7 +73,7 @@ export function CancelAppointmentButton({ appointmentId, appointmentDate, startT
           onClick={() => setOpen(true)}
           disabled={loading}
         >
-          <XCircle className="h-3.5 w-3.5" />
+          <IconXCircle className="h-3.5 w-3.5" />
           إلغاء الموعد
         </Button>
       )}
@@ -79,7 +82,7 @@ export function CancelAppointmentButton({ appointmentId, appointmentDate, startT
           <DialogHeader className="text-right">
             <div className="flex items-center gap-3 justify-end mb-2">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+                <IconExclamationTriangle className="h-6 w-6 text-red-600" />
               </div>
               <DialogTitle className="text-xl text-gray-900">
                 تأكيد إلغاء الموعد
@@ -107,9 +110,9 @@ export function CancelAppointmentButton({ appointmentId, appointmentDate, startT
               className="bg-red-600 hover:bg-red-700 text-white gap-2"
             >
               {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <IconLoader className="h-4 w-4 animate-spin" />
               ) : (
-                <XCircle className="h-4 w-4" />
+                <IconXCircle className="h-4 w-4" />
               )}
               تأكيد الإلغاء
             </Button>

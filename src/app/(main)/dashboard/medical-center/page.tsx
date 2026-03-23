@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  Stethoscope,
-  Siren,
-  Building2,
-} from "lucide-react";
+import IconUsers from "@/components/icon/icon-users";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconHeart from "@/components/icon/icon-heart";
+import IconBell from "@/components/icon/icon-bell";
+import IconBuilding from "@/components/icon/icon-building";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MEDICAL_CENTER_ANNUAL_FEE_NIS } from "@/lib/subscription-pricing";
 import { formatDateNumeric } from "@/lib/utils";
@@ -52,7 +49,7 @@ export default function MedicalCenterDashboardPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Building2 className="h-8 w-8 text-blue-600" />
+          <IconBuilding className="h-8 w-8 text-blue-600" />
           لوحة المركز الطبي
         </h1>
         {c && (
@@ -103,7 +100,7 @@ export default function MedicalCenterDashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Stethoscope className="h-4 w-4" />
+              <IconHeart className="h-4 w-4" />
               الأطباء
             </div>
             <div className="text-2xl font-bold mt-1">{s?.doctorsCount ?? "—"}</div>
@@ -112,7 +109,7 @@ export default function MedicalCenterDashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Calendar className="h-4 w-4" />
+              <IconCalendar className="h-4 w-4" />
               الحجوزات
             </div>
             <div className="text-2xl font-bold mt-1">{s?.appointmentsCount ?? "—"}</div>
@@ -121,7 +118,7 @@ export default function MedicalCenterDashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Users className="h-4 w-4" />
+              <IconUsers className="h-4 w-4" />
               المرضى (فريد)
             </div>
             <div className="text-2xl font-bold mt-1">{s?.patientsCount ?? "—"}</div>
@@ -130,7 +127,7 @@ export default function MedicalCenterDashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Siren className="h-4 w-4" />
+              <IconBell className="h-4 w-4" />
               طوارئ
             </div>
             <div className="text-2xl font-bold mt-1">{s?.emergencyCount ?? "—"}</div>
@@ -143,7 +140,7 @@ export default function MedicalCenterDashboardPage() {
           <Card className="hover:border-blue-300 transition-colors cursor-pointer h-full">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-blue-600" />
+                <IconHeart className="h-5 w-5 text-blue-600" />
                 الأطباء وأوقات العمل
               </CardTitle>
             </CardHeader>
@@ -156,7 +153,7 @@ export default function MedicalCenterDashboardPage() {
           <Card className="hover:border-blue-300 transition-colors cursor-pointer h-full">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
+                <IconUsers className="h-5 w-5 text-blue-600" />
                 مرضى المركز
               </CardTitle>
             </CardHeader>
@@ -169,7 +166,7 @@ export default function MedicalCenterDashboardPage() {
           <Card className="hover:border-blue-300 transition-colors cursor-pointer h-full">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
+                <IconCalendar className="h-5 w-5 text-blue-600" />
                 حجوزات المركز
               </CardTitle>
             </CardHeader>
@@ -182,7 +179,7 @@ export default function MedicalCenterDashboardPage() {
           <Card className="hover:border-amber-300 transition-colors cursor-pointer h-full border-amber-100 bg-amber-50/30">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Siren className="h-5 w-5 text-amber-600" />
+                <IconBell className="h-5 w-5 text-amber-600" />
                 قسم الطوارئ
               </CardTitle>
             </CardHeader>

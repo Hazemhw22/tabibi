@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Plus, Trash2, Settings, MapPin, Clock } from "lucide-react";
+import Image from "next/image";
+import IconBuilding from "@/components/icon/icon-building";
+import IconPlus from "@/components/icon/icon-plus";
+import IconTrash from "@/components/icon/icon-trash";
+import IconSettings from "@/components/icon/icon-settings";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconClock from "@/components/icon/icon-clock";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +40,8 @@ export default function MedicalCenterSettingsPage() {
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
   const [locationId, setLocationId] = useState("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [hours, setHours] = useState<HoursRow[]>([{ dayOfWeek: 0, startTime: "08:00", endTime: "16:00" }]);
 
   useEffect(() => {
@@ -52,6 +60,7 @@ export default function MedicalCenterSettingsPage() {
           phone?: string | null;
           description?: string | null;
           locationId?: string | null;
+          imageUrl?: string | null;
           operatingHours?: HoursRow[];
         };
         setName(c.name ?? "");
@@ -61,6 +70,7 @@ export default function MedicalCenterSettingsPage() {
         setPhone(c.phone ?? "");
         setDescription(c.description ?? "");
         setLocationId(c.locationId ?? "");
+        setImageUrl(c.imageUrl ?? "");
         if (c.operatingHours?.length) setHours(c.operatingHours);
       })
       .catch(() => toast.error("تعذر التحميل"))
@@ -92,6 +102,7 @@ export default function MedicalCenterSettingsPage() {
           phone: phone.trim() || null,
           description: description.trim() || null,
           locationId: locationId || null,
+          imageUrl: imageUrl || null,
           operatingHours: hours.map((h) => ({
             dayOfWeek: h.dayOfWeek,
             startTime: h.startTime.slice(0, 5),
@@ -133,7 +144,7 @@ export default function MedicalCenterSettingsPage() {
 
       <div className="mb-8 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-          <Settings className="h-7 w-7" />
+          <IconSettings className="h-7 w-7" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-slate-900">إعدادات المركز الطبي</h1>
@@ -146,10 +157,51 @@ export default function MedicalCenterSettingsPage() {
       <form onSubmit={save} className="space-y-4">
         <div className={panelClass}>
           <h2 className="mb-1 text-base font-semibold text-slate-900 flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-blue-600" />
+            <IconBuilding className="h-4 w-4 text-blue-600" />
             بيانات المركز
           </h2>
           <p className="text-xs text-slate-500 mb-4">الاسم والعنوان كما تظهر للمرضى.</p>
+          <div className="mb-4 flex items-center gap-4">
+            <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+              {imageUrl ? (
+                <Image src={imageUrl} alt="صورة المركز" fill className="object-cover" unoptimized />
+              ) : null}
+            </div>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    setUploadingImage(true);
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
+                    const data = await res.json();
+                    if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
+                    setImageUrl(data.url);
+                    toast.success("تم رفع صورة المركز");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
+                  } finally {
+                    setUploadingImage(false);
+                    e.currentTarget.value = "";
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" disabled={uploadingImage}>
+                {uploadingImage ? "جاري الرفع..." : "رفع صورة المركز"}
+              </Button>
+            </label>
+            {imageUrl ? (
+              <Button type="button" variant="ghost" onClick={() => setImageUrl("")}>
+                إزالة
+              </Button>
+            ) : null}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label className="text-slate-700">الاسم (عربي)</Label>
@@ -180,7 +232,7 @@ export default function MedicalCenterSettingsPage() {
 
         <div className={panelClass}>
           <h2 className="mb-1 text-base font-semibold text-slate-900 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-emerald-600" />
+            <IconMapPin className="h-4 w-4 text-emerald-600" />
             موقع المركز على الخريطة
           </h2>
           <p className="text-xs text-slate-500 mb-4">
@@ -198,7 +250,7 @@ export default function MedicalCenterSettingsPage() {
 
         <div className={panelClass}>
           <h2 className="mb-1 text-base font-semibold text-slate-900 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-600" />
+            <IconClock className="h-4 w-4 text-amber-600" />
             أوقات عمل المركز (عامة)
           </h2>
           <p className="text-xs text-slate-500 mb-4">
@@ -207,7 +259,7 @@ export default function MedicalCenterSettingsPage() {
           <div className="space-y-3">
             <div className="flex justify-end">
               <Button type="button" variant="outline" size="sm" onClick={addHourRow} className="gap-1 border-slate-200 text-slate-700">
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-4 w-4" />
                 إضافة يوم
               </Button>
             </div>
@@ -249,7 +301,7 @@ export default function MedicalCenterSettingsPage() {
                     onClick={() => removeHourRow(i)}
                     disabled={hours.length <= 1}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <IconTrash className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

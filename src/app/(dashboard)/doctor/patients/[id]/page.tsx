@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ArrowRight, Phone, AlertTriangle } from "lucide-react";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconPhone from "@/components/icon/icon-phone";
+import IconExclamationTriangle from "@/components/icon/icon-exclamation-triangle";
 import Link from "next/link";
 import { format, differenceInYears } from "date-fns";
 import PatientTabs from "./patient-tabs";
@@ -42,7 +44,7 @@ export default async function PatientDetailPage({
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Back */}
       <Link href="/dashboard/doctor/patients" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
-        <ArrowRight className="h-4 w-4" /> قائمة المرضى
+        <IconArrowForward className="h-4 w-4" /> قائمة المرضى
       </Link>
 
       {/* تفاصيل رئيسية أفقية + 3 بطاقات ملخص */}
@@ -56,7 +58,7 @@ export default async function PatientDetailPage({
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">
               {patient.allergies ? (
                 <span className="flex items-center gap-1">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                  <IconExclamationTriangle className="h-3.5 w-3.5 text-amber-500" />
                   {patient.allergies}
                 </span>
               ) : (
@@ -64,7 +66,7 @@ export default async function PatientDetailPage({
               )}
               {patient.phone && (
                 <span className="flex items-center gap-1" dir="ltr">
-                  <Phone className="h-3.5 w-3.5 text-gray-400" />
+                  <IconPhone className="h-3.5 w-3.5 text-gray-400" />
                   {patient.phone}
                 </span>
               )}

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, ArrowRight, Loader2 } from "lucide-react";
+import IconMail from "@/components/icon/icon-mail";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconLoader from "@/components/icon/icon-loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,7 +46,7 @@ export default function ForgotPasswordPage() {
             <p className="text-gray-600 text-sm mb-4">تحقق من بريدك الإلكتروني واتبع الرابط لإعادة تعيين كلمة المرور.</p>
             <Link href="/login">
               <Button variant="outline" className="gap-2">
-                <ArrowRight className="h-4 w-4" />
+                <IconArrowForward className="h-4 w-4" />
                 العودة لتسجيل الدخول
               </Button>
             </Link>
@@ -61,7 +63,7 @@ export default function ForgotPasswordPage() {
               dir="ltr"
             />
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              {loading ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconMail className="h-4 w-4" />}
               {loading ? "جاري الإرسال..." : "إرسال رابط الاستعادة"}
             </Button>
           </form>

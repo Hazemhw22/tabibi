@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CreditCard, Calendar, Clock, MapPin, Shield, Loader2, ArrowRight } from "lucide-react";
+import IconCreditCard from "@/components/icon/icon-credit-card";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconClock from "@/components/icon/icon-clock";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconLock from "@/components/icon/icon-lock";
+import IconLoader from "@/components/icon/icon-loader";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +78,7 @@ export default function PaymentPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <IconLoader className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -91,7 +97,7 @@ export default function PaymentPage() {
           onClick={() => router.back()}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
         >
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
           العودة
         </button>
         <h1 className="text-2xl font-bold text-gray-900">إتمام الدفع</h1>
@@ -117,7 +123,7 @@ export default function PaymentPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="bg-gray-100 p-2 rounded-lg">
-                <Calendar className="h-4 w-4 text-gray-600" />
+                <IconCalendar className="h-4 w-4 text-gray-600" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">التاريخ</p>
@@ -129,7 +135,7 @@ export default function PaymentPage() {
 
             <div className="flex items-center gap-3">
               <div className="bg-gray-100 p-2 rounded-lg">
-                <Clock className="h-4 w-4 text-gray-600" />
+                <IconClock className="h-4 w-4 text-gray-600" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">الوقت</p>
@@ -142,7 +148,7 @@ export default function PaymentPage() {
             {appointment.clinic && (
               <div className="flex items-center gap-3">
                 <div className="bg-gray-100 p-2 rounded-lg">
-                  <MapPin className="h-4 w-4 text-gray-600" />
+                  <IconMapPin className="h-4 w-4 text-gray-600" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">العيادة</p>
@@ -168,7 +174,7 @@ export default function PaymentPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
+            <IconCreditCard className="h-4 w-4" />
             طرق الدفع
           </CardTitle>
         </CardHeader>
@@ -176,7 +182,7 @@ export default function PaymentPage() {
           <div className="grid grid-cols-1 gap-3">
             <div className="flex items-center gap-3 p-4 border-2 border-blue-500 rounded-xl bg-blue-50 cursor-pointer">
               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <CreditCard className="h-5 w-5 text-blue-600" />
+                <IconCreditCard className="h-5 w-5 text-blue-600" />
               </div>
               <div className="flex-1">
                 <p className="font-medium text-gray-800">بطاقة ائتمان / Stripe</p>
@@ -190,7 +196,7 @@ export default function PaymentPage() {
 
       {/* Security Notice */}
       <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl mb-6">
-        <Shield className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+        <IconLock className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium text-green-800">دفع آمن 100%</p>
           <p className="text-xs text-green-600 mt-0.5">
@@ -208,12 +214,12 @@ export default function PaymentPage() {
       >
         {paying ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <IconLoader className="h-5 w-5 animate-spin" />
             جاري التحويل لصفحة الدفع...
           </>
         ) : (
           <>
-            <CreditCard className="h-5 w-5" />
+            <IconCreditCard className="h-5 w-5" />
             ادفع ₪{appointment.fee} الآن
           </>
         )}

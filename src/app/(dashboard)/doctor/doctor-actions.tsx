@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, UserX, Loader2 } from "lucide-react";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconUsers from "@/components/icon/icon-users";
+import IconLoader from "@/components/icon/icon-loader";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -43,11 +45,11 @@ export default function DoctorActions({ appointmentId, type }: Props) {
   return (
     <div className="flex gap-1.5 shrink-0">
       <Button size="sm" variant="success" onClick={() => update("COMPLETED")} disabled={!!loading} className="text-xs h-7 px-2 gap-1">
-        {loading === "COMPLETED" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+        {loading === "COMPLETED" ? <IconLoader className="h-3 w-3 animate-spin" /> : <IconCircleCheck className="h-3 w-3" />}
         منجز
       </Button>
       <Button size="sm" variant="destructive" onClick={() => update("NO_SHOW")} disabled={!!loading} className="text-xs h-7 px-2 gap-1">
-        {loading === "NO_SHOW" ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
+        {loading === "NO_SHOW" ? <IconLoader className="h-3 w-3 animate-spin" /> : <IconUsers className="h-3 w-3" />}
         غائب
       </Button>
     </div>

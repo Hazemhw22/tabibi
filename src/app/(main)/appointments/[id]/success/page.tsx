@@ -1,4 +1,6 @@
-import { CheckCircle, Calendar, ArrowRight } from "lucide-react";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,7 +49,7 @@ export default async function SuccessPage({
     <div className="max-w-lg mx-auto px-4 py-16 text-center">
       <div className="relative inline-flex mb-8">
         <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
-          <CheckCircle className="h-14 w-14 text-green-500" />
+          <IconCircleCheck className="h-14 w-14 text-green-500" />
         </div>
         <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
           ✓
@@ -105,13 +107,13 @@ export default async function SuccessPage({
       <div className="flex flex-col gap-3">
         <Link href="/dashboard/patient">
           <Button className="w-full" size="lg">
-            <Calendar className="h-4 w-4" />
+            <IconCalendar className="h-4 w-4" />
             عرض مواعيدي
           </Button>
         </Link>
         <Link href="/doctors">
           <Button variant="outline" className="w-full" size="lg">
-            <ArrowRight className="h-4 w-4" />
+            <IconArrowForward className="h-4 w-4" />
             حجز موعد آخر
           </Button>
         </Link>

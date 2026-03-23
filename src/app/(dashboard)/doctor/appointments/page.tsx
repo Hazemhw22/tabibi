@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import IconCalendar from "@/components/icon/icon-calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DoctorActions from "../doctor-actions";
@@ -67,7 +67,7 @@ export default async function DoctorAppointmentsPage({
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="h-4 w-4 text-blue-600" />
+              <IconCalendar className="h-4 w-4 text-blue-600" />
               <span className="font-semibold text-blue-800 text-sm">
                 اليوم - {format(new Date(), "EEEE d MMMM")} ({today.length} موعد)
               </span>
@@ -102,7 +102,7 @@ export default async function DoctorAppointmentsPage({
         <CardContent className="pt-0 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
           {appointments.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
-              <Calendar className="h-10 w-10 mx-auto mb-3 text-gray-200" />
+              <IconCalendar className="h-10 w-10 mx-auto mb-3 text-gray-200" />
               <p className="text-sm">لا توجد مواعيد</p>
             </div>
           ) : (

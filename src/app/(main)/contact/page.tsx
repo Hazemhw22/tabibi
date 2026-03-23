@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
+import IconMail from "@/components/icon/icon-mail";
+import IconPhone from "@/components/icon/icon-phone";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconSend from "@/components/icon/icon-send";
+import IconLoader from "@/components/icon/icon-loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +39,7 @@ export default function ContactPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-8">
-        <ArrowLeft className="h-4 w-4" />
+        <IconArrowLeft className="h-4 w-4" />
         العودة للرئيسية
       </Link>
 
@@ -45,7 +50,7 @@ export default function ContactPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <IconMapPin className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-gray-900">العنوان</h3>
                 <p className="text-gray-600 text-sm">الخليل، فلسطين</p>
@@ -56,7 +61,7 @@ export default function ContactPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
-              <Mail className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <IconMail className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-gray-900">البريد الإلكتروني</h3>
                 <p className="text-gray-600 text-sm" dir="ltr">info@tabibi.ps</p>
@@ -67,7 +72,7 @@ export default function ContactPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
-              <Phone className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <IconPhone className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-gray-900">الهاتف</h3>
                 <p className="text-gray-600 text-sm" dir="ltr">+972 507795580</p>
@@ -108,7 +113,7 @@ export default function ContactPage() {
               />
             </div>
             <Button type="submit" disabled={loading} className="gap-2">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {loading ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconSend className="h-4 w-4" />}
               إرسال
             </Button>
           </form>

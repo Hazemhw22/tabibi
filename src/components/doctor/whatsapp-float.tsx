@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import IconMessage from "@/components/icon/icon-message";
 
 const SUPPORT_PHONE = "972507795580";
 const MESSAGE = "مرحباً، أود التواصل مع الدعم الفني";
@@ -17,7 +17,7 @@ export function DoctorWhatsAppFloat() {
       title="تواصل معنا"
       aria-label="تواصل معنا عبر واتساب"
     >
-      <MessageCircle className="h-6 w-6 shrink-0" />
+      <IconMessage className="h-6 w-6 shrink-0" />
       <span className="text-sm font-medium whitespace-nowrap">تواصل معنا</span>
     </a>
   );

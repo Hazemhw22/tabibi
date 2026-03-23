@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { Moon, Sun } from "lucide-react";
+import IconMoon from "@/components/icon/icon-moon";
+import IconSun from "@/components/icon/icon-sun";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
@@ -108,7 +109,7 @@ export default function DashboardHeader() {
             )}
             title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
           >
-            {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+            {isDark ? <IconSun className="h-[18px] w-[18px]" /> : <IconMoon className="h-[18px] w-[18px]" />}
           </button>
         )}
 

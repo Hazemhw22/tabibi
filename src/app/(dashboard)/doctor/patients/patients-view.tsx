@@ -2,12 +2,23 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTransition, useState, useMemo, useEffect } from "react";
-import {
-  Plus, Search, X, Users, Loader2,
-  User, Calendar, TrendingUp, TrendingDown,
-  FileText, CheckCircle, Clock, XCircle, Trash2,
-  Phone, AlertTriangle, Stethoscope,
-} from "lucide-react";
+import IconPlus from "@/components/icon/icon-plus";
+import IconSearch from "@/components/icon/icon-search";
+import IconX from "@/components/icon/icon-x";
+import IconUsers from "@/components/icon/icon-users";
+import IconLoader from "@/components/icon/icon-loader";
+import IconUser from "@/components/icon/icon-user";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconTrendingDown from "@/components/icon/icon-trending-down";
+import IconDocument from "@/components/icon/icon-document";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconClock from "@/components/icon/icon-clock";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconTrash from "@/components/icon/icon-trash";
+import IconPhone from "@/components/icon/icon-phone";
+import IconExclamationTriangle from "@/components/icon/icon-exclamation-triangle";
+import IconHeart from "@/components/icon/icon-heart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format, differenceInYears } from "date-fns";
@@ -71,17 +82,17 @@ type Props = {
 
 /* ─── Constants ──────────────────────────────────────────────────── */
 const TABS = [
-  { id: "info",         label: "البيانات",       icon: User },
-  { id: "visits",       label: "سجل الزيارات",   icon: Calendar },
-  { id: "transactions", label: "المعاملات",       icon: TrendingUp },
-  { id: "medical",      label: "الملفات الطبية", icon: FileText },
+  { id: "info",         label: "البيانات",       icon: IconUser },
+  { id: "visits",       label: "سجل الزيارات",   icon: IconCalendar },
+  { id: "transactions", label: "المعاملات",       icon: IconTrendingUp },
+  { id: "medical",      label: "الملفات الطبية", icon: IconDocument },
 ];
 
 const APT_STATUS: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  SCHEDULED: { label: "مجدول",  color: "text-blue-600 bg-blue-50",   icon: Clock },
-  COMPLETED: { label: "منجز",   color: "text-green-600 bg-green-50", icon: CheckCircle },
-  CANCELLED: { label: "ملغي",   color: "text-red-500 bg-red-50",     icon: XCircle },
-  NO_SHOW:   { label: "غائب",   color: "text-yellow-600 bg-yellow-50", icon: XCircle },
+  SCHEDULED: { label: "مجدول",  color: "text-blue-600 bg-blue-50",   icon: IconClock },
+  COMPLETED: { label: "منجز",   color: "text-green-600 bg-green-50", icon: IconCircleCheck },
+  CANCELLED: { label: "ملغي",   color: "text-red-500 bg-red-50",     icon: IconXCircle },
+  NO_SHOW:   { label: "غائب",   color: "text-yellow-600 bg-yellow-50", icon: IconXCircle },
 };
 
 /* ─── Component ──────────────────────────────────────────────────── */
@@ -285,11 +296,11 @@ export default function PatientsView({
               onClick={() => setAddModalOpen(true)}
               className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" /> إضافة
+              <IconPlus className="h-3.5 w-3.5" /> إضافة
             </button>
           </div>
           <div className="relative">
-            <Search className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <IconSearch className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={search}
@@ -303,7 +314,7 @@ export default function PatientsView({
                 onClick={() => handleSearch("")}
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <X className="h-3.5 w-3.5" />
+                <IconX className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
@@ -313,7 +324,7 @@ export default function PatientsView({
         <ul className="flex-1 overflow-y-auto divide-y divide-gray-50">
           {filtered.length === 0 ? (
             <li className="flex flex-col items-center justify-center h-full py-12 text-center px-4">
-              <Users className="h-10 w-10 text-gray-200 mb-2" />
+              <IconUsers className="h-10 w-10 text-gray-200 mb-2" />
               <p className="text-sm text-gray-400">{search ? "لا توجد نتائج" : "لا يوجد مرضى بعد"}</p>
             </li>
           ) : (
@@ -335,7 +346,7 @@ export default function PatientsView({
                         active ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500",
                       )}
                     >
-                      <User className="h-4 w-4" />
+                      <IconUser className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={cn("truncate text-sm font-medium", active ? "text-white" : "text-gray-900")}>
@@ -373,13 +384,13 @@ export default function PatientsView({
                     {age != null && <span>العمر: {age} سنة</span>}
                     {selectedPatient.phone && (
                       <span className="flex items-center gap-1" dir="ltr">
-                        <Phone className="h-3.5 w-3.5 text-gray-400" />
+                        <IconPhone className="h-3.5 w-3.5 text-gray-400" />
                         {selectedPatient.phone}
                       </span>
                     )}
                     {selectedPatient.allergies && (
                       <span className="flex items-center gap-1 text-amber-600 text-xs font-medium">
-                        <AlertTriangle className="h-3.5 w-3.5" />
+                        <IconExclamationTriangle className="h-3.5 w-3.5" />
                         {selectedPatient.allergies}
                       </span>
                     )}
@@ -480,7 +491,7 @@ export default function PatientsView({
                         onClick={() => setAddingApt(true)}
                         className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
                       >
-                        <Plus className="h-3.5 w-3.5" /> موعد جديد
+                        <IconPlus className="h-3.5 w-3.5" /> موعد جديد
                       </Button>
                     )}
                   </div>
@@ -508,7 +519,7 @@ export default function PatientsView({
                       />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveApt} disabled={savingApt}>
-                          {savingApt ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                          {savingApt ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setAddingApt(false)}>إلغاء</Button>
                       </div>
@@ -544,11 +555,11 @@ export default function PatientsView({
                               <div className="flex gap-1">
                                 <button onClick={() => updateAptStatus(apt.id, "COMPLETED")}
                                   className="rounded p-1.5 text-gray-300 hover:bg-green-50 hover:text-green-500 transition-colors">
-                                  <CheckCircle className="h-4 w-4" />
+                                  <IconCircleCheck className="h-4 w-4" />
                                 </button>
                                 <button onClick={() => updateAptStatus(apt.id, "CANCELLED")}
                                   className="rounded p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors">
-                                  <XCircle className="h-4 w-4" />
+                                  <IconXCircle className="h-4 w-4" />
                                 </button>
                               </div>
                             )}
@@ -588,14 +599,14 @@ export default function PatientsView({
                       <Button size="sm" variant="outline"
                         onClick={() => setAddingService(true)}
                         className="gap-1 border-red-200 text-red-600 hover:bg-red-50">
-                        <Plus className="h-3.5 w-3.5" /> خدمة جديدة
+                        <IconPlus className="h-3.5 w-3.5" /> خدمة جديدة
                       </Button>
                     )}
                     {!addingPayment && (
                       <Button size="sm" variant="outline"
                         onClick={() => setAddingPayment(true)}
                         className="gap-1 border-green-200 text-green-600 hover:bg-green-50">
-                        <Plus className="h-3.5 w-3.5" /> تسجيل دفعة
+                        <IconPlus className="h-3.5 w-3.5" /> تسجيل دفعة
                       </Button>
                     )}
                   </div>
@@ -616,7 +627,7 @@ export default function PatientsView({
                         className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-red-400" />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveService} disabled={savingService} className="bg-red-600 hover:bg-red-700">
-                          {savingService ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                          {savingService ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setAddingService(false)}>إلغاء</Button>
                       </div>
@@ -639,7 +650,7 @@ export default function PatientsView({
                         className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-green-400" />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={savePayment} disabled={savingPayment} className="bg-green-600 hover:bg-green-700">
-                          {savingPayment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                          {savingPayment ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setAddingPayment(false)}>إلغاء</Button>
                       </div>
@@ -671,8 +682,8 @@ export default function PatientsView({
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
                                   {t.type === "SERVICE"
-                                    ? <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
-                                    : <TrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
+                                    ? <IconTrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                                    : <IconTrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
                                   <span className="font-medium text-gray-900">{t.description}</span>
                                 </div>
                                 {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400">{t.notes}</p>}
@@ -688,7 +699,7 @@ export default function PatientsView({
                                   onClick={() => deleteTransaction(t.id)}
                                   className="text-gray-200 hover:text-red-400 transition-colors"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <IconTrash className="h-3.5 w-3.5" />
                                 </button>
                               </td>
                             </tr>
@@ -707,7 +718,7 @@ export default function PatientsView({
                   <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50">
                     {selectedPatient.allergies && (
                       <div className="flex items-start gap-3 px-5 py-4">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                        <IconExclamationTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                         <div>
                           <div className="text-sm font-semibold text-gray-900 mb-1">الحساسيات والتنبيهات</div>
                           <div className="text-sm text-gray-600">{selectedPatient.allergies}</div>
@@ -716,7 +727,7 @@ export default function PatientsView({
                     )}
                     {selectedPatient.notes && (
                       <div className="flex items-start gap-3 px-5 py-4">
-                        <FileText className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
+                        <IconDocument className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
                         <div>
                           <div className="text-sm font-semibold text-gray-900 mb-1">ملاحظات طبية</div>
                           <div className="text-sm text-gray-600">{selectedPatient.notes}</div>
@@ -725,7 +736,7 @@ export default function PatientsView({
                     )}
                     {!selectedPatient.allergies && !selectedPatient.notes && (
                       <div className="py-12 text-center text-sm text-gray-400">
-                        <Stethoscope className="mx-auto mb-3 h-10 w-10 text-gray-200" />
+                        <IconHeart className="mx-auto mb-3 h-10 w-10 text-gray-200" />
                         لا توجد ملفات طبية
                       </div>
                     )}
@@ -736,7 +747,7 @@ export default function PatientsView({
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-center text-gray-300">
-            <Users className="mb-4 h-16 w-16" />
+            <IconUsers className="mb-4 h-16 w-16" />
             <p className="text-sm">اختر مريضاً من القائمة</p>
             <p className="mt-1 text-xs">أو أضف مريضاً جديداً</p>
           </div>
@@ -784,7 +795,7 @@ export default function PatientsView({
                 onClick={() => setAddModalOpen(false)}
                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
-                <X className="h-5 w-5" />
+                <IconX className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleAddSubmit} className="space-y-4 p-5">
@@ -835,7 +846,7 @@ export default function PatientsView({
               </div>
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={addLoading}>
-                  {addLoading ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "إضافة المريض"}
+                  {addLoading ? <><IconLoader className="ml-2 h-4 w-4 animate-spin" />جاري الحفظ...</> : "إضافة المريض"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setAddModalOpen(false)}>إلغاء</Button>
               </div>

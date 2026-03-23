@@ -2,13 +2,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import {
-  Users,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Stethoscope,
-} from "lucide-react";
+import IconUsers from "@/components/icon/icon-users";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconHeart from "@/components/icon/icon-heart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -67,9 +65,9 @@ export default async function AdminDashboard() {
       {/* إحصائيات — إيرادات من الاشتراكات فقط */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {[
-          { label: "إجمالي الأطباء", value: totalDoctors ?? 0, icon: Users, color: "text-blue-600 bg-blue-50" },
-          { label: "بانتظار الموافقة", value: pendingDoctors.length, icon: AlertCircle, color: "text-orange-600 bg-orange-50" },
-          { label: "إجمالي الإيرادات (اشتراكات)", value: `₪${revenue.toFixed(0)}`, icon: TrendingUp, color: "text-green-600 bg-green-50" },
+          { label: "إجمالي الأطباء", value: totalDoctors ?? 0, icon: IconUsers, color: "text-blue-600 bg-blue-50" },
+          { label: "بانتظار الموافقة", value: pendingDoctors.length, icon: IconInfoCircle, color: "text-orange-600 bg-orange-50" },
+          { label: "إجمالي الإيرادات (اشتراكات)", value: `₪${revenue.toFixed(0)}`, icon: IconTrendingUp, color: "text-green-600 bg-green-50" },
         ].map((stat, i) => (
           <Card key={i}>
             <CardContent className="p-5">
@@ -88,7 +86,7 @@ export default async function AdminDashboard() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between gap-2 text-base sm:text-lg">
             <span className="inline-flex items-center gap-2 text-gray-900">
-              <Stethoscope className="h-5 w-5 text-blue-600" />
+              <IconHeart className="h-5 w-5 text-blue-600" />
               <span>الأطباء والاشتراكات</span>
             </span>
             <span className="text-xs text-gray-400 hidden sm:inline">
@@ -272,7 +270,7 @@ export default async function AdminDashboard() {
             </table>
             {doctorsForTable.length === 0 && (
               <div className="text-center py-12 text-gray-400">
-                <Users className="h-12 w-12 mx-auto mb-2" />
+                <IconUsers className="h-12 w-12 mx-auto mb-2" />
                 <p>لا يوجد أطباء مسجلون بعد</p>
               </div>
             )}
@@ -285,14 +283,14 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <IconInfoCircle className="h-4 w-4 text-orange-500" />
               بانتظار الموافقة ({pendingDoctors.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             {pendingDoctors.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
-                <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-400" />
+                <IconCircleCheck className="h-10 w-10 mx-auto mb-2 text-green-400" />
                 <p className="text-sm">لا يوجد طلبات معلقة</p>
               </div>
             ) : (

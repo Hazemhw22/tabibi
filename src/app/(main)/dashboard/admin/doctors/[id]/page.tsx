@@ -4,18 +4,16 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import Link from "next/link";
-import {
-  ArrowRight,
-  User,
-  Mail,
-  Phone,
-  Stethoscope,
-  MapPin,
-  Building2,
-  CreditCard,
-  Star,
-  Clock,
-} from "lucide-react";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconUser from "@/components/icon/icon-user";
+import IconMail from "@/components/icon/icon-mail";
+import IconPhone from "@/components/icon/icon-phone";
+import IconHeart from "@/components/icon/icon-heart";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconBuilding from "@/components/icon/icon-building";
+import IconCreditCard from "@/components/icon/icon-credit-card";
+import IconStar from "@/components/icon/icon-star";
+import IconClock from "@/components/icon/icon-clock";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLocationFullName } from "@/data/west-bank-locations";
@@ -119,7 +117,7 @@ export default async function AdminDoctorDetailPage({
           href="/dashboard/admin/doctors"
           className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:underline"
         >
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
           العودة لقائمة الأطباء
         </Link>
       </div>
@@ -149,14 +147,14 @@ export default async function AdminDoctorDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4" />
+              <IconUser className="h-4 w-4" />
               البيانات الشخصية وطرق الاتصال
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                <User className="h-5 w-5 text-gray-500 shrink-0" />
+                <IconUser className="h-5 w-5 text-gray-500 shrink-0" />
                 <div>
                   <p className="text-xs text-gray-500">الاسم</p>
                   <p className="font-medium text-gray-900 dir-ltr text-right">
@@ -165,7 +163,7 @@ export default async function AdminDoctorDetailPage({
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                <Mail className="h-5 w-5 text-gray-500 shrink-0" />
+                <IconMail className="h-5 w-5 text-gray-500 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-xs text-gray-500">البريد الإلكتروني</p>
                   <p className="font-medium text-gray-900 truncate dir-ltr text-right">
@@ -174,7 +172,7 @@ export default async function AdminDoctorDetailPage({
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                <Phone className="h-5 w-5 text-gray-500 shrink-0" />
+                <IconPhone className="h-5 w-5 text-gray-500 shrink-0" />
                 <div>
                   <p className="text-xs text-gray-500">رقم الهاتف / واتساب</p>
                   <p className="font-medium text-gray-900 dir-ltr text-right">
@@ -190,7 +188,7 @@ export default async function AdminDoctorDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Stethoscope className="h-4 w-4" />
+              <IconHeart className="h-4 w-4" />
               التخصص والملف المهني
             </CardTitle>
           </CardHeader>
@@ -202,7 +200,7 @@ export default async function AdminDoctorDetailPage({
               </div>
               {doctor.locationId && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500 shrink-0" />
+                  <IconMapPin className="h-4 w-4 text-gray-500 shrink-0" />
                   <div>
                     <p className="text-xs text-gray-500">منطقة العمل (الرئيسية)</p>
                     <p className="font-medium text-gray-900">
@@ -228,7 +226,7 @@ export default async function AdminDoctorDetailPage({
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-500" />
+                <IconStar className="h-4 w-4 text-amber-500" />
                 <span className="font-medium">{doctor.rating ?? 0}</span>
                 <span className="text-sm text-gray-500">({doctor.totalReviews ?? 0} تقييم)</span>
               </div>
@@ -252,7 +250,7 @@ export default async function AdminDoctorDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
+              <IconCreditCard className="h-4 w-4" />
               الاشتراك والإجراءات
             </CardTitle>
           </CardHeader>
@@ -303,7 +301,7 @@ export default async function AdminDoctorDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
+              <IconBuilding className="h-4 w-4" />
               العيادات ({clinics.length})
             </CardTitle>
           </CardHeader>
@@ -324,7 +322,7 @@ export default async function AdminDoctorDetailPage({
                       )}
                     </div>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      <IconMapPin className="h-3.5 w-3.5 shrink-0" />
                       {c.address}، {c.city}
                     </p>
                     {c.locationId && (
@@ -334,7 +332,7 @@ export default async function AdminDoctorDetailPage({
                     )}
                     {c.phone && (
                       <p className="text-sm text-gray-600 dir-ltr text-right">
-                        <Phone className="h-3.5 w-3.5 inline ml-1" />
+                        <IconPhone className="h-3.5 w-3.5 inline ml-1" />
                         {c.phone}
                       </p>
                     )}
@@ -349,7 +347,7 @@ export default async function AdminDoctorDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+              <IconClock className="h-4 w-4" />
               أوقات العمل ({timeSlots.length})
             </CardTitle>
           </CardHeader>

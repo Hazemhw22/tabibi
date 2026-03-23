@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Settings, ArrowRight, Shield } from "lucide-react";
+import IconSettings from "@/components/icon/icon-settings";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconLock from "@/components/icon/icon-lock";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminSettingsPage() {
@@ -17,7 +19,7 @@ export default async function AdminSettingsPage() {
           <p className="text-gray-500">إعدادات لوحة تحكم المنصة</p>
         </div>
         <Link href="/dashboard/admin" className="text-blue-600 text-sm font-medium flex items-center gap-1">
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
           لوحة التحكم
         </Link>
       </div>
@@ -25,7 +27,7 @@ export default async function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+            <IconLock className="h-5 w-5" />
             حسابك
           </CardTitle>
         </CardHeader>
@@ -39,7 +41,7 @@ export default async function AdminSettingsPage() {
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <IconSettings className="h-5 w-5" />
             الإعدادات
           </CardTitle>
         </CardHeader>

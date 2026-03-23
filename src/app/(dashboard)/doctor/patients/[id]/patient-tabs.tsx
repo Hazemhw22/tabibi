@@ -3,11 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import {
-  User, Wrench, History, CalendarPlus, Plus, Trash2,
-  Loader2, TrendingDown, TrendingUp, CheckCircle, Clock,
-  XCircle,
-} from "lucide-react";
+import IconUser from "@/components/icon/icon-user";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconPlus from "@/components/icon/icon-plus";
+import IconTrash from "@/components/icon/icon-trash";
+import IconLoader from "@/components/icon/icon-loader";
+import IconTrendingDown from "@/components/icon/icon-trending-down";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconClock from "@/components/icon/icon-clock";
+import IconXCircle from "@/components/icon/icon-x-circle";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,17 +42,17 @@ interface Props {
 }
 
 const tabs = [
-  { id: "info", label: "المعلومات", icon: User },
-  { id: "services", label: "الخدمات", icon: Wrench },
-  { id: "history", label: "الحركات", icon: History },
-  { id: "manage", label: "مواعيد ودفعات", icon: CalendarPlus },
+  { id: "info", label: "المعلومات", icon: IconUser },
+  { id: "services", label: "الخدمات", icon: IconUser },
+  { id: "history", label: "الحركات", icon: IconClock },
+  { id: "manage", label: "مواعيد ودفعات", icon: IconCalendar },
 ];
 
 const APT_STATUS: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  SCHEDULED: { label: "مجدول", color: "text-blue-600 bg-blue-50", icon: Clock },
-  COMPLETED: { label: "منجز", color: "text-green-600 bg-green-50", icon: CheckCircle },
-  CANCELLED: { label: "ملغي", color: "text-red-500 bg-red-50", icon: XCircle },
-  NO_SHOW: { label: "غائب", color: "text-yellow-600 bg-yellow-50", icon: XCircle },
+  SCHEDULED: { label: "مجدول", color: "text-blue-600 bg-blue-50", icon: IconClock },
+  COMPLETED: { label: "منجز", color: "text-green-600 bg-green-50", icon: IconCircleCheck },
+  CANCELLED: { label: "ملغي", color: "text-red-500 bg-red-50", icon: IconXCircle },
+  NO_SHOW: { label: "غائب", color: "text-yellow-600 bg-yellow-50", icon: IconXCircle },
 };
 
 export default function PatientTabs({ patient, transactions, appointments, balance }: Props) {
@@ -244,7 +249,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
             {/* Add Service Button */}
             {!addingService ? (
               <Button onClick={() => setAddingService(true)} variant="outline" className="gap-2 border-dashed border-red-300 text-red-600 hover:bg-red-50">
-                <Plus className="h-4 w-4" /> إضافة خدمة جديدة (دين)
+                <IconPlus className="h-4 w-4" /> إضافة خدمة جديدة (دين)
               </Button>
             ) : (
               <div className="border border-red-200 bg-red-50/30 rounded-xl p-4 space-y-3">
@@ -262,7 +267,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                   className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
                 <div className="flex gap-2">
                   <Button size="sm" onClick={saveService} disabled={savingService} className="bg-red-600 hover:bg-red-700">
-                    {savingService ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ الخدمة"}
+                    {savingService ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ الخدمة"}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setAddingService(false)}>إلغاء</Button>
                 </div>
@@ -297,7 +302,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                         <td className="px-4 py-3 text-gray-400 text-xs">{s.notes || "-"}</td>
                         <td className="px-4 py-3">
                           <button onClick={() => deleteTransaction(s.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <IconTrash className="h-3.5 w-3.5" />
                           </button>
                         </td>
                       </tr>
@@ -359,8 +364,8 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             {t.type === "SERVICE"
-                              ? <TrendingDown className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                              : <TrendingUp className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                              ? <IconTrendingDown className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                              : <IconTrendingUp className="h-3.5 w-3.5 text-green-500 shrink-0" />
                             }
                             <span className="font-medium text-gray-900">{t.description}</span>
                           </div>
@@ -401,11 +406,11 @@ export default function PatientTabs({ patient, transactions, appointments, balan
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                  <CalendarPlus className="h-4 w-4 text-blue-600" /> المواعيد
+                  <IconCalendar className="h-4 w-4 text-blue-600" /> المواعيد
                 </h3>
                 {!addingApt && (
                   <Button size="sm" onClick={() => setAddingApt(true)} variant="outline" className="gap-1 border-blue-300 text-blue-600 hover:bg-blue-50">
-                    <Plus className="h-3.5 w-3.5" /> إضافة موعد
+                    <IconPlus className="h-3.5 w-3.5" /> إضافة موعد
                   </Button>
                 )}
               </div>
@@ -429,7 +434,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                     className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   <div className="flex gap-2">
                     <Button size="sm" onClick={saveApt} disabled={savingApt}>
-                      {savingApt ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "حفظ الموعد"}
+                      {savingApt ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ الموعد"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setAddingApt(false)}>إلغاء</Button>
                   </div>
@@ -460,11 +465,11 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                           <div className="flex gap-1">
                             <button onClick={() => updateAptStatus(apt.id, "COMPLETED")} title="منجز"
                               className="p-1.5 rounded-lg text-gray-300 hover:text-green-500 hover:bg-green-50 transition-colors">
-                              <CheckCircle className="h-4 w-4" />
+                              <IconCircleCheck className="h-4 w-4" />
                             </button>
                             <button onClick={() => updateAptStatus(apt.id, "CANCELLED")} title="ملغي"
                               className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
-                              <XCircle className="h-4 w-4" />
+                              <IconXCircle className="h-4 w-4" />
                             </button>
                           </div>
                         )}
@@ -479,7 +484,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
             <div className="border-t border-gray-100 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <IconTrendingUp className="h-4 w-4 text-green-600" />
                   الدفعات
                   <span className={`text-sm font-bold mr-2 ${balance < 0 ? "text-red-500" : "text-green-600"}`}>
                     (الرصيد: {balance >= 0 ? "+" : ""}₪{balance.toFixed(0)})
@@ -487,7 +492,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                 </h3>
                 {!addingPayment && (
                   <Button size="sm" onClick={() => setAddingPayment(true)} variant="outline" className="gap-1 border-green-300 text-green-600 hover:bg-green-50">
-                    <Plus className="h-3.5 w-3.5" /> إضافة دفعة
+                    <IconPlus className="h-3.5 w-3.5" /> إضافة دفعة
                   </Button>
                 )}
               </div>
@@ -508,7 +513,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                     className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
                   <div className="flex gap-2">
                     <Button size="sm" onClick={savePayment} disabled={savingPayment} className="bg-green-600 hover:bg-green-700">
-                      {savingPayment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "تسجيل الدفعة"}
+                      {savingPayment ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "تسجيل الدفعة"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setAddingPayment(false)}>إلغاء</Button>
                   </div>
@@ -540,7 +545,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                           <td className="px-4 py-3 text-gray-400 text-xs">{p.notes || "-"}</td>
                           <td className="px-4 py-3">
                             <button onClick={() => deleteTransaction(p.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <IconTrash className="h-3.5 w-3.5" />
                             </button>
                           </td>
                         </tr>

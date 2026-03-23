@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Check, X, Loader2 } from "lucide-react";
+import IconBuilding from "@/components/icon/icon-building";
+import IconCheck from "@/components/icon/icon-check";
+import IconX from "@/components/icon/icon-x";
+import IconLoader from "@/components/icon/icon-loader";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +74,7 @@ export default function AdminMedicalCentersPage() {
           ← لوحة الإدارة
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Building2 className="h-8 w-8 text-sky-600" />
+          <IconBuilding className="h-8 w-8 text-sky-600" />
           المراكز الطبية
         </h1>
         <p className="text-gray-600 mt-1">
@@ -86,7 +89,7 @@ export default function AdminMedicalCentersPage() {
         <CardContent>
           {loading ? (
             <p className="text-gray-500 flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <IconLoader className="h-4 w-4 animate-spin" />
               جاري التحميل...
             </p>
           ) : centers.length === 0 ? (
@@ -133,9 +136,9 @@ export default function AdminMedicalCentersPage() {
                               onClick={() => patch(c.id, "APPROVED")}
                             >
                               {acting === c.id + "APPROVED" ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <IconLoader className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <Check className="h-3.5 w-3.5" />
+                                <IconCheck className="h-3.5 w-3.5" />
                               )}
                               قبول ({MEDICAL_CENTER_ANNUAL_FEE_NIS} ₪/سنة)
                             </Button>
@@ -147,9 +150,9 @@ export default function AdminMedicalCentersPage() {
                               onClick={() => patch(c.id, "REJECTED")}
                             >
                               {acting === c.id + "REJECTED" ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <IconLoader className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <X className="h-3.5 w-3.5" />
+                                <IconX className="h-3.5 w-3.5" />
                               )}
                               رفض
                             </Button>

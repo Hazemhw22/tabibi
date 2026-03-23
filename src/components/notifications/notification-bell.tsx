@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, CheckCheck, TrendingDown, TrendingUp, Calendar, Info } from "lucide-react";
+import IconBell from "@/components/icon/icon-bell";
+import IconCheck from "@/components/icon/icon-check";
+import IconChecks from "@/components/icon/icon-checks";
+import IconTrendingDown from "@/components/icon/icon-trending-down";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -21,11 +27,11 @@ interface Notification {
 }
 
 const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: string; bg: string }> = {
-  payment:            { icon: TrendingUp,   color: "text-green-600",  bg: "bg-green-100" },
-  service:            { icon: TrendingDown, color: "text-red-500",    bg: "bg-red-100" },
-  appointment:        { icon: Calendar,     color: "text-blue-600",   bg: "bg-blue-100" },
-  appointment_update: { icon: Calendar,     color: "text-indigo-600", bg: "bg-indigo-100" },
-  info:               { icon: Info,         color: "text-gray-500",   bg: "bg-gray-100" },
+  payment:            { icon: IconTrendingUp,   color: "text-green-600",  bg: "bg-green-100" },
+  service:            { icon: IconTrendingDown, color: "text-red-500",    bg: "bg-red-100" },
+  appointment:        { icon: IconCalendar,     color: "text-blue-600",   bg: "bg-blue-100" },
+  appointment_update: { icon: IconCalendar,     color: "text-indigo-600", bg: "bg-indigo-100" },
+  info:               { icon: IconInfoCircle,   color: "text-gray-500",   bg: "bg-gray-100" },
 };
 
 type Theme = "dark" | "light";
@@ -133,7 +139,7 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
   return (
     <div className="relative" ref={dropRef}>
       <button type="button" onClick={() => setOpen((o) => !o)} className={btnClass} title="الإشعارات">
-        <Bell className="h-[18px] w-[18px]" />
+        <IconBell className="h-[18px] w-[18px]" />
         {unread > 0 && (
           <span className="absolute right-1.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
@@ -146,7 +152,7 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
           {/* Header */}
           <div className={cn("flex items-center justify-between border-b px-4 py-3", headerClass)}>
             <div className="flex items-center gap-2">
-              <Bell className={cn("h-4 w-4", theme === "dark" ? "text-gray-400" : "text-gray-500")} />
+              <IconBell className={cn("h-4 w-4", theme === "dark" ? "text-gray-400" : "text-gray-500")} />
               <span className={cn("text-sm font-semibold", titleClass)}>الإشعارات</span>
               {unread > 0 && (
                 <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -156,7 +162,7 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
             </div>
             {unread > 0 && (
               <button type="button" onClick={markAll} disabled={loading} className={markAllClass}>
-                <CheckCheck className="inline h-3.5 w-3.5 ml-1" />
+                <IconChecks className="inline h-3.5 w-3.5 ml-1" />
                 قراءة الكل
               </button>
             )}
@@ -166,7 +172,7 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className={cn("py-12 text-center text-sm", emptyClass)}>
-                <Bell className="mx-auto mb-3 h-10 w-10 opacity-20" />
+                <IconBell className="mx-auto mb-3 h-10 w-10 opacity-20" />
                 لا توجد إشعارات
               </div>
             ) : (
@@ -202,7 +208,7 @@ export default function NotificationBell({ theme = "dark", pollInterval = 30_000
                         className={cn("mt-1 shrink-0 rounded p-0.5 transition-colors", theme === "dark" ? "text-gray-500 hover:text-blue-400" : "text-gray-400 hover:text-blue-600")}
                         title="تحديد كمقروء"
                       >
-                        <Check className="h-3.5 w-3.5" />
+                        <IconCheck className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>

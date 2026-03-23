@@ -2,14 +2,18 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
-import { Star, CheckCircle, Clock, XCircle, Pause } from "lucide-react";
+import IconStar from "@/components/icon/icon-star";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconClock from "@/components/icon/icon-clock";
+import IconXCircle from "@/components/icon/icon-x-circle";
+import IconMinusCircle from "@/components/icon/icon-minus-circle";
 import AdminDoctorActions from "../admin-doctor-actions";
 
 const STATUS_MAP: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  APPROVED: { label: "معتمد", icon: CheckCircle, color: "text-green-600" },
-  PENDING: { label: "قيد المراجعة", icon: Clock, color: "text-orange-500" },
-  REJECTED: { label: "مرفوض", icon: XCircle, color: "text-red-500" },
-  SUSPENDED: { label: "موقوف", icon: Pause, color: "text-gray-500" },
+  APPROVED: { label: "معتمد", icon: IconCircleCheck, color: "text-green-600" },
+  PENDING: { label: "قيد المراجعة", icon: IconClock, color: "text-orange-500" },
+  REJECTED: { label: "مرفوض", icon: IconXCircle, color: "text-red-500" },
+  SUSPENDED: { label: "موقوف", icon: IconMinusCircle, color: "text-gray-500" },
 };
 
 export default async function AdminDoctorsPage() {
@@ -67,7 +71,7 @@ export default async function AdminDoctorsPage() {
                   <td className="px-4 py-4 text-gray-600">{doc._count.appointments}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                      <IconStar className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                       <span className="font-medium text-gray-800">{doc.rating.toFixed(1)}</span>
                       <span className="text-xs text-gray-400">({doc._count.reviews})</span>
                     </div>

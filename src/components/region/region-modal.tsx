@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Loader2, Navigation, LogIn, UserPlus } from "lucide-react";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconLoader from "@/components/icon/icon-loader";
+import IconLogin from "@/components/icon/icon-login";
+import IconUserPlus from "@/components/icon/icon-user-plus";
 import { Button } from "@/components/ui/button";
 import { WEST_BANK_LOCATIONS, suggestLocationIdFromPlaceName } from "@/data/west-bank-locations";
 import { getStoredUserRole } from "./role-choice-modal";
@@ -121,7 +124,7 @@ export default function RegionModal() {
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-right">
         <div className="flex items-center gap-2 mb-4">
           <div className="p-2 rounded-xl bg-blue-100">
-            <MapPin className="h-6 w-6 text-blue-600" />
+            <IconMapPin className="h-6 w-6 text-blue-600" />
           </div>
           <h2 id="region-modal-title" className="text-xl font-bold text-gray-900">
             اختر منطقتك
@@ -140,12 +143,12 @@ export default function RegionModal() {
         >
           {loadingGeo ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <IconLoader className="h-4 w-4 animate-spin" />
               جاري تحديد الموقع...
             </>
           ) : (
             <>
-              <Navigation className="h-4 w-4" />
+              <IconMapPin className="h-4 w-4" />
               استخدم موقعي الحالي
             </>
           )}
@@ -178,13 +181,13 @@ export default function RegionModal() {
           <div className="flex gap-2 pt-2 border-t border-gray-100">
             <Link href="/login/patient" className="flex-1">
               <Button type="button" variant="outline" className="w-full gap-2">
-                <LogIn className="h-4 w-4" />
+                <IconLogin className="h-4 w-4" />
                 تسجيل الدخول
               </Button>
             </Link>
             <Link href="/register/patient" className="flex-1">
               <Button type="button" variant="outline" className="w-full gap-2">
-                <UserPlus className="h-4 w-4" />
+                <IconUserPlus className="h-4 w-4" />
                 إنشاء حساب
               </Button>
             </Link>

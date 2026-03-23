@@ -4,14 +4,19 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import Link from "next/link";
-import { Calendar, Star, Plus, Clock, User, MapPin } from "lucide-react";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconStar from "@/components/icon/icon-star";
+import IconPlus from "@/components/icon/icon-plus";
+import IconClock from "@/components/icon/icon-clock";
+import IconUser from "@/components/icon/icon-user";
+import IconMapPin from "@/components/icon/icon-map-pin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 
 const STATUS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  DRAFT: { label: "مسودة", variant: "secondary" },
+  DRAFT: { label: "بانتظار موافقة الطبيب", variant: "secondary" },
   CONFIRMED: { label: "مؤكد", variant: "default" },
   COMPLETED: { label: "منجز", variant: "outline" },
   CANCELLED: { label: "ملغي", variant: "destructive" },
@@ -53,7 +58,7 @@ export default async function PatientAppointmentsPage() {
         </div>
         <Link href="/doctors" className="w-full sm:w-auto">
           <Button className="gap-2 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
+            <IconPlus className="h-4 w-4" />
             حجز موعد جديد
           </Button>
         </Link>
@@ -63,7 +68,7 @@ export default async function PatientAppointmentsPage() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <IconCalendar className="h-8 w-8 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-1">لا توجد مواعيد حتى الآن</h3>
             <p className="text-gray-500 text-sm mb-6">احجز موعدك الأول مع أحد أطبائنا</p>
@@ -78,7 +83,7 @@ export default async function PatientAppointmentsPage() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="h-5 w-5 text-blue-600" />
+                  <IconClock className="h-5 w-5 text-blue-600" />
                   المواعيد القادمة ({upcoming.length})
                 </CardTitle>
               </CardHeader>
@@ -95,18 +100,18 @@ export default async function PatientAppointmentsPage() {
                       >
                         <div className="flex gap-4 min-w-0">
                           <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                            <User className="h-6 w-6 text-blue-600" />
+                            <IconUser className="h-6 w-6 text-blue-600" />
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-900">د. {doctor?.User?.name ?? doctor?.user?.name ?? "—"}</p>
                             <p className="text-sm text-blue-600">{doctor?.Specialty?.nameAr ?? doctor?.specialty?.nameAr}</p>
                             <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                              <Calendar className="h-3.5 w-3.5" />
+                              <IconCalendar className="h-3.5 w-3.5" />
                               {format(new Date(a.appointmentDate as string), "EEEE d MMMM yyyy", { locale: ar })} • {String(a.startTime)} - {String(a.endTime)}
                             </p>
                             {clinic?.name && (
                               <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
+                                <IconMapPin className="h-3 w-3" />
                                 {clinic.name}
                               </p>
                             )}
@@ -123,9 +128,7 @@ export default async function PatientAppointmentsPage() {
                             />
                           )}
                           {a.status === "DRAFT" && (
-                            <Link href={`/appointments/${a.id}/payment`}>
-                              <Button size="sm">ادفع لتأكيد الموعد</Button>
-                            </Link>
+                            <Badge variant="secondary">تم إرسال الطلب للطبيب</Badge>
                           )}
                         </div>
                       </div>
@@ -139,7 +142,7 @@ export default async function PatientAppointmentsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5 text-gray-500" />
+                <IconCalendar className="h-5 w-5 text-gray-500" />
                 سجل المواعيد ({past.length})
               </CardTitle>
             </CardHeader>
@@ -160,7 +163,7 @@ export default async function PatientAppointmentsPage() {
                       >
                         <div className="flex gap-3 min-w-0">
                           <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
-                            <User className="h-5 w-5 text-gray-500" />
+                            <IconUser className="h-5 w-5 text-gray-500" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">د. {doctor?.User?.name ?? doctor?.user?.name ?? "—"}</p>
@@ -176,7 +179,7 @@ export default async function PatientAppointmentsPage() {
                           {a.status === "COMPLETED" && !hasReview && (
                             <Link href={`/appointments/${a.id}/review`}>
                               <Button size="sm" variant="outline" className="gap-1">
-                                <Star className="h-3.5 w-3.5" /> تقييم
+                                <IconStar className="h-3.5 w-3.5" /> تقييم
                               </Button>
                             </Link>
                           )}

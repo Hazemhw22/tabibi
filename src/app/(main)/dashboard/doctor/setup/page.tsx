@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, Stethoscope, Plus, Upload, AlertCircle, MapPin } from "lucide-react";
+import IconLoader from "@/components/icon/icon-loader";
+import IconHeart from "@/components/icon/icon-heart";
+import IconPlus from "@/components/icon/icon-plus";
+import IconUpload from "@/components/icon/icon-upload";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
+import IconMapPin from "@/components/icon/icon-map-pin";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,7 +110,7 @@ export default function DoctorSetupPage() {
   if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+        <IconLoader className="h-10 w-10 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -115,7 +120,7 @@ export default function DoctorSetupPage() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-2">
-            <Stethoscope className="h-7 w-7 text-blue-600" />
+            <IconHeart className="h-7 w-7 text-blue-600" />
           </div>
           <CardTitle className="text-xl">إعداد حساب الطبيب</CardTitle>
           <p className="text-sm text-gray-500 mt-1">
@@ -134,7 +139,7 @@ export default function DoctorSetupPage() {
                   {imageUrl ? (
                     <Image src={imageUrl} alt="Preview" width={96} height={96} className="object-cover w-full h-full" unoptimized />
                   ) : (
-                    <Upload className="h-8 w-8 text-gray-400" />
+                    <IconUpload className="h-8 w-8 text-gray-400" />
                   )}
                 </div>
                 <div>
@@ -155,7 +160,7 @@ export default function DoctorSetupPage() {
             {/* المنطقة - الضفة الغربية */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="inline h-4 w-4 ml-1" />
+                <IconMapPin className="inline h-4 w-4 ml-1" />
                 المنطقة (الضفة الغربية)
               </label>
               <select
@@ -197,7 +202,7 @@ export default function DoctorSetupPage() {
             {/* إضافة تخصص جديد */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-4 w-4" />
                 أو أضف تخصصاً جديداً
               </label>
               <input
@@ -211,7 +216,7 @@ export default function DoctorSetupPage() {
 
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+                <IconInfoCircle className="h-4 w-4 shrink-0" />
                 {error}
               </div>
             )}
@@ -219,7 +224,7 @@ export default function DoctorSetupPage() {
             <Button type="submit" className="w-full" size="lg" disabled={submitting || loading}>
               {submitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  <IconLoader className="h-4 w-4 animate-spin ml-2" />
                   جاري الحفظ...
                 </>
               ) : (

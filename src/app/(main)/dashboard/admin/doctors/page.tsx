@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import Link from "next/link";
-import { Stethoscope, ArrowRight } from "lucide-react";
+import IconHeart from "@/components/icon/icon-heart";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import AdminDoctorActions from "../admin-doctor-actions";
@@ -44,7 +45,7 @@ export default async function AdminDoctorsPage() {
           </p>
         </div>
         <Link href="/dashboard/admin" className="text-blue-600 text-sm font-medium flex items-center gap-1">
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
           لوحة التحكم
         </Link>
       </div>
@@ -86,7 +87,7 @@ export default async function AdminDoctorsPage() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between gap-2 text-base sm:text-lg">
             <span className="inline-flex items-center gap-2 text-gray-900">
-              <Stethoscope className="h-5 w-5 text-blue-600" />
+              <IconHeart className="h-5 w-5 text-blue-600" />
               <span>كل الأطباء ({list.length})</span>
             </span>
             <span className="text-xs text-gray-400 hidden sm:inline">

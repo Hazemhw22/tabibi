@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { PatientSettingsForm } from "./patient-settings-form";
 import PatientRegionSelect from "@/components/patient/patient-region-select";
@@ -13,6 +13,7 @@ export default async function PatientSettingsPage() {
 
   const name = session.user.name ?? "";
   const phone = (session.user as { phone?: string }).phone ?? "";
+  const image = (session.user as { image?: string | null }).image ?? null;
 
   const { data: userRow } = await supabaseAdmin
     .from("User")
@@ -33,11 +34,11 @@ export default async function PatientSettingsPage() {
           className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:underline"
         >
           لوحة التحكم
-          <ArrowRight className="h-4 w-4" />
+          <IconArrowForward className="h-4 w-4" />
         </Link>
       </div>
 
-      <PatientSettingsForm defaultName={name} defaultPhone={phone} />
+      <PatientSettingsForm defaultName={name} defaultPhone={phone} defaultImage={image} />
 
       <div className="mt-6">
         <PatientRegionSelect

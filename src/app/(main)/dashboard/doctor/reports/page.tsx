@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { TrendingUp, Calendar, UserCheck, AlertCircle, Receipt } from "lucide-react";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
+import IconReceipt from "@/components/icon/icon-receipt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -155,7 +159,7 @@ export default async function DoctorReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600">
-                <Calendar className="h-5 w-5" />
+                <IconCalendar className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{aptList.length}</p>
@@ -168,7 +172,7 @@ export default async function DoctorReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-green-100 text-green-600">
-                <UserCheck className="h-5 w-5" />
+                <IconCircleCheck className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{completed.length}</p>
@@ -181,7 +185,7 @@ export default async function DoctorReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600">
-                <TrendingUp className="h-5 w-5" />
+                <IconTrendingUp className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">₪{totalEarnings.toFixed(0)}</p>
@@ -194,7 +198,7 @@ export default async function DoctorReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600">
-                <AlertCircle className="h-5 w-5" />
+                <IconInfoCircle className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">₪{debtAfterDeduction.toFixed(0)}</p>
@@ -207,7 +211,7 @@ export default async function DoctorReportsPage() {
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-purple-100 text-purple-600">
-                <TrendingUp className="h-5 w-5" />
+                <IconTrendingUp className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{aptList.length ? ((completed.length / aptList.length) * 100).toFixed(0) : 0}%</p>
@@ -222,7 +226,7 @@ export default async function DoctorReportsPage() {
         <CardHeader className="bg-gradient-to-l from-slate-50 to-white border-b border-gray-100 px-6 py-5">
           <CardTitle className="flex items-center gap-3 text-lg">
             <div className="p-2 rounded-xl bg-slate-100 text-slate-600">
-              <Receipt className="h-5 w-5" />
+              <IconReceipt className="h-5 w-5" />
             </div>
             الدفعات والديون
           </CardTitle>
@@ -230,7 +234,7 @@ export default async function DoctorReportsPage() {
         <CardContent className="p-0">
           {txRows.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              <Receipt className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <IconReceipt className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p>لا توجد دفعات أو ديون مسجلة</p>
             </div>
           ) : (

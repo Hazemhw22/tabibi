@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Stethoscope, Clock, UserPlus, Pencil } from "lucide-react";
+import IconHeart from "@/components/icon/icon-heart";
+import IconClock from "@/components/icon/icon-clock";
+import IconUserPlus from "@/components/icon/icon-user-plus";
+import IconPencil from "@/components/icon/icon-pencil";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -132,12 +135,12 @@ export default function CenterDoctorsPage() {
       </Link>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Stethoscope className="h-6 w-6 text-blue-600 shrink-0" />
+          <IconHeart className="h-6 w-6 text-blue-600 shrink-0" />
           أطباء المركز
         </h1>
         <Button asChild className="gap-2">
           <Link href="/dashboard/medical-center/doctors/new">
-            <UserPlus className="h-4 w-4" />
+            <IconUserPlus className="h-4 w-4" />
             إضافة طبيب
           </Link>
         </Button>
@@ -223,7 +226,7 @@ export default function CenterDoctorsPage() {
                           className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40"
                           title="تعديل"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <IconPencil className="h-4 w-4" />
                         </Link>
                       </DataTableCell>
                     </DataTableRow>
@@ -260,12 +263,12 @@ export default function CenterDoctorsPage() {
                         </span>
                       </p>
                       <div className="text-xs text-gray-600 dark:text-gray-400 flex gap-1 items-start">
-                        <Clock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <IconClock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                         <span>{hoursSummary(slots) || "لا توجد أوقات"}</span>
                       </div>
                       <Button variant="outline" size="sm" className="w-full gap-1" asChild>
                         <Link href={`/dashboard/medical-center/doctors/${d.id}`}>
-                          <Pencil className="h-3.5 w-3.5" />
+                          <IconPencil className="h-3.5 w-3.5" />
                           إدارة الطبيب
                         </Link>
                       </Button>

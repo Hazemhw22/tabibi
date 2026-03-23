@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import Link from "next/link";
-import {
-  Users, Calendar, TrendingUp, Star,
-  CheckCircle, ChevronLeft, Plus,
-} from "lucide-react";
+import IconUsers from "@/components/icon/icon-users";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconStar from "@/components/icon/icon-star";
+import IconCircleCheck from "@/components/icon/icon-circle-check";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
+import IconPlus from "@/components/icon/icon-plus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,7 +90,7 @@ export default async function DoctorHomePage() {
         </div>
         <Link href="/dashboard/doctor/patients/new">
           <Button className="gap-2">
-            <Plus className="h-4 w-4" /> مريض جديد
+            <IconPlus className="h-4 w-4" /> مريض جديد
           </Button>
         </Link>
       </div>
@@ -95,10 +98,10 @@ export default async function DoctorHomePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "إجمالي المرضى", value: totalPatients, icon: Users, color: "bg-blue-50 text-blue-600", border: "border-blue-100" },
-          { label: "مواعيد اليوم", value: upcomingToday.length, icon: Calendar, color: "bg-indigo-50 text-indigo-600", border: "border-indigo-100" },
-          { label: "مواعيد منجزة", value: statsMap["COMPLETED"] || 0, icon: CheckCircle, color: "bg-green-50 text-green-600", border: "border-green-100" },
-          { label: "إجمالي الإيرادات", value: `₪${(earnings._sum.amount || 0).toFixed(0)}`, icon: TrendingUp, color: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" },
+          { label: "إجمالي المرضى", value: totalPatients, icon: IconUsers, color: "bg-blue-50 text-blue-600", border: "border-blue-100" },
+          { label: "مواعيد اليوم", value: upcomingToday.length, icon: IconCalendar, color: "bg-indigo-50 text-indigo-600", border: "border-indigo-100" },
+          { label: "مواعيد منجزة", value: statsMap["COMPLETED"] || 0, icon: IconCircleCheck, color: "bg-green-50 text-green-600", border: "border-green-100" },
+          { label: "إجمالي الإيرادات", value: `₪${(earnings._sum.amount || 0).toFixed(0)}`, icon: IconTrendingUp, color: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" },
         ].map((s, i) => (
           <Card key={i} className={`border ${s.border}`}>
             <CardContent className="p-5">
@@ -122,18 +125,18 @@ export default async function DoctorHomePage() {
               </CardTitle>
               <Link href="/dashboard/doctor/appointments">
                 <Button variant="ghost" size="sm" className="text-blue-600 gap-1 text-xs">
-                  عرض الكل <ChevronLeft className="h-3.5 w-3.5" />
+                  عرض الكل <IconArrowLeft className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </CardHeader>
             <CardContent className="pt-0">
               {todayApts.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
-                  <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-200" />
+                  <IconCalendar className="h-10 w-10 mx-auto mb-2 text-gray-200" />
                   <p className="text-sm">لا توجد مواعيد اليوم</p>
                   <Link href="/dashboard/doctor/appointments/new">
                     <Button size="sm" variant="outline" className="mt-3 gap-1">
-                      <Plus className="h-3.5 w-3.5" /> إضافة موعد
+                      <IconPlus className="h-3.5 w-3.5" /> إضافة موعد
                     </Button>
                   </Link>
                 </div>
@@ -199,7 +202,7 @@ export default async function DoctorHomePage() {
           <Card className="bg-blue-600 border-blue-600">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <Star className="h-5 w-5 text-yellow-300" />
+                <IconStar className="h-5 w-5 text-yellow-300" />
                 <span className="text-white font-semibold text-sm">تقييمك</span>
               </div>
               <div className="text-3xl font-bold text-white">{doctor.rating.toFixed(1)}</div>

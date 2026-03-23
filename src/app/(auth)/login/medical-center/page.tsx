@@ -7,7 +7,13 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Mail, Lock, Loader2, AlertCircle, Building2 } from "lucide-react";
+import { EyeOff } from "lucide-react";
+import IconEye from "@/components/icon/icon-eye";
+import IconMail from "@/components/icon/icon-mail";
+import IconLock from "@/components/icon/icon-lock";
+import IconLoader from "@/components/icon/icon-loader";
+import IconInfoCircle from "@/components/icon/icon-info-circle";
+import IconBuilding from "@/components/icon/icon-building";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -58,14 +64,14 @@ function LoginMedicalCenterForm() {
     <Card className="w-full max-w-md shadow-xl border-0">
       {rateLimited && (
         <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+          <IconInfoCircle className="h-4 w-4 shrink-0" />
           <span>تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة مرة أخرى بعد 15 دقيقة.</span>
         </div>
       )}
       <CardHeader className="text-center pb-2">
         <div className="flex justify-center mb-2">
           <div className="p-3 rounded-2xl bg-sky-50 border border-sky-100">
-            <Building2 className="h-8 w-8 text-sky-600" />
+            <IconBuilding className="h-8 w-8 text-sky-600" />
           </div>
         </div>
         <CardTitle className="text-2xl">تسجيل دخول المركز الطبي</CardTitle>
@@ -79,7 +85,7 @@ function LoginMedicalCenterForm() {
             label="البريد الإلكتروني"
             type="email"
             placeholder="email@example.com"
-            icon={<Mail className="h-4 w-4" />}
+            icon={<IconMail className="h-4 w-4" />}
             error={errors.email?.message}
             autoComplete="email"
             {...register("email")}
@@ -89,7 +95,7 @@ function LoginMedicalCenterForm() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">كلمة المرور</label>
             <div className="relative">
               <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
-                <Lock className="h-4 w-4" />
+                <IconLock className="h-4 w-4" />
               </div>
               <input
                 type={showPassword ? "text" : "password"}
@@ -104,13 +110,13 @@ function LoginMedicalCenterForm() {
                 className="absolute inset-y-0 left-3 flex items-center text-gray-400 hover:text-gray-600"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
               </button>
             </div>
             {errors.password && <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>}
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري تسجيل الدخول...</> : "تسجيل الدخول"}
+            {loading ? <><IconLoader className="h-4 w-4 animate-spin" /> جاري تسجيل الدخول...</> : "تسجيل الدخول"}
           </Button>
         </form>
         <div className="mt-6 text-center space-y-2">
@@ -131,7 +137,7 @@ function LoginMedicalCenterForm() {
 
 export default function LoginMedicalCenterPage() {
   return (
-    <Suspense fallback={<Card className="w-full max-w-md shadow-xl border-0"><CardContent className="py-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></CardContent></Card>}>
+    <Suspense fallback={<Card className="w-full max-w-md shadow-xl border-0"><CardContent className="py-12 flex justify-center"><IconLoader className="h-8 w-8 animate-spin text-gray-400" /></CardContent></Card>}>
       <LoginMedicalCenterForm />
     </Suspense>
   );

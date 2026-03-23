@@ -2,7 +2,9 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Search, SlidersHorizontal, MapPin } from "lucide-react";
+import IconSearch from "@/components/icon/icon-search";
+import IconFilter from "@/components/icon/icon-filter";
+import IconMapPin from "@/components/icon/icon-map-pin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
@@ -86,7 +88,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
     <Card className="lg:sticky lg:top-20">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <SlidersHorizontal className="h-4 w-4" />
+          <IconFilter className="h-4 w-4" />
           فلترة البحث
         </CardTitle>
       </CardHeader>
@@ -97,7 +99,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
             بحث
           </label>
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               value={search}
@@ -111,7 +113,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
         {/* Location - الضفة الغربية */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            <MapPin className="inline h-4 w-4 ml-1" />
+            <IconMapPin className="inline h-4 w-4 ml-1" />
             المنطقة (الضفة الغربية)
           </label>
           <select

@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Building2, MapPin, ChevronLeft } from "lucide-react";
+import IconBuilding from "@/components/icon/icon-building";
+import IconMapPin from "@/components/icon/icon-map-pin";
+import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -24,7 +26,7 @@ export async function MedicalCentersPreview() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
+              <IconBuilding className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
               المراكز الطبية
             </h2>
             <p className="text-gray-500 dark:text-slate-400 mt-2 max-w-xl">
@@ -34,7 +36,7 @@ export async function MedicalCentersPreview() {
           <Button variant="outline" asChild className="shrink-0 dark:border-slate-600 dark:text-slate-200">
             <Link href="/medical-centers" className="gap-2">
               كل المراكز
-              <ChevronLeft className="h-4 w-4 rotate-180" />
+              <IconArrowLeft className="h-4 w-4 rotate-180" />
             </Link>
           </Button>
         </div>
@@ -53,14 +55,14 @@ export async function MedicalCentersPreview() {
                   <CardContent className="p-5">
                     <div className="flex items-start gap-3">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300">
-                        <Building2 className="h-6 w-6" />
+                        <IconBuilding className="h-6 w-6" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                           {c.nameAr || c.name}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-slate-400 flex items-start gap-1 mt-2">
-                          <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <IconMapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                           <span className="line-clamp-2">
                             {c.address}، {c.city}
                           </span>

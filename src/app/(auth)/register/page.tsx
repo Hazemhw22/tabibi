@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Stethoscope, Building2 } from "lucide-react";
+import IconHeart from "@/components/icon/icon-heart";
+import IconBuilding from "@/components/icon/icon-building";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +25,7 @@ export default function RegisterPage() {
           >
             <div className="absolute top-0 left-0 w-20 h-20 rounded-full bg-emerald-200/40 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform" />
             <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-emerald-100 group-hover:scale-105 transition-transform">
-              <Heart className="h-10 w-10 text-emerald-600" />
+              <IconHeart className="h-10 w-10 text-emerald-600" />
             </div>
             <span className="relative text-lg font-bold text-gray-800">مريض</span>
             <span className="relative text-xs text-emerald-700/80 text-center">احجز مواعيدك بسهولة</span>
@@ -39,7 +40,7 @@ export default function RegisterPage() {
           >
             <div className="absolute bottom-0 right-0 w-20 h-20 rounded-full bg-violet-200/40 translate-x-1/2 translate-y-1/2 group-hover:scale-110 transition-transform" />
             <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-violet-100 group-hover:scale-105 transition-transform">
-              <Stethoscope className="h-10 w-10 text-violet-600" />
+              <IconHeart className="h-10 w-10 text-violet-600" />
             </div>
             <span className="relative text-lg font-bold text-gray-800">طبيب</span>
             <span className="relative text-xs text-violet-700/80 text-center">انضم لشبكة طبيبي</span>
@@ -53,7 +54,7 @@ export default function RegisterPage() {
             )}
           >
             <div className="relative p-4 rounded-2xl bg-white/80 shadow-sm border border-sky-100 group-hover:scale-105 transition-transform">
-              <Building2 className="h-10 w-10 text-sky-600" />
+              <IconBuilding className="h-10 w-10 text-sky-600" />
             </div>
             <span className="relative text-lg font-bold text-gray-800">مركز طبي</span>
             <span className="relative text-xs text-sky-700/80 text-center">لوحة إدارة المركز</span>

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Loader2, UserPlus } from "lucide-react";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconLoader from "@/components/icon/icon-loader";
+import IconUserPlus from "@/components/icon/icon-user-plus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,14 +63,14 @@ export default function NewPatientPage() {
         href="/dashboard/doctor/patients"
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
-        <ArrowRight className="h-4 w-4" />
+        <IconArrowForward className="h-4 w-4" />
         العودة لقائمة المرضى
       </Link>
 
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader className="bg-gray-50/80 border-b border-gray-100">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <UserPlus className="h-5 w-5 text-blue-600" />
+            <IconUserPlus className="h-5 w-5 text-blue-600" />
             إضافة مريض جديد
           </CardTitle>
           <p className="text-sm text-gray-500 mt-1">بيانات المريض في العيادة (اسم، رقم هاتف، بريد، رقم ملف، ملاحظات)</p>
@@ -174,7 +176,7 @@ export default function NewPatientPage() {
               <Button type="submit" className="flex-1" disabled={loading} size="lg">
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                    <IconLoader className="h-4 w-4 animate-spin ml-2" />
                     جاري الحفظ...
                   </>
                 ) : (

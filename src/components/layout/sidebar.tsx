@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import IconMenuDashboard from "@/components/icon/menu/icon-menu-dashboard";
@@ -116,9 +116,13 @@ interface SidebarContentProps {
   pathname: string;
   onLinkClick: () => void;
   isDark: boolean;
+  userRole?: string;
+  userName?: string | null;
+  userImage?: string | null;
+  doctorSpecialty?: string | null;
 }
 
-function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark }: SidebarContentProps) {
+function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, userRole, userName, userImage, doctorSpecialty }: SidebarContentProps) {
   const linkClass = (item: NavItem, isActive: boolean) => {
     const Icon = item.icon;
     return (
@@ -156,17 +160,44 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark }: 
 
   return (
     <div className="flex flex-col h-full">
-      <div className={cn("flex h-16 shrink-0 items-center gap-3 border-b px-4 py-3", isDark ? "border-gray-800" : "border-gray-200")}>
-        <Image
-          src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
-          alt="Tabibi"
-          width={240}
-          height={60}
-          className="h-20 w-auto shrink-0 max-w-[240px] brightness-125"
-          priority
-        />
-        <p className={cn("text-xs truncate", isDark ? "text-gray-400" : "text-gray-500")}>{roleLabel}</p>
-      </div>
+      {/* Header: Doctor profile card OR logo */}
+      {userRole === "DOCTOR" ? (
+        <div className={cn("px-4 pt-6 pb-5 text-center border-b", isDark ? "border-gray-800" : "border-gray-200")}>
+          <div className="mx-auto h-[76px] w-[76px] rounded-full overflow-hidden bg-blue-900 border-[3px] border-blue-500/40 flex items-center justify-center">
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt={userName ?? "طبيب"}
+                width={76}
+                height={76}
+                className="object-cover w-full h-full"
+                unoptimized
+              />
+            ) : (
+              <span className="text-[2.2rem]">👨‍⚕️</span>
+            )}
+          </div>
+          <h2 className={cn("mt-3 text-sm font-bold truncate px-2 leading-tight", isDark ? "text-white" : "text-gray-900")}>
+            د. {userName}
+          </h2>
+          <p className={cn("text-xs mt-1 truncate px-2", isDark ? "text-blue-400" : "text-blue-600")}>
+            {doctorSpecialty ?? "طبيب"}
+          </p>
+          <div className={cn("mt-3 h-px w-14 mx-auto", isDark ? "bg-gray-700" : "bg-gray-200")} />
+        </div>
+      ) : (
+        <div className={cn("flex h-16 shrink-0 items-center gap-3 border-b px-4 py-3", isDark ? "border-gray-800" : "border-gray-200")}>
+          <Image
+            src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
+            alt="Tabibi"
+            width={240}
+            height={60}
+            className="h-20 w-auto shrink-0 max-w-[240px] brightness-125"
+            priority
+          />
+          <p className={cn("text-xs truncate", isDark ? "text-gray-400" : "text-gray-500")}>{roleLabel}</p>
+        </div>
+      )}
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-6">
         {sections.map((section) => (
@@ -185,6 +216,8 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark }: 
           </div>
         ))}
       </nav>
+
+      
 
       <div className={cn("shrink-0 border-t px-5 py-3 text-center", isDark ? "border-gray-800" : "border-gray-200")}>
         <p className={cn("text-[11px]", isDark ? "text-gray-300" : "text-gray-400")}>
@@ -212,7 +245,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [doctorStatus, setDoctorStatus] = useState<string | null>(null);
+  const [doctorInfo, setDoctorInfo] = useState<{ status: string | null; specialty: string | null }>({ status: null, specialty: null });
 
   useEffect(() => {
     try {
@@ -238,13 +271,16 @@ export default function Sidebar() {
     if (role !== "DOCTOR") return;
     fetch("/api/doctor/profile")
       .then((r) => r.json())
-      .then((data) => setDoctorStatus(data?.doctor?.status ?? null))
-      .catch(() => setDoctorStatus(null));
+      .then((data) => setDoctorInfo({
+        status: data?.doctor?.status ?? null,
+        specialty: data?.doctor?.specialty?.nameAr ?? null,
+      }))
+      .catch(() => setDoctorInfo({ status: null, specialty: null }));
   }, [role]);
 
   const sections =
     role === "DOCTOR"
-      ? doctorStatus === "REJECTED" || doctorStatus === "PENDING"
+      ? doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING"
         ? doctorSectionsLimited
         : doctorSectionsFull
       : role === "MEDICAL_CENTER_ADMIN"
@@ -279,6 +315,10 @@ export default function Sidebar() {
           pathname={pathname}
           onLinkClick={() => setMobileOpen(false)}
           isDark={effectiveDark}
+          userRole={role}
+          userName={session?.user?.name}
+          userImage={session?.user?.image ?? null}
+          doctorSpecialty={doctorInfo.specialty}
         />
       </aside>
 
@@ -330,6 +370,10 @@ export default function Sidebar() {
           pathname={pathname}
           onLinkClick={() => setMobileOpen(false)}
           isDark={effectiveDark}
+          userRole={role}
+          userName={session?.user?.name}
+          userImage={session?.user?.image ?? null}
+          doctorSpecialty={doctorInfo.specialty}
         />
       </aside>
     </>

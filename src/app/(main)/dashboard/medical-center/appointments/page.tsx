@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Calendar, PlusCircle } from "lucide-react";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconPlusCircle from "@/components/icon/icon-plus-circle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export default function CenterAppointmentsPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-blue-600" />
+          <IconCalendar className="h-6 w-6 text-blue-600" />
           حجوزات المركز
         </h1>
         <Button
@@ -56,7 +57,7 @@ export default function CenterAppointmentsPage() {
           className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
           onClick={() => setQuickOpen(true)}
         >
-          <PlusCircle className="h-4 w-4" />
+          <IconPlusCircle className="h-4 w-4" />
           إضافة حجز
         </Button>
       </div>
@@ -70,7 +71,7 @@ export default function CenterAppointmentsPage() {
           <CardContent className="py-12 text-center text-gray-500 space-y-4">
             <p>لا توجد حجوزات بعد.</p>
             <Button type="button" variant="outline" className="gap-2" onClick={() => setQuickOpen(true)}>
-              <PlusCircle className="h-4 w-4" />
+              <IconPlusCircle className="h-4 w-4" />
               إضافة حجز سريع
             </Button>
           </CardContent>

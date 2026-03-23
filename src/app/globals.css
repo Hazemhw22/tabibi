@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
+/* Enable dark: prefix when [data-theme="dark"] is on <html> */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme inline {
-  --font-sans: var(--font-cairo);
+  --font-sans: var(--font-tajawal);
+  --font-heading: var(--font-messiri);
 }
 
 * {
@@ -14,11 +18,18 @@ html {
 }
 
 body {
-  font-family: var(--font-cairo), "Cairo", "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-tajawal), "Tajawal", "Segoe UI", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   min-width: 0;
+}
+
+/* تطبيق خط El Messiri على العناوين */
+h1, h2, h3,
+.font-heading {
+  font-family: var(--font-messiri), "El Messiri", "Tajawal", sans-serif;
+  letter-spacing: 0;
 }
 
 /* تحسين اللمس على الشاشات الصغيرة - منع تكبير iOS عند التركيز على الحقول */
@@ -29,49 +40,172 @@ body {
 }
 
 /* === Dark / Light theme support via [data-theme] on <html> === */
+
+/* ── CSS custom properties for dark mode ── */
+html[data-theme="dark"] {
+  --dm-bg:          #0f172a; /* slate-900  – page base */
+  --dm-surface:     #1e293b; /* slate-800  – cards / panels */
+  --dm-surface2:    #273549; /* between 700-800 – elevated cards */
+  --dm-border:      #334155; /* slate-700  – borders */
+  --dm-border-soft: #1e293b; /* slate-800  – subtle borders */
+  --dm-text:        #f1f5f9; /* slate-100  – primary text */
+  --dm-text-muted:  #94a3b8; /* slate-400  – secondary text */
+  --dm-text-faint:  #64748b; /* slate-500  – hint text */
+  --dm-input-bg:    #1e293b; /* input backgrounds */
+  --dm-hover:       #334155; /* hover state */
+}
+
 html[data-theme="dark"] body {
-  background-color: #020617; /* slate-950 */
-  color: #e5e7eb; /* gray-200 */
+  background-color: var(--dm-bg);
+  color: var(--dm-text);
 }
 
-html[data-theme="dark"] .bg-white {
-  background-color: #020617 !important;
-}
+/* ── Backgrounds ── */
+html[data-theme="dark"] .bg-white          { background-color: var(--dm-surface)  !important; }
+html[data-theme="dark"] .bg-gray-50        { background-color: var(--dm-bg)       !important; }
+html[data-theme="dark"] .bg-gray-100       { background-color: var(--dm-input-bg) !important; }
+html[data-theme="dark"] .bg-gray-200       { background-color: var(--dm-hover)    !important; }
+html[data-theme="dark"] .bg-slate-50       { background-color: var(--dm-bg)       !important; }
+html[data-theme="dark"] .bg-slate-100      { background-color: var(--dm-input-bg) !important; }
 
-html[data-theme="dark"] .bg-gray-50 {
-  background-color: #020617 !important;
-}
+/* ── Hero section blue tint ── */
+html[data-theme="dark"] .bg-blue-50        { background-color: #0d1f3c            !important; }
+html[data-theme="dark"] .bg-amber-50       { background-color: #1c1505            !important; }
+html[data-theme="dark"] .bg-green-50       { background-color: #052010            !important; }
+html[data-theme="dark"] .bg-red-50         { background-color: #200505            !important; }
 
+/* ── Text ── */
+html[data-theme="dark"] .text-gray-900     { color: var(--dm-text)       !important; }
+html[data-theme="dark"] .text-gray-800     { color: var(--dm-text)       !important; }
+html[data-theme="dark"] .text-gray-700     { color: #cbd5e1               !important; }
+html[data-theme="dark"] .text-gray-600     { color: var(--dm-text-muted) !important; }
+html[data-theme="dark"] .text-gray-500     { color: var(--dm-text-muted) !important; }
+html[data-theme="dark"] .text-gray-400     { color: var(--dm-text-faint) !important; }
+html[data-theme="dark"] .text-black        { color: var(--dm-text)       !important; }
+html[data-theme="dark"] .text-amber-900    { color: #fde68a               !important; }
+html[data-theme="dark"] .text-amber-700    { color: #fcd34d               !important; }
+html[data-theme="dark"] .text-green-700    { color: #86efac               !important; }
+
+/* ── Borders ── */
+html[data-theme="dark"] .border-gray-50,
 html[data-theme="dark"] .border-gray-100,
-html[data-theme="dark"] .border-gray-200 {
-  border-color: #1f2937 !important; /* gray-800 */
-}
+html[data-theme="dark"] .border-gray-200   { border-color: var(--dm-border-soft) !important; }
+html[data-theme="dark"] .border-gray-300   { border-color: var(--dm-border)      !important; }
+html[data-theme="dark"] .border-amber-200  { border-color: #78350f               !important; }
+html[data-theme="dark"] .border-blue-100   { border-color: #1e3a5f               !important; }
+html[data-theme="dark"] .border-blue-200   { border-color: #1d4ed8               !important; }
 
-html[data-theme="dark"] .text-gray-900 {
-  color: #e5e7eb !important;
-}
+/* ── Dividers ── */
+html[data-theme="dark"] .divide-gray-100 > * + *,
+html[data-theme="dark"] .divide-gray-200 > * + * { border-color: var(--dm-border-soft) !important; }
+html[data-theme="dark"] hr                 { border-color: var(--dm-border-soft) !important; }
+html[data-theme="dark"] .w-px             { background-color: var(--dm-border)   !important; }
 
-html[data-theme="dark"] .text-gray-700 {
-  color: #d1d5db !important;
+/* ── Inputs / forms ── */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background-color: var(--dm-input-bg) !important;
+  color: var(--dm-text)                !important;
+  border-color: var(--dm-border)       !important;
 }
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color: var(--dm-text-faint) !important; }
 
-html[data-theme="dark"] .text-gray-500 {
-  color: #9ca3af !important;
-}
+/* ── Shadow tweaks ── */
+html[data-theme="dark"] .shadow-sm,
+html[data-theme="dark"] .shadow-md,
+html[data-theme="dark"] .shadow-lg { box-shadow: 0 1px 10px 0 rgba(0,0,0,.5) !important; }
 
-/* Navbar specific */
+/* ── Hover states ── */
+html[data-theme="dark"] .hover\:bg-gray-50:hover  { background-color: var(--dm-hover)    !important; }
+html[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: var(--dm-hover)    !important; }
+html[data-theme="dark"] .hover\:bg-gray-200:hover { background-color: var(--dm-border)   !important; }
+html[data-theme="dark"] .hover\:bg-blue-50:hover  { background-color: #0d1f3c            !important; }
+
+/* ── Navbar ── */
 html[data-theme="dark"] nav {
-  background-color: #020617 !important;
-  border-color: #1f2937 !important;
+  background-color: var(--dm-surface) !important;
+  border-color: var(--dm-border-soft) !important;
+}
+html[data-theme="dark"] nav a          { color: #e5e7eb; }
+html[data-theme="dark"] nav a:hover    { color: #38bdf8; }
+
+/* Navbar mobile menu */
+html[data-theme="dark"] .border-t       { border-color: var(--dm-border-soft) !important; }
+
+/* ── Dropdown menu ── */
+html[data-theme="dark"] .absolute.bg-white {
+  background-color: var(--dm-surface2) !important;
+  border-color: var(--dm-border)       !important;
 }
 
-html[data-theme="dark"] nav a {
-  color: #e5e7eb;
+/* ── Doctor / Medical-Center cards ── */
+html[data-theme="dark"] .rounded-3xl.bg-white,
+html[data-theme="dark"] .rounded-2xl.bg-white,
+html[data-theme="dark"] .rounded-xl.bg-white {
+  background-color: var(--dm-surface) !important;
 }
 
-html[data-theme="dark"] nav a:hover {
-  color: #38bdf8; /* sky-400 */
+/* ── Specialty pills (inactive) ── */
+html[data-theme="dark"] .bg-gray-100.rounded-xl,
+html[data-theme="dark"] .bg-gray-100.rounded-2xl,
+html[data-theme="dark"] .bg-gray-100.rounded-full {
+  background-color: var(--dm-surface) !important;
+  color: var(--dm-text-muted)         !important;
 }
+
+/* ── Specialty badge on doctor card ── */
+html[data-theme="dark"] .bg-blue-50.rounded-full { background-color: #1e3a5f !important; }
+
+/* ── Stats cards (blue/green/amber tinted) ── */
+html[data-theme="dark"] .bg-blue-50.rounded-2xl { background-color: #0d1f3c !important; }
+html[data-theme="dark"] .bg-green-50.rounded-2xl { background-color: #052010 !important; }
+html[data-theme="dark"] .bg-amber-50.rounded-2xl { background-color: #1c1505 !important; }
+
+/* ── Search bar inside hero ── */
+html[data-theme="dark"] section.bg-blue-50 .bg-white {
+  background-color: var(--dm-surface) !important;
+}
+
+/* ── Location badge ── */
+html[data-theme="dark"] .bg-white.rounded-xl.border-gray-100 {
+  background-color: var(--dm-surface) !important;
+}
+
+/* ── Appointment cards ── */
+html[data-theme="dark"] .bg-white.rounded-2xl,
+html[data-theme="dark"] .bg-white.rounded-3xl { background-color: var(--dm-surface) !important; }
+
+/* ── Table ── */
+html[data-theme="dark"] table { background-color: var(--dm-surface) !important; }
+html[data-theme="dark"] thead th { background-color: var(--dm-surface2) !important; color: var(--dm-text-muted) !important; }
+html[data-theme="dark"] tbody tr:hover { background-color: var(--dm-hover) !important; }
+html[data-theme="dark"] tbody td { color: var(--dm-text) !important; border-color: var(--dm-border-soft) !important; }
+
+/* ── Card component ── */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] [class*="Card"] { background-color: var(--dm-surface) !important; border-color: var(--dm-border-soft) !important; }
+
+/* ── Green WhatsApp button ── */
+html[data-theme="dark"] .bg-green-100 { background-color: #052010 !important; }
+
+/* ── Rating badge on cards ── */
+html[data-theme="dark"] .bg-white\/90 { background-color: rgba(30,41,59,.9) !important; }
+
+/* ── Doctor profile page ── */
+html[data-theme="dark"] .bg-white.rounded-xl { background-color: var(--dm-surface) !important; }
+html[data-theme="dark"] .bg-gray-50.rounded-xl { background-color: var(--dm-surface2) !important; }
+html[data-theme="dark"] .bg-gray-50.rounded-2xl { background-color: var(--dm-surface2) !important; }
+
+/* ── Booking section (date/time pills) ── */
+html[data-theme="dark"] .bg-gray-100.rounded-full { background-color: var(--dm-surface) !important; }
+html[data-theme="dark"] .bg-gray-50.rounded-full  { background-color: var(--dm-surface2) !important; }
+
+/* ── Scrollbar dark ── */
+html[data-theme="dark"] ::-webkit-scrollbar-track  { background: var(--dm-surface); }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb  { background: var(--dm-border); }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

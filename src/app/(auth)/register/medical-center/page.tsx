@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, Loader2 } from "lucide-react";
+import IconBuilding from "@/components/icon/icon-building";
+import IconLoader from "@/components/icon/icon-loader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ export default function RegisterMedicalCenterPage() {
     <Card className="w-full max-w-lg shadow-xl border-0">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
-          <Building2 className="h-6 w-6 text-blue-600" />
+          <IconBuilding className="h-6 w-6 text-blue-600" />
           تسجيل مركز طبي
         </CardTitle>
         <CardDescription>
@@ -137,7 +138,7 @@ export default function RegisterMedicalCenterPage() {
             </div>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading && <IconLoader className="h-4 w-4 animate-spin" />}
             إنشاء الحساب
           </Button>
         </form>

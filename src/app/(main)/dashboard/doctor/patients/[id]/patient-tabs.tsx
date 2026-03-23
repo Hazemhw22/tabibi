@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { User, Calendar, Receipt, BarChart3, Plus, Loader2 } from "lucide-react";
+import IconUser from "@/components/icon/icon-user";
+import IconCalendar from "@/components/icon/icon-calendar";
+import IconReceipt from "@/components/icon/icon-receipt";
+import IconBarChart from "@/components/icon/icon-bar-chart";
+import IconPlus from "@/components/icon/icon-plus";
+import IconLoader from "@/components/icon/icon-loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +21,10 @@ import { toast } from "sonner";
 type TabId = "info" | "appointments" | "transactions" | "summary";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "info", label: "البيانات الأساسية", icon: User },
-  { id: "appointments", label: "المواعيد", icon: Calendar },
-  { id: "transactions", label: "المعاملات", icon: Receipt },
-  { id: "summary", label: "الملخص", icon: BarChart3 },
+  { id: "info", label: "البيانات الأساسية", icon: IconUser },
+  { id: "appointments", label: "المواعيد", icon: IconCalendar },
+  { id: "transactions", label: "المعاملات", icon: IconReceipt },
+  { id: "summary", label: "الملخص", icon: IconBarChart },
 ];
 
 interface PatientData {
@@ -351,7 +356,7 @@ export default function PatientTabs({
                 className="gap-2"
                 onClick={() => setShowAppointment(true)}
               >
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-4 w-4" />
                 إضافة موعد
               </Button>
             </div>
@@ -411,7 +416,7 @@ export default function PatientTabs({
                 )}
                 <div className="flex gap-2 mt-4">
                   <Button onClick={handleAddAppointment} disabled={savingApt} className="gap-2">
-                    {savingApt && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {savingApt && <IconLoader className="h-4 w-4 animate-spin" />}
                     حفظ
                   </Button>
                   <Button variant="outline" onClick={() => setShowAppointment(false)}>إلغاء</Button>
@@ -452,7 +457,7 @@ export default function PatientTabs({
                 className="gap-2"
                 onClick={() => { setShowPayment(true); setShowService(false); }}
               >
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-4 w-4" />
                 إضافة دفعة
               </Button>
               <Button
@@ -462,7 +467,7 @@ export default function PatientTabs({
                 className="gap-2"
                 onClick={() => { setShowService(true); setShowPayment(false); }}
               >
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-4 w-4" />
                 إضافة خدمة
               </Button>
             </div>
@@ -485,7 +490,7 @@ export default function PatientTabs({
                 </div>
                 <div className="flex gap-2 mt-4">
                   <Button onClick={handleAddPayment} disabled={savingPayment} className="gap-2">
-                    {savingPayment && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {savingPayment && <IconLoader className="h-4 w-4 animate-spin" />}
                     حفظ الدفعة
                   </Button>
                   <Button variant="outline" onClick={() => setShowPayment(false)}>إلغاء</Button>
@@ -511,7 +516,7 @@ export default function PatientTabs({
                 </div>
                 <div className="flex gap-2 mt-4">
                   <Button onClick={handleAddService} disabled={savingService} className="gap-2">
-                    {savingService && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {savingService && <IconLoader className="h-4 w-4 animate-spin" />}
                     حفظ الخدمة
                   </Button>
                   <Button variant="outline" onClick={() => setShowService(false)}>إلغاء</Button>

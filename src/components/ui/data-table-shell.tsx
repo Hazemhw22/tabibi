@@ -1,7 +1,10 @@
 "use client";
 
 import type { TdHTMLAttributes } from "react";
-import { Search, LayoutGrid, List, Filter } from "lucide-react";
+import IconSearch from "@/components/icon/icon-search";
+import IconLayoutGrid from "@/components/icon/icon-layout-grid";
+import IconListCheck from "@/components/icon/icon-list-check";
+import IconFilter from "@/components/icon/icon-filter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +51,7 @@ export function DataTableShell({
     <div className={cn("rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900/50", className)}>
       <div className="flex flex-col gap-3 border-b border-gray-100 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="relative min-w-0 flex-1 sm:max-w-md">
-          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <IconSearch className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="search"
             value={searchQuery}
@@ -77,7 +80,7 @@ export function DataTableShell({
                 onClick={() => onViewModeChange("table")}
                 title="عرض جدول"
               >
-                <List className="h-4 w-4" />
+                <IconListCheck className="h-4 w-4" />
               </Button>
               <Button
                 type="button"
@@ -87,14 +90,14 @@ export function DataTableShell({
                 onClick={() => onViewModeChange("grid")}
                 title="عرض شبكة"
               >
-                <LayoutGrid className="h-4 w-4" />
+                <IconLayoutGrid className="h-4 w-4" />
               </Button>
             </div>
           )}
 
           {filterSlot && (
             <div className="flex items-center gap-1 text-violet-700 dark:text-violet-400">
-              <Filter className="h-4 w-4" />
+              <IconFilter className="h-4 w-4" />
               {filterSlot}
             </div>
           )}

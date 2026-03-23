@@ -2,22 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Loader2 } from "lucide-react";
+import IconUser from "@/components/icon/icon-user";
+import IconLoader from "@/components/icon/icon-loader";
 import { toast } from "sonner";
 
 type Props = {
   defaultName: string;
   defaultPhone: string;
+  defaultImage?: string | null;
 };
 
-export function PatientSettingsForm({ defaultName, defaultPhone }: Props) {
+export function PatientSettingsForm({ defaultName, defaultPhone, defaultImage }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [name, setName] = useState(defaultName ?? "");
   const [phone, setPhone] = useState(defaultPhone ?? "");
+  const [image, setImage] = useState<string | null>(defaultImage ?? null);
+
+  const uploadAvatar = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload/avatar", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || "فشل رفع الصورة");
+    return data.url as string;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +41,7 @@ export function PatientSettingsForm({ defaultName, defaultPhone }: Props) {
     }
     setLoading(true);
     try {
-      const payload = { name: name.trim(), phone: phone.trim() || undefined };
+      const payload = { name: name.trim(), phone: phone.trim() || undefined, image: image || undefined };
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -37,6 +51,7 @@ export function PatientSettingsForm({ defaultName, defaultPhone }: Props) {
       if (res.ok) {
         if (typeof data.name === "string") setName(data.name);
         if (data.phone !== undefined) setPhone(data.phone ?? "");
+        if (data.image !== undefined) setImage(data.image ?? null);
         toast.success("تم حفظ التعديلات بنجاح.");
         router.refresh();
       } else {
@@ -53,12 +68,56 @@ export function PatientSettingsForm({ defaultName, defaultPhone }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
+          <IconUser className="h-5 w-5" />
           تعديل بياناتي
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="relative h-16 w-16 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+              {image ? (
+                <Image src={image} alt="صورة المستخدم" fill className="object-cover" unoptimized />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                  <IconUser className="h-6 w-6" />
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      setUploading(true);
+                      const url = await uploadAvatar(file);
+                      setImage(url);
+                      toast.success("تم رفع الصورة بنجاح");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "فشل رفع الصورة");
+                    } finally {
+                      setUploading(false);
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" disabled={uploading} className="gap-2">
+                  {uploading ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
+                  تغيير الصورة
+                </Button>
+              </label>
+              {image ? (
+                <Button type="button" variant="ghost" onClick={() => setImage(null)}>
+                  إزالة
+                </Button>
+              ) : null}
+            </div>
+          </div>
           <Input
             label="الاسم"
             value={name}
@@ -77,7 +136,7 @@ export function PatientSettingsForm({ defaultName, defaultPhone }: Props) {
             dir="ltr"
           />
           <Button type="submit" disabled={loading} className="gap-2">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {loading ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
             حفظ التعديلات
           </Button>
         </form>

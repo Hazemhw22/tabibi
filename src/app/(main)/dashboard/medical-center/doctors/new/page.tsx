@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Stethoscope, Plus, Trash2 } from "lucide-react";
+import IconHeart from "@/components/icon/icon-heart";
+import IconPlus from "@/components/icon/icon-plus";
+import IconTrash from "@/components/icon/icon-trash";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,7 +138,7 @@ export default function NewCenterDoctorPage() {
         ← أطباء المركز
       </Link>
       <h1 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <Stethoscope className="h-6 w-6 text-blue-600" />
+        <IconHeart className="h-6 w-6 text-blue-600" />
         إضافة طبيب للمركز
       </h1>
 
@@ -232,7 +234,7 @@ export default function NewCenterDoctorPage() {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <Label>أوقات العمل (عيادة المركز)</Label>
                 <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addSlot}>
-                  <Plus className="h-4 w-4" />
+                  <IconPlus className="h-4 w-4" />
                   يوم آخر
                 </Button>
               </div>
@@ -287,7 +289,7 @@ export default function NewCenterDoctorPage() {
                       onClick={() => removeSlot(i)}
                       disabled={slots.length <= 1}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <IconTrash className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2, UserPlus } from "lucide-react";
+import IconArrowForward from "@/components/icon/icon-arrow-forward";
+import IconLoader from "@/components/icon/icon-loader";
+import IconUserPlus from "@/components/icon/icon-user-plus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,13 +48,13 @@ export default function NewPatientPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6">
-        <ArrowRight className="h-4 w-4" /> العودة
+        <IconArrowForward className="h-4 w-4" /> العودة
       </button>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <UserPlus className="h-5 w-5 text-blue-600" />
+            <IconUserPlus className="h-5 w-5 text-blue-600" />
             إضافة مريض جديد
           </CardTitle>
         </CardHeader>
@@ -106,7 +108,7 @@ export default function NewPatientPage() {
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" className="flex-1" disabled={loading} size="lg">
-                {loading ? <><Loader2 className="h-4 w-4 animate-spin ml-2" /> جاري الحفظ...</> : "إضافة المريض"}
+                {loading ? <><IconLoader className="h-4 w-4 animate-spin ml-2" /> جاري الحفظ...</> : "إضافة المريض"}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.back()} size="lg">إلغاء</Button>
             </div>

@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Wallet, TrendingUp, Stethoscope, Building2 } from "lucide-react";
+import IconCashBanknotes from "@/components/icon/icon-cash-banknotes";
+import IconTrendingUp from "@/components/icon/icon-trending-up";
+import IconHeart from "@/components/icon/icon-heart";
+import IconBuilding from "@/components/icon/icon-building";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatNumber } from "@/lib/utils";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
@@ -99,7 +102,7 @@ export default function MedicalCenterFinancePage() {
 
       <div className="mb-6 space-y-4">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Wallet className="h-7 w-7 text-emerald-600 shrink-0" />
+          <IconCashBanknotes className="h-7 w-7 text-emerald-600 shrink-0" />
           حسابات المركز الطبي
         </h1>
 
@@ -108,7 +111,7 @@ export default function MedicalCenterFinancePage() {
             <Card className="border-emerald-200 dark:border-emerald-900/50 dark:bg-gray-900/40">
               <CardContent className="p-4">
                 <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 mb-1">
-                  <Building2 className="h-4 w-4 shrink-0" />
+                  <IconBuilding className="h-4 w-4 shrink-0" />
                   ما دفعه المرضى (إجمالي المركز)
                 </p>
                 <p className="text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
@@ -119,7 +122,7 @@ export default function MedicalCenterFinancePage() {
             <Card className="border-blue-200 dark:border-blue-900/50 dark:bg-gray-900/40">
               <CardContent className="p-4">
                 <p className="text-xs font-medium text-blue-800 dark:text-blue-300 flex items-center gap-1.5 mb-1">
-                  <Stethoscope className="h-4 w-4 shrink-0" />
+                  <IconHeart className="h-4 w-4 shrink-0" />
                   مستحقات الأطباء من العيادة
                 </p>
                 <p className="text-2xl font-bold tabular-nums text-blue-700 dark:text-blue-400">
@@ -130,7 +133,7 @@ export default function MedicalCenterFinancePage() {
             <Card className="border-amber-200 dark:border-amber-900/50 dark:bg-gray-900/40">
               <CardContent className="p-4">
                 <p className="text-xs font-medium text-amber-900 dark:text-amber-200 flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="h-4 w-4 shrink-0" />
+                  <IconTrendingUp className="h-4 w-4 shrink-0" />
                   صافي تقديري للمركز
                 </p>
                 <p

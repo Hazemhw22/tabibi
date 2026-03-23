@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Siren, Loader2 } from "lucide-react";
+import IconBell from "@/components/icon/icon-bell";
+import IconLoader from "@/components/icon/icon-loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +94,7 @@ export default function EmergencyPage() {
         ← الرئيسية
       </Link>
       <h1 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <Siren className="h-6 w-6 text-amber-600" />
+        <IconBell className="h-6 w-6 text-amber-600" />
         قسم الطوارئ (بدون حجز مسبق)
       </h1>
 
@@ -165,7 +166,7 @@ export default function EmergencyPage() {
               />
             </div>
             <Button type="submit" disabled={saving} className="gap-2">
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving && <IconLoader className="h-4 w-4 animate-spin" />}
               حفظ
             </Button>
           </form>
