@@ -53,10 +53,20 @@ export default async function PatientDashboard() {
 
   const { data: userRow } = await supabaseAdmin
     .from("User")
-    .select("regionId")
+    .select("regionId, image, name, gender")
     .eq("id", session.user.id)
     .single();
-  const patientRegionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
+  const patientRow = userRow as {
+    regionId?: string | null;
+    image?: string | null;
+    name?: string | null;
+    gender?: string | null;
+  } | null;
+  const patientRegionId = patientRow?.regionId ?? null;
+  const sessionUser = session.user as { image?: string | null };
+  const patientImage = patientRow?.image ?? sessionUser.image ?? null;
+  const patientDisplayName = patientRow?.name?.trim() || session.user.name?.trim() || "مريض";
+  const patientInitial = [...patientDisplayName][0] ?? "م";
 
   const { data: appointments } = await supabaseAdmin
     .from("Appointment")
@@ -173,13 +183,19 @@ export default async function PatientDashboard() {
       <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-5 shadow-sm dark:shadow-slate-900/50">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                {session.user.name?.charAt(0) ?? "م"}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-slate-100 dark:ring-slate-600">
+                {patientImage ? (
+                  <Image src={patientImage} alt="" fill className="object-cover" unoptimized sizes="56px" />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl">
+                    {patientInitial}
+                  </div>
+                )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-gray-400 dark:text-slate-500">مرحباً 👋</p>
-                <h1 className="text-base font-bold text-gray-900 dark:text-slate-100 leading-tight">{session.user.name}</h1>
+                <h1 className="text-base font-bold text-gray-900 dark:text-slate-100 leading-tight truncate">{patientDisplayName}</h1>
               </div>
             </div>
             <Link

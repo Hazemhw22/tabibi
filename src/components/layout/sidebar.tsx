@@ -19,6 +19,7 @@ import IconDollarSignCircle from "@/components/icon/icon-dollar-sign-circle";
 import IconMenuWidgets from "@/components/icon/menu/icon-menu-widgets";
 import IconBuilding from "@/components/icon/icon-building";
 import IconXCircle from "@/components/icon/icon-x-circle";
+import { getDoctorAvatar, getPatientAvatar } from "@/lib/avatar";
 
 interface NavItem {
   label: string;
@@ -119,10 +120,13 @@ interface SidebarContentProps {
   userRole?: string;
   userName?: string | null;
   userImage?: string | null;
+  userGender?: string | null;
   doctorSpecialty?: string | null;
+  centerImage?: string | null;
+  centerName?: string | null;
 }
 
-function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, userRole, userName, userImage, doctorSpecialty }: SidebarContentProps) {
+function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, userRole, userName, userImage, userGender, doctorSpecialty, centerImage, centerName }: SidebarContentProps) {
   const linkClass = (item: NavItem, isActive: boolean) => {
     const Icon = item.icon;
     return (
@@ -158,46 +162,62 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
       ? pathname === href
       : pathname.startsWith(href);
 
+  // تحديد الصورة والاسم حسب الدور
+  const profileImage = (() => {
+    if (userRole === "DOCTOR") return getDoctorAvatar(userImage, userGender);
+    if (userRole === "MEDICAL_CENTER_ADMIN") return centerImage || null;
+    return getPatientAvatar(userImage, userGender);
+  })();
+  const profileName = userRole === "MEDICAL_CENTER_ADMIN" ? (centerName || userName) : userName;
+  const profileSubtitle =
+    userRole === "DOCTOR" ? (doctorSpecialty ?? "طبيب") :
+    userRole === "MEDICAL_CENTER_ADMIN" ? "مركز طبي" :
+    userRole === "PLATFORM_ADMIN" || userRole === "CLINIC_ADMIN" ? "مشرف" :
+    "مريض";
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header: Doctor profile card OR logo */}
-      {userRole === "DOCTOR" ? (
-        <div className={cn("px-4 pt-6 pb-5 text-center border-b", isDark ? "border-gray-800" : "border-gray-200")}>
-          <div className="mx-auto h-[76px] w-[76px] rounded-full overflow-hidden bg-blue-900 border-[3px] border-blue-500/40 flex items-center justify-center">
-            {userImage ? (
-              <Image
-                src={userImage}
-                alt={userName ?? "طبيب"}
-                width={76}
-                height={76}
-                className="object-cover w-full h-full"
-                unoptimized
-              />
-            ) : (
-              <span className="text-[2.2rem]">👨‍⚕️</span>
-            )}
-          </div>
-          <h2 className={cn("mt-3 text-sm font-bold truncate px-2 leading-tight", isDark ? "text-white" : "text-gray-900")}>
-            د. {userName}
-          </h2>
-          <p className={cn("text-xs mt-1 truncate px-2", isDark ? "text-blue-400" : "text-blue-600")}>
-            {doctorSpecialty ?? "طبيب"}
-          </p>
-          <div className={cn("mt-3 h-px w-14 mx-auto", isDark ? "bg-gray-700" : "bg-gray-200")} />
-        </div>
-      ) : (
-        <div className={cn("flex h-16 shrink-0 items-center gap-3 border-b px-4 py-3", isDark ? "border-gray-800" : "border-gray-200")}>
+      {/* Header: Profile card for all roles */}
+      <div className={cn("px-4 pt-5 pb-4 border-b", isDark ? "border-gray-800" : "border-gray-200")}>
+        {/* Logo row */}
+        <div className="flex items-center gap-2 mb-4">
           <Image
             src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
             alt="Tabibi"
-            width={240}
-            height={60}
-            className="h-20 w-auto shrink-0 max-w-[240px] brightness-125"
+            width={120}
+            height={30}
+            className="h-8 w-auto brightness-125"
             priority
           />
-          <p className={cn("text-xs truncate", isDark ? "text-gray-400" : "text-gray-500")}>{roleLabel}</p>
         </div>
-      )}
+        {/* Avatar + name */}
+        <div className="flex items-center gap-3">
+          <div className="shrink-0 h-12 w-12 rounded-xl overflow-hidden border-2 border-blue-500/40 bg-blue-900 flex items-center justify-center">
+            {profileImage ? (
+              <Image
+                src={profileImage}
+                alt={profileName ?? "مستخدم"}
+                width={48}
+                height={48}
+                className="object-cover object-top w-full h-full"
+                unoptimized
+              />
+            ) : (
+              <span className="text-xl">
+                {userRole === "DOCTOR" ? "👨‍⚕️" : userRole === "MEDICAL_CENTER_ADMIN" ? "🏥" : "👤"}
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={cn("text-sm font-bold truncate leading-tight", isDark ? "text-white" : "text-gray-900")}>
+              {userRole === "DOCTOR" ? `د. ${profileName}` : profileName}
+            </p>
+            <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-blue-400" : "text-blue-600")}>
+              {profileSubtitle}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-6">
         {sections.map((section) => (
@@ -245,7 +265,9 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [doctorInfo, setDoctorInfo] = useState<{ status: string | null; specialty: string | null }>({ status: null, specialty: null });
+  const [doctorInfo, setDoctorInfo] = useState<{ status: string | null; specialty: string | null; image: string | null; gender: string | null }>({ status: null, specialty: null, image: null, gender: null });
+  const [centerInfo, setCenterInfo] = useState<{ image: string | null; name: string | null }>({ image: null, name: null });
+  const [patientInfo, setPatientInfo] = useState<{ image: string | null; gender: string | null }>({ image: null, gender: null });
 
   useEffect(() => {
     try {
@@ -268,14 +290,33 @@ export default function Sidebar() {
   const effectiveDark = useEffectiveDark(theme, role);
 
   useEffect(() => {
-    if (role !== "DOCTOR") return;
-    fetch("/api/doctor/profile")
-      .then((r) => r.json())
-      .then((data) => setDoctorInfo({
-        status: data?.doctor?.status ?? null,
-        specialty: data?.doctor?.specialty?.nameAr ?? null,
-      }))
-      .catch(() => setDoctorInfo({ status: null, specialty: null }));
+    if (role === "DOCTOR") {
+      fetch("/api/doctor/profile")
+        .then((r) => r.json())
+        .then((data) => setDoctorInfo({
+          status: data?.doctor?.status ?? null,
+          specialty: data?.doctor?.specialty?.nameAr ?? null,
+          image: data?.doctor?.user?.image ?? null,
+          gender: data?.doctor?.gender ?? null,
+        }))
+        .catch(() => setDoctorInfo({ status: null, specialty: null, image: null, gender: null }));
+    } else if (role === "MEDICAL_CENTER_ADMIN") {
+      fetch("/api/medical-center/settings")
+        .then((r) => r.json())
+        .then((data) => setCenterInfo({
+          image: data?.center?.imageUrl ?? null,
+          name: data?.center?.nameAr ?? data?.center?.name ?? null,
+        }))
+        .catch(() => setCenterInfo({ image: null, name: null }));
+    } else if (role === "PATIENT") {
+      fetch("/api/profile/me")
+        .then((r) => r.json())
+        .then((data) => setPatientInfo({
+          image: data?.image ?? null,
+          gender: data?.gender ?? null,
+        }))
+        .catch(() => setPatientInfo({ image: null, gender: null }));
+    }
   }, [role]);
 
   const sections =
@@ -317,8 +358,11 @@ export default function Sidebar() {
           isDark={effectiveDark}
           userRole={role}
           userName={session?.user?.name}
-          userImage={session?.user?.image ?? null}
+          userImage={role === "DOCTOR" ? doctorInfo.image : role === "PATIENT" ? patientInfo.image : (session?.user?.image ?? null)}
+          userGender={role === "DOCTOR" ? doctorInfo.gender : role === "PATIENT" ? patientInfo.gender : null}
           doctorSpecialty={doctorInfo.specialty}
+          centerImage={centerInfo.image}
+          centerName={centerInfo.name}
         />
       </aside>
 
@@ -372,8 +416,11 @@ export default function Sidebar() {
           isDark={effectiveDark}
           userRole={role}
           userName={session?.user?.name}
-          userImage={session?.user?.image ?? null}
+          userImage={role === "DOCTOR" ? doctorInfo.image : role === "PATIENT" ? patientInfo.image : (session?.user?.image ?? null)}
+          userGender={role === "DOCTOR" ? doctorInfo.gender : role === "PATIENT" ? patientInfo.gender : null}
           doctorSpecialty={doctorInfo.specialty}
+          centerImage={centerInfo.image}
+          centerName={centerInfo.name}
         />
       </aside>
     </>

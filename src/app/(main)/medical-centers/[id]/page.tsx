@@ -60,6 +60,7 @@ export default async function MedicalCenterDetailPage({ params }: { params: Prom
     `)
     .eq("medicalCenterId", id)
     .eq("status", "APPROVED")
+    .eq("visibleToPatients", true)
     .order("createdAt", { ascending: true });
 
   const session = await auth();

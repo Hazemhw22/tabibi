@@ -36,7 +36,7 @@ interface Specialty {
 }
 
 export default function DoctorSettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -129,6 +129,7 @@ export default function DoctorSettingsPage() {
       if (res.ok) {
         toast.success("تم حفظ البيانات بنجاح!");
         await fetchProfile();
+        if (avatarUrl) await updateSession({ image: avatarUrl });
         router.refresh();
       } else {
         toast.error(data.error || "حدث خطأ");

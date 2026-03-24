@@ -10,4 +10,9 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     autoRefreshToken: false,
     persistSession: false,
   },
+  global: {
+    // تعطيل Next.js fetch cache لضمان الحصول على بيانات حديثة دائماً
+    fetch: (url: RequestInfo | URL, options?: RequestInit) =>
+      fetch(url, { ...options, cache: "no-store" }),
+  },
 });

@@ -13,14 +13,17 @@ export default async function PatientSettingsPage() {
 
   const name = session.user.name ?? "";
   const phone = (session.user as { phone?: string }).phone ?? "";
-  const image = (session.user as { image?: string | null }).image ?? null;
+  const sessionImage = (session.user as { image?: string | null }).image ?? null;
 
   const { data: userRow } = await supabaseAdmin
     .from("User")
-    .select("regionId")
+    .select("regionId, image, name")
     .eq("id", session.user.id)
     .single();
-  const regionId = (userRow as { regionId?: string | null } | null)?.regionId ?? null;
+  const row = userRow as { regionId?: string | null; image?: string | null; name?: string | null } | null;
+  const regionId = row?.regionId ?? null;
+  const image = row?.image ?? sessionImage;
+  const displayName = row?.name?.trim() || name;
 
   return (
     <div className="max-w-2xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -38,7 +41,7 @@ export default async function PatientSettingsPage() {
         </Link>
       </div>
 
-      <PatientSettingsForm defaultName={name} defaultPhone={phone} defaultImage={image} />
+      <PatientSettingsForm defaultName={displayName} defaultPhone={phone} defaultImage={image} />
 
       <div className="mt-6">
         <PatientRegionSelect

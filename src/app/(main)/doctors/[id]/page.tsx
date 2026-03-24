@@ -27,7 +27,7 @@ async function getDoctor(id: string) {
     .eq("id", id)
     .single();
 
-  if (error || !doctor || doctor.status !== "APPROVED") return null;
+  if (error || !doctor || doctor.status !== "APPROVED" || doctor.visibleToPatients === false) return null;
 
   const slots = (doctor.timeSlots ?? []).filter((s: { isActive?: boolean }) => s.isActive !== false);
   slots.sort((a: { dayOfWeek: number }, b: { dayOfWeek: number }) => a.dayOfWeek - b.dayOfWeek);

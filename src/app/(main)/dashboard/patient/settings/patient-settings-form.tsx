@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ type Props = {
 
 export function PatientSettingsForm({ defaultName, defaultPhone, defaultImage }: Props) {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +56,7 @@ export function PatientSettingsForm({ defaultName, defaultPhone, defaultImage }:
         if (data.phone !== undefined) setPhone(data.phone ?? "");
         if (data.image !== undefined) setImage(data.image ?? null);
         toast.success("تم حفظ التعديلات بنجاح.");
+        await updateSession({ image: data.image ?? null, name: data.name });
         router.refresh();
       } else {
         toast.error(data.error || "فشل الحفظ");

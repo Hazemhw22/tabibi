@@ -77,23 +77,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session: updateSession }) {
       if (user) {
-        const u = user as { role?: string; id?: string; name?: string; phone?: string };
+        const u = user as { role?: string; id?: string; name?: string; phone?: string; image?: string | null };
         token.role = u.role;
         token.id = u.id;
         token.name = u.name;
         token.phone = u.phone;
+        token.picture = u.image ?? null;
+      }
+      // عند استدعاء update() من الـ client
+      if (trigger === "update" && updateSession) {
+        const s = updateSession as { image?: string | null; name?: string; phone?: string };
+        if (s.image !== undefined) token.picture = s.image;
+        if (s.name !== undefined) token.name = s.name;
+        if (s.phone !== undefined) token.phone = s.phone;
       }
       return token;
     },
     async session({ session, token }) {
       if (session?.user && token) {
-        const u = session.user as { id?: string; role?: string; name?: string; phone?: string };
+        const u = session.user as { id?: string; role?: string; name?: string; phone?: string; image?: string | null };
         u.id = token.id as string;
         u.role = token.role as string;
         u.name = (token.name as string) ?? session.user?.name ?? "";
         u.phone = (token.phone as string) ?? "";
+        u.image = (token.picture as string | null) ?? null;
       }
       return session;
     },
