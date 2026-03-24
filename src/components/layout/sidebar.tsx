@@ -179,17 +179,7 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
     <div className="flex flex-col h-full">
       {/* Header: Profile card for all roles */}
       <div className={cn("px-4 pt-5 pb-4 border-b", isDark ? "border-gray-800" : "border-gray-200")}>
-        {/* Logo row */}
-        <div className="flex items-center gap-2 mb-4">
-          <Image
-            src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
-            alt="Tabibi"
-            width={120}
-            height={30}
-            className="h-8 w-auto brightness-125"
-            priority
-          />
-        </div>
+    
         {/* Avatar + name */}
         <div className="flex items-center gap-3">
           <div className="shrink-0 h-12 w-12 rounded-xl overflow-hidden border-2 border-blue-500/40 bg-blue-900 flex items-center justify-center">
