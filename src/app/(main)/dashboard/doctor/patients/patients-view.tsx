@@ -735,7 +735,7 @@ export default function PatientsView({
         </div>
 
         {/* List */}
-        <ul className="flex-1 overflow-y-auto divide-y divide-gray-50">
+        <ul className="flex-1 overflow-y-auto space-y-1.5 px-2 py-2">
           {filtered.length === 0 ? (
             <li className="flex flex-col items-center justify-center py-12 text-center px-4 h-full">
               <IconUsers className="h-10 w-10 text-gray-200 mb-2" />
@@ -743,14 +743,22 @@ export default function PatientsView({
             </li>
           ) : filtered.map((p) => {
             const active = selectedId === p.id;
+            const isClinic = p.source === "clinic";
             return (
               <li key={p.id}>
                 <button
                   type="button"
                   onClick={() => openPatient(p)}
                   className={cn(
-                    "flex w-full items-center gap-3 px-4 py-3 text-right transition-colors",
-                    active ? "bg-blue-600" : "hover:bg-gray-50"
+                    "relative flex w-full items-center gap-3 rounded-xl border border-gray-200/95 py-2.5 pe-3 ps-3 text-right shadow-sm transition-colors",
+                    active
+                      ? isClinic
+                        ? "border-s-[3px] border-s-emerald-200"
+                        : "border-s-[3px] border-s-blue-200"
+                      : isClinic
+                        ? "border-s-[3px] border-s-emerald-500"
+                        : "border-s-[3px] border-s-blue-500",
+                    active ? "bg-blue-600 border-gray-200/30" : "bg-white hover:bg-gray-50/90"
                   )}
                 >
                   <div className={cn(
@@ -764,16 +772,19 @@ export default function PatientsView({
                       {p.name}
                     </p>
                     <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400")}>
-                      {p.source === "clinic"
+                      {isClinic
                         ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.whatsapp ?? "—")
                         : `${p.appointmentCount} موعد · منصة`}
                     </p>
                   </div>
                   <Badge
-                    variant={p.source === "clinic" ? "secondary" : "default"}
-                    className={cn("text-[10px] shrink-0 px-1.5", active && "opacity-80")}
+                    variant={isClinic ? "secondary" : "default"}
+                    className={cn(
+                      "text-[10px] shrink-0 px-1.5",
+                      active && "border-white/30 bg-white/15 text-white"
+                    )}
                   >
-                    {p.source === "clinic" ? "عيادة" : "منصة"}
+                    {isClinic ? "عيادة" : "منصة"}
                   </Badge>
                 </button>
               </li>
@@ -786,6 +797,14 @@ export default function PatientsView({
       <div className="flex flex-1 flex-col overflow-hidden bg-gray-50/40 min-w-0">
         {selectedPatient ? (
           <>
+            {/* شريط لوني أعلى التفاصيل (نفس منطق القائمة) */}
+            <div
+              className={cn(
+                "h-1 shrink-0",
+                selectedPatient.source === "clinic" ? "bg-emerald-500" : "bg-blue-500"
+              )}
+              aria-hidden
+            />
             {/* Header */}
             <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 space-y-4">
               <div className="flex items-center gap-4">
