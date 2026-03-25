@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
+import { doctorMayAddExtraClinicsWhileLinkedToCenter } from "@/lib/doctor-extra-clinics";
 import { z } from "zod";
 
 export async function GET() {
@@ -27,10 +28,15 @@ export async function GET() {
       (a: { dayOfWeek: number }, b: { dayOfWeek: number }) => a.dayOfWeek - b.dayOfWeek
     );
 
+    const extraClinicsAllowed = doctorMayAddExtraClinicsWhileLinkedToCenter(
+      doctor as Parameters<typeof doctorMayAddExtraClinicsWhileLinkedToCenter>[0]
+    );
+
     return NextResponse.json({
       doctor: {
         ...doctor,
         timeSlots,
+        extraClinicsAllowed,
       },
     });
   } catch (error) {
@@ -84,7 +90,7 @@ export async function PUT(req: Request) {
 
     const { data: doctor, error: findErr } = await supabaseAdmin
       .from("Doctor")
-      .select("id, medicalCenterId, canAddExtraClinics")
+      .select("id, medicalCenterId, canAddExtraClinics, subscriptionPeriod, subscriptionEndDate, subscriptionPlan")
       .eq("userId", session.user.id)
       .single();
 
@@ -93,7 +99,9 @@ export async function PUT(req: Request) {
     }
 
     const centerLinked = Boolean((doctor as { medicalCenterId?: string | null }).medicalCenterId);
-    const allowExtraClinics = Boolean((doctor as { canAddExtraClinics?: boolean }).canAddExtraClinics);
+    const allowExtraClinics = doctorMayAddExtraClinicsWhileLinkedToCenter(
+      doctor as Parameters<typeof doctorMayAddExtraClinicsWhileLinkedToCenter>[0]
+    );
 
     // معالجة التخصص (اختيار أو إضافة جديد)
     let finalSpecialtyId: string | undefined = data.specialtyId;

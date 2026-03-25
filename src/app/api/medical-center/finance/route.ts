@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 export type FinanceRow = {
   doctorId: string;
@@ -23,18 +24,20 @@ export async function GET() {
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
-    const { data: doctors, error: doctorsErr } = await supabaseAdmin
-      .from("Doctor")
-      .select("id, user:User(name)")
-      .eq("medicalCenterId", centerId)
-      .order("createdAt", { ascending: true });
-
-    if (doctorsErr) {
-      console.error(doctorsErr);
-      return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+    const doctorIds = await getLinkedDoctorIdsForCenter(centerId);
+    let doctors: { id: string; user?: unknown }[] = [];
+    if (doctorIds.length > 0) {
+      const { data: doctorRows, error: doctorsErr } = await supabaseAdmin
+        .from("Doctor")
+        .select("id, user:User(name)")
+        .in("id", doctorIds)
+        .order("createdAt", { ascending: true });
+      if (doctorsErr) {
+        console.error(doctorsErr);
+        return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+      }
+      doctors = (doctorRows ?? []) as { id: string; user?: unknown }[];
     }
-
-    const doctorIds = (doctors ?? []).map((d) => (d as { id: string }).id);
     if (!doctorIds.length) {
       return NextResponse.json({
         stats: {

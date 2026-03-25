@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { doctorIsLinkedToCenter, getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 import { findOrCreatePatientByPhone } from "@/lib/patient-account";
 import { notifyAppointmentBooked } from "@/lib/notifications";
 import {
@@ -38,12 +39,7 @@ export async function GET() {
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
-    const { data: doctors } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("medicalCenterId", centerId);
-
-    const ids = (doctors ?? []).map((d) => d.id);
+    const ids = await getLinkedDoctorIdsForCenter(centerId);
     if (!ids.length) {
       return NextResponse.json({ appointments: [] });
     }
@@ -94,14 +90,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = walkInSchema.parse(body);
 
-    const { data: doctorRow, error: docErr } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("id", data.doctorId)
-      .eq("medicalCenterId", centerId)
-      .maybeSingle();
-
-    if (docErr || !doctorRow) {
+    const okDoctor = await doctorIsLinkedToCenter(data.doctorId, centerId);
+    if (!okDoctor) {
       return NextResponse.json({ error: "الطبيب غير مرتبط بمركزك" }, { status: 404 });
     }
 

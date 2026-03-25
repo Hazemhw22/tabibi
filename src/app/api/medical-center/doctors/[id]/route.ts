@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
 import { getOrCreateMainClinicForCenterDoctor } from "@/lib/medical-center-clinic";
+import { doctorIsLinkedToCenter } from "@/lib/medical-center-doctors";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -23,14 +24,7 @@ const patchSchema = z.object({
 });
 
 async function assertCenterDoctor(doctorId: string, centerId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("Doctor")
-    .select("id")
-    .eq("id", doctorId)
-    .eq("medicalCenterId", centerId)
-    .maybeSingle();
-  if (error || !data) return false;
-  return true;
+  return doctorIsLinkedToCenter(doctorId, centerId);
 }
 
 /** تفاصيل طبيب ضمن المركز */

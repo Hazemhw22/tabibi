@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DoctorActions from "./doctor-actions";
 import UpcomingAppointments, { type ScheduleApt } from "./upcoming-appointments";
+import DoctorMedicalCenterInvitesCard from "@/components/medical-center/doctor-medical-center-invites-card";
 
 export default async function DoctorDashboard() {
   const session = await auth();
@@ -322,6 +323,8 @@ export default async function DoctorDashboard() {
           <Button variant="outline" size="sm">الإعدادات</Button>
         </Link>
       </div>
+
+      <DoctorMedicalCenterInvitesCard />
 
       {/* ── 4 Stats cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

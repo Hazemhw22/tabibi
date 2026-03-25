@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 /** مرضى فريدون حجزوا عند أطباء المركز */
 export async function GET() {
@@ -14,12 +15,7 @@ export async function GET() {
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
-    const { data: doctors } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("medicalCenterId", centerId);
-
-    const ids = (doctors ?? []).map((d) => d.id);
+    const ids = await getLinkedDoctorIdsForCenter(centerId);
     if (!ids.length) {
       return NextResponse.json({ patients: [] });
     }

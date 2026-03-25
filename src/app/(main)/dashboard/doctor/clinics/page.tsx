@@ -61,7 +61,9 @@ export default function DoctorClinicsPage() {
         if (data.doctor) {
           setCenterFlags({
             medicalCenterId: data.doctor.medicalCenterId ?? null,
-            canAddExtraClinics: Boolean(data.doctor.canAddExtraClinics),
+            canAddExtraClinics: Boolean(
+              data.doctor.extraClinicsAllowed ?? data.doctor.canAddExtraClinics
+            ),
           });
           setDoctorLocationId(data.doctor.locationId ?? null);
           if (Array.isArray(data.doctor.clinics) && data.doctor.clinics.length > 0) {

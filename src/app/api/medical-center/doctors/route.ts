@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { assertMedicalCenterApproved, getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
+import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 import { getOrCreateMainClinicForCenterDoctor } from "@/lib/medical-center-clinic";
 import { z } from "zod";
 
@@ -58,6 +59,11 @@ export async function GET() {
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
+    const doctorIds = await getLinkedDoctorIdsForCenter(centerId);
+    if (doctorIds.length === 0) {
+      return NextResponse.json({ doctors: [] });
+    }
+
     const { data: doctors, error } = await supabaseAdmin
       .from("Doctor")
       .select(`
@@ -71,7 +77,7 @@ export async function GET() {
         specialty:Specialty(nameAr),
         timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId)
       `)
-      .eq("medicalCenterId", centerId)
+      .in("id", doctorIds)
       .order("createdAt", { ascending: true });
 
     if (error) {

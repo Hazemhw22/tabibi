@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import IconHeart from "@/components/icon/icon-heart";
 import IconPlus from "@/components/icon/icon-plus";
 import IconTrash from "@/components/icon/icon-trash";
+import IconUser from "@/components/icon/icon-user";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +14,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 import LoadingScreen from "@/components/ui/loading-screen";
-import { DAYS_AR } from "@/lib/utils";
+import { DAYS_AR, cn } from "@/lib/utils";
 
 type Specialty = { id: string; nameAr: string };
 
 type SlotRow = { dayOfWeek: number; startTime: string; endTime: string; slotCapacity: number };
 
+type PlatformDoctorMatch = { id: string; name: string; email: string; phone: string; specialtyAr: string };
+
 const DAY_OPTIONS = DAYS_AR.map((d, idx) => ({ value: String(idx), label: d }));
+
+function isPlausibleLookupEmail(s: string): boolean {
+  const t = s.trim();
+  if (t.length < 3 || !t.includes("@")) return false;
+  const parts = t.split("@");
+  if (parts.length !== 2) return false;
+  return Boolean(parts[0]?.length && parts[1]?.length);
+}
 
 export default function NewCenterDoctorPage() {
   const router = useRouter();
@@ -30,9 +41,7 @@ export default function NewCenterDoctorPage() {
   const [phone, setPhone] = useState("");
   const [specialtyId, setSpecialtyId] = useState("");
   const [consultationFee, setConsultationFee] = useState("150");
-  /** مستحقات الطبيب من العيادة (حساب الطبيب) */
   const [doctorClinicFee, setDoctorClinicFee] = useState("0");
-  /** يظهر للمريض بجانب السعر في صفحة المركز */
   const [patientFeeServiceType, setPatientFeeServiceType] = useState<"CONSULTATION" | "EXAMINATION">(
     "CONSULTATION"
   );
@@ -41,6 +50,12 @@ export default function NewCenterDoctorPage() {
   ]);
   const [loading, setLoading] = useState(false);
   const [specsLoading, setSpecsLoading] = useState(true);
+
+  /** طبيب مسجّل في المنصة — طلب موافقة بدل إنشاء حساب (البحث بالبريد) */
+  const [lookupEmail, setLookupEmail] = useState("");
+  const [linkedDoctor, setLinkedDoctor] = useState<PlatformDoctorMatch | null>(null);
+  const [platformMatches, setPlatformMatches] = useState<PlatformDoctorMatch[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/specialties")
@@ -51,6 +66,37 @@ export default function NewCenterDoctorPage() {
       .catch(() => toast.error("تعذر تحميل التخصصات"))
       .finally(() => setSpecsLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (linkedDoctor) {
+      setPlatformMatches([]);
+      return;
+    }
+    if (!isPlausibleLookupEmail(lookupEmail)) {
+      setPlatformMatches([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      setLookupLoading(true);
+      fetch(`/api/medical-center/doctors/lookup-by-email?email=${encodeURIComponent(lookupEmail.trim())}`)
+        .then(async (r) => {
+          const j = await r.json();
+          if (!r.ok) {
+            toast.error(typeof j.error === "string" ? j.error : "تعذر البحث عن الطبيب");
+            setPlatformMatches([]);
+            return;
+          }
+          if (j.doctors && Array.isArray(j.doctors)) setPlatformMatches(j.doctors);
+          else setPlatformMatches([]);
+        })
+        .catch(() => {
+          setPlatformMatches([]);
+          toast.error("تعذر الاتصال بالخادم للبحث");
+        })
+        .finally(() => setLookupLoading(false));
+    }, 450);
+    return () => clearTimeout(t);
+  }, [lookupEmail, linkedDoctor]);
 
   const specialtyOptions = specialties.map((s) => ({ value: s.id, label: s.nameAr }));
 
@@ -71,14 +117,18 @@ export default function NewCenterDoctorPage() {
     setSlots((s) => s.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
+  const timePayload = () =>
+    slots.map((s) => ({
+      dayOfWeek: s.dayOfWeek,
+      startTime: s.startTime.length === 5 ? s.startTime : s.startTime.slice(0, 5),
+      endTime: s.endTime.length === 5 ? s.endTime : s.endTime.slice(0, 5),
+      slotCapacity: Math.min(50, Math.max(1, s.slotCapacity || 1)),
+    }));
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fee = Number(consultationFee);
     const docClinic = Number(doctorClinicFee);
-    if (!specialtyId || !name.trim() || !email.trim() || password.length < 6) {
-      toast.error("أكمل الحقول المطلوبة");
-      return;
-    }
     if (Number.isNaN(fee) || fee < 0) {
       toast.error("أدخل رسوماً صحيحة للمريض للمركز");
       return;
@@ -89,6 +139,48 @@ export default function NewCenterDoctorPage() {
     }
     if (slots.length === 0) {
       toast.error("أضف يوم عمل واحداً على الأقل");
+      return;
+    }
+
+    if (linkedDoctor) {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/medical-center/doctors/invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            doctorId: linkedDoctor.id,
+            consultationFee: fee,
+            doctorClinicFee: docClinic,
+            patientFeeServiceType,
+            timeSlots: timePayload(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "فشل إرسال الطلب");
+          return;
+        }
+        toast.success(data.message || "تم إرسال الطلب", {
+          description: "سيصل تنبيه للطبيب للموافقة أو الرفض. ستُضاف العيادة تلقائياً عند قبوله.",
+          duration: 6000,
+        });
+        router.push("/dashboard/medical-center/doctors");
+      } catch {
+        toast.error("حدث خطأ");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (!specialtyId || !name.trim() || !email.trim() || password.length < 6) {
+      toast.error("أكمل الحقول المطلوبة");
+      return;
+    }
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length < 9) {
+      toast.error("أدخل رقم هاتف صالحاً للطبيب الجديد");
       return;
     }
 
@@ -106,12 +198,7 @@ export default function NewCenterDoctorPage() {
           consultationFee: fee,
           doctorClinicFee: docClinic,
           patientFeeServiceType,
-          timeSlots: slots.map((s) => ({
-            dayOfWeek: s.dayOfWeek,
-            startTime: s.startTime.length === 5 ? s.startTime : s.startTime.slice(0, 5),
-            endTime: s.endTime.length === 5 ? s.endTime : s.endTime.slice(0, 5),
-            slotCapacity: Math.min(50, Math.max(1, s.slotCapacity || 1)),
-          })),
+          timeSlots: timePayload(),
         }),
       });
       const data = await res.json();
@@ -146,46 +233,138 @@ export default function NewCenterDoctorPage() {
         <CardHeader>
           <CardTitle className="text-base">بيانات الطبيب وأوقات العمل</CardTitle>
           <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-            يُنشأ تلقائياً سجل <strong>عيادة</strong> للطبيب مرتبطاً بمركزك، وتُربط أوقات العمل بهذه العيادة حتى
-            يظهر الحجز للمرضى بشكل صحيح. حقل <strong>عدد الأدوار</strong> يحدّ كم مريضاً يمكنهم الحجز في نفس
-            فترة الوقت (مثلاً 2 = دوران في نفس الساعة).
+            إن كان الطبيب <strong>مسجّلاً في المنصة</strong>، أدخل <strong>البريد الإلكتروني المسجّل لدينا</strong> واختر
+            اسمه من القائمة — يُرسل له <strong>طلب انضمام</strong> ويُخفى إنشاء بريد وكلمة مرور. عند موافقته تُضاف
+            عيادة المركز تلقائياً مع الأوقات التي تضعها هنا. إن لم يكن مسجّلاً، املأ البيانات الكاملة لإنشاء حساب
+            جديد.
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">الاسم الكامل</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">البريد الإلكتروني (لتسجيل الدخول)</Label>
-              <Input id="email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="lookupEmail">البريد للبحث عن طبيب مسجّل</Label>
               <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
+                id="lookupEmail"
+                type="email"
+                dir="ltr"
+                autoComplete="off"
+                value={lookupEmail}
+                onChange={(e) => setLookupEmail(e.target.value)}
+                placeholder="نفس البريد المستخدم في تسجيل الدخول للمنصة"
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="phone">الهاتف</Label>
-              <Input id="phone" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              <p className="text-xs text-gray-500">
+                اكتب البريد الكامل؛ يتم البحث تلقائياً. لإضافة طبيب جديد بالكامل تجاهل هذا الحقل واملأ القسم أدناه.
+              </p>
             </div>
 
-            <div className="grid gap-2 w-full min-w-0">
-              <Label>التخصص</Label>
-              <DropdownSelect
-                value={specialtyId}
-                onChange={setSpecialtyId}
-                options={specialtyOptions}
-                placeholder="اختر التخصص"
-              />
-            </div>
+            {lookupLoading && !linkedDoctor ? (
+              <p className="text-xs text-blue-600 flex items-center gap-2">
+                <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-blue-500" />
+                جاري البحث في المنصة...
+              </p>
+            ) : null}
+
+            {!linkedDoctor && platformMatches.length > 0 ? (
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 space-y-2">
+                <p className="text-xs font-semibold text-blue-900 flex items-center gap-1">
+                  <IconUser className="h-3.5 w-3.5" />
+                  طبيب مسجّل — اختر للطلب بالموافقة
+                </p>
+                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                  {platformMatches.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setLinkedDoctor(m)}
+                      className={cn(
+                        "text-right rounded-lg border px-3 py-2.5 text-sm transition-colors",
+                        "border-blue-200 bg-white hover:border-blue-400 hover:bg-blue-50"
+                      )}
+                    >
+                      <span className="font-bold text-gray-900">د. {m.name}</span>
+                      <span className="block text-xs text-blue-700 mt-0.5">{m.specialtyAr || "—"}</span>
+                      {m.email ? (
+                        <span className="block text-[11px] text-slate-500 mt-1 dir-ltr text-right">{m.email}</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {linkedDoctor ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-800">طبيب مسجّل — طلب انضمام</p>
+                    <p className="font-bold text-gray-900 mt-1">د. {linkedDoctor.name}</p>
+                    <p className="text-sm text-emerald-900">{linkedDoctor.specialtyAr || "—"}</p>
+                    {linkedDoctor.email ? (
+                      <p className="text-xs text-slate-600 mt-1 dir-ltr">{linkedDoctor.email}</p>
+                    ) : null}
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setLinkedDoctor(null)}>
+                    تغيير
+                  </Button>
+                </div>
+                <p className="text-xs text-emerald-900/90 leading-relaxed">
+                  لن يُنشأ حساب جديد. بعد «إرسال الطلب» ستنتظر موافقة الطبيب من لوحته. عند القبول تُضاف عيادة
+                  مركزك إلى عياداته مع الأوقات أدناه.
+                </p>
+              </div>
+            ) : null}
+
+            {!linkedDoctor ? (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">الاسم الكامل</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required={!linkedDoctor} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">البريد الإلكتروني (لتسجيل الدخول)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    dir="ltr"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required={!linkedDoctor}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">كلمة المرور</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required={!linkedDoctor}
+                    minLength={6}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">الهاتف</Label>
+                  <Input
+                    id="phone"
+                    dir="ltr"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="مثال: 0599123456"
+                    required={!linkedDoctor}
+                  />
+                </div>
+
+                <div className="grid gap-2 w-full min-w-0">
+                  <Label>التخصص</Label>
+                  <DropdownSelect
+                    value={specialtyId}
+                    onChange={setSpecialtyId}
+                    options={specialtyOptions}
+                    placeholder="اختر التخصص"
+                  />
+                </div>
+              </>
+            ) : null}
 
             <div className="grid gap-2">
               <Label htmlFor="fee">رسوم المريض للمركز (₪)</Label>
@@ -297,7 +476,11 @@ export default function NewCenterDoctorPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "جاري الحفظ..." : "حفظ وإضافة الطبيب"}
+              {loading
+                ? "جاري الحفظ..."
+                : linkedDoctor
+                  ? "إرسال طلب انضمام للطبيب"
+                  : "حفظ وإضافة الطبيب"}
             </Button>
           </form>
         </CardContent>

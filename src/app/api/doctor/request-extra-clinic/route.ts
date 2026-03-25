@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { doctorMayAddExtraClinicsWhileLinkedToCenter } from "@/lib/doctor-extra-clinics";
 import { notifyPlatformAdmins } from "@/lib/notifications";
 import { EXTRA_CLINIC_ANNUAL_FEE_NIS } from "@/lib/subscription-pricing";
 
@@ -14,7 +15,9 @@ export async function POST() {
 
     const { data: doctor, error } = await supabaseAdmin
       .from("Doctor")
-      .select("id, medicalCenterId, userId, canAddExtraClinics, user:User(name)")
+      .select(
+        "id, medicalCenterId, userId, canAddExtraClinics, subscriptionPeriod, subscriptionEndDate, subscriptionPlan, user:User(name)"
+      )
       .eq("userId", session.user.id)
       .maybeSingle();
 
@@ -26,8 +29,11 @@ export async function POST() {
     if (!mid) {
       return NextResponse.json({ error: "هذا الطلب لأطباء المركز الطبي فقط" }, { status: 400 });
     }
-    if ((doctor as { canAddExtraClinics?: boolean }).canAddExtraClinics) {
-      return NextResponse.json({ message: "تم تفعيل إضافة العيادات مسبقاً" });
+    if (doctorMayAddExtraClinicsWhileLinkedToCenter(doctor as Parameters<typeof doctorMayAddExtraClinicsWhileLinkedToCenter>[0])) {
+      return NextResponse.json({
+        message:
+          "يمكنك إضافة عيادات من صفحة «العيادات والمواعيد» دون طلب — لديك اشتراك منفصل في المنصة أو تم تفعيل الخيار من الإدارة.",
+      });
     }
 
     const name =

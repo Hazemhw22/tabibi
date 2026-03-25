@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
+import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 import type { DashboardSearchResult } from "@/lib/dashboard-search-types";
 
 function match(q: string, ...fields: (string | undefined | null)[]) {
@@ -31,14 +32,18 @@ export async function GET(req: Request) {
         return NextResponse.json({ results: [] });
       }
 
-      const { data: doctors } = await supabaseAdmin
-        .from("Doctor")
-        .select(
-          `id, status, consultationFee,
+      const linkedIds = await getLinkedDoctorIdsForCenter(centerId);
+      const { data: doctors } =
+        linkedIds.length > 0
+          ? await supabaseAdmin
+              .from("Doctor")
+              .select(
+                `id, status, consultationFee,
            user:User(name, email, phone),
            specialty:Specialty(nameAr)`
-        )
-        .eq("medicalCenterId", centerId);
+              )
+              .in("id", linkedIds)
+          : { data: [] as Record<string, unknown>[] };
 
       for (const d of doctors ?? []) {
         const u = Array.isArray(d.user) ? d.user[0] : d.user;

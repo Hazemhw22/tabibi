@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
+import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 /** إحصائيات سريعة للوحة المركز */
 export async function GET() {
@@ -21,12 +22,7 @@ export async function GET() {
       .eq("id", centerId)
       .single();
 
-    const doctorIds = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("medicalCenterId", centerId);
-
-    const ids = (doctorIds.data ?? []).map((d) => d.id);
+    const ids = await getLinkedDoctorIdsForCenter(centerId);
     let appointmentsCount = 0;
     let patientsDistinct = 0;
 

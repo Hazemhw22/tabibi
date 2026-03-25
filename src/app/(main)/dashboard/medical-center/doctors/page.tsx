@@ -24,6 +24,13 @@ import { DropdownSelect } from "@/components/ui/dropdown-select";
 
 type Slot = { id: string; dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean };
 
+type PendingInvite = {
+  id: string;
+  createdAt: string;
+  doctorName: string;
+  specialtyAr: string;
+};
+
 type Doc = {
   id: string;
   status: string;
@@ -94,6 +101,7 @@ function statusBadge(status: string) {
 
 export default function CenterDoctorsPage() {
   const [doctors, setDoctors] = useState<Doc[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("");
@@ -107,6 +115,15 @@ export default function CenterDoctorsPage() {
         else setDoctors(j.doctors ?? []);
       })
       .catch(() => setErr("تعذر التحميل"));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/medical-center/doctor-invites")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.invites) setPendingInvites(j.invites);
+      })
+      .catch(() => {});
   }, []);
 
   const specialtyOptions = useMemo(() => {
@@ -164,6 +181,29 @@ export default function CenterDoctorsPage() {
         </Button>
       </div>
       {err && <p className="text-red-600 text-sm mb-4">{err}</p>}
+
+      {pendingInvites.length > 0 ? (
+        <Card className="mb-6 border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20">
+          <CardContent className="py-4 space-y-3">
+            <p className="text-sm font-bold text-amber-950 dark:text-amber-100">في انتظار موافقة الطبيب</p>
+            <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200/90">
+              {pendingInvites.map((inv) => (
+                <li key={inv.id} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-amber-200/60 pb-2 last:border-0 dark:border-amber-800/40">
+                  <span>
+                    د. {inv.doctorName || "—"}
+                    {inv.specialtyAr ? (
+                      <Badge variant="outline" className="me-2 text-xs border-amber-300">
+                        {inv.specialtyAr}
+                      </Badge>
+                    ) : null}
+                  </span>
+                  <span className="text-xs text-amber-800/80">طلب انضمام مرسل</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {doctors.length === 0 ? (
         <Card className="dark:border-gray-700 dark:bg-gray-900/40">

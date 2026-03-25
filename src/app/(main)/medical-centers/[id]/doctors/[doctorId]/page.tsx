@@ -12,6 +12,7 @@ import IconShare from "@/components/icon/icon-share";
 import IconBuilding from "@/components/icon/icon-building";
 import { DAYS_AR } from "@/lib/utils";
 import { auth } from "@/lib/auth";
+import { doctorIsLinkedToCenter } from "@/lib/medical-center-doctors";
 import FavoriteButton from "@/components/ui/favorite-button";
 import CenterDoctorBooking from "./center-doctor-booking";
 
@@ -42,11 +43,11 @@ async function getCenterDoctor(centerId: string, doctorId: string) {
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId, slotCapacity)
     `)
     .eq("id", doctorId)
-    .eq("medicalCenterId", centerId)
     .eq("status", "APPROVED")
     .single();
 
   if (error || !doctor) return null;
+  if (!(await doctorIsLinkedToCenter(doctorId, centerId))) return null;
 
   const slots = (doctor.timeSlots ?? []).filter((s: { isActive?: boolean }) => s.isActive !== false);
   slots.sort((a: { dayOfWeek: number }, b: { dayOfWeek: number }) => a.dayOfWeek - b.dayOfWeek);

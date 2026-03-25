@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 /** تفاصيل مركز + كل الأطباء المعتمدين المرتبطين به (بمن فيهم غير الظاهرين في قائمة الأطباء العامة) */
 export async function GET(
@@ -20,9 +21,13 @@ export async function GET(
       return NextResponse.json({ error: "المركز غير موجود" }, { status: 404 });
     }
 
-    const { data: doctors, error: dErr } = await supabaseAdmin
-      .from("Doctor")
-      .select(`
+    const doctorIds = await getLinkedDoctorIdsForCenter(id);
+    let doctors: unknown[] = [];
+    let dErr: { message?: string } | null = null;
+    if (doctorIds.length > 0) {
+      const res = await supabaseAdmin
+        .from("Doctor")
+        .select(`
         id,
         consultationFee,
         rating,
@@ -32,9 +37,12 @@ export async function GET(
         user:User(name, phone),
         specialty:Specialty(nameAr)
       `)
-      .eq("medicalCenterId", id)
-      .eq("status", "APPROVED")
-      .order("createdAt", { ascending: true });
+        .in("id", doctorIds)
+        .eq("status", "APPROVED")
+        .order("createdAt", { ascending: true });
+      doctors = res.data ?? [];
+      dErr = res.error;
+    }
 
     if (dErr) {
       console.error("Center doctors:", dErr);

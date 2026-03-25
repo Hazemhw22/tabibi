@@ -155,6 +155,9 @@ model MedicalCenter {
   doctors          Doctor[]
   emergencyVisits  EmergencyVisit[]
   appointments     Appointment[] @relation("CenterAppointments")
+  /// عيادات مرتبطة بهذا المركز (فرع المركز لكل طبيب)
+  linkedClinics    Clinic[]
+  doctorInvites    MedicalCenterDoctorInvite[]
 }
 
 /// زيارة طوارئ بدون حجز مسبق
@@ -173,32 +176,42 @@ model EmergencyVisit {
   medicalCenter MedicalCenter @relation(fields: [medicalCenterId], references: [id], onDelete: Cascade)
 }
 
+/// مطابق لجدول Doctor في Supabase (الحقول والمعاني كما في لوحة البيانات)
 model Doctor {
-  id                 String       @id @default(cuid())
-  userId             String       @unique
-  specialtyId        String
-  locationId         String?      // موقع العمل (مدينة/قرية من الضفة الغربية)
-  bio                String?
-  experienceYears    Int          @default(0)
-  consultationFee    Float        @default(0)
-  /// للعرض للمريض بجانب السعر: CONSULTATION = استشارة طبية، EXAMINATION = كشفية
-  patientFeeServiceType String    @default("CONSULTATION")
-  /// للأطباء المرتبطين بمركز: مستحقات الطبيب من العيادة (حساب الطبيب — لا يُدفع مباشرة من المريض)
-  doctorClinicFee    Float        @default(0)
-  licenseNumber      String?
-  status             DoctorStatus @default(PENDING)
-  rating             Float        @default(0)
-  totalReviews       Int          @default(0)
-  visibleToPatients  Boolean      @default(true) // false = لا يظهر في صفحات المرضى، فقط مرضى العيادة
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  specialtyId     String
+  bio             String?
+  experienceYears Int          @default(0)
+  consultationFee Float        @default(0)
+  licenseNumber   String?
+  status          DoctorStatus @default(PENDING)
+  rating          Float        @default(0)
+  totalReviews    Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  /// basic | premium | enterprise
+  subscriptionPlan    String?
+  /// monthly | half_year | yearly
+  subscriptionPeriod  String?
+  /// تاريخ انتهاء الاشتراك
+  subscriptionEndDate DateTime?
+  /// رقم الواتساب للتواصل
+  whatsapp            String?
+  visibleToPatients   Boolean  @default(true)
+  /// معرف الموقع من قائمة مدن وقرى الضفة الغربية
+  locationId          String?
   /// إن وُجد: الطبيب ضمن هذا المركز الطبي (يظهر في صفحة المركز)
-  medicalCenterId    String?
-  /// اشتراك المنصة (أطباء المركز: سنوي ضمن باقة المركز)
-  subscriptionPeriod   String?
-  subscriptionEndDate  DateTime?
-  /// يضيف عيادة ثانية فقط بعد تفعيل مشرف المنصة (+500 ₪ سنوياً)
-  canAddExtraClinics   Boolean      @default(false)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  medicalCenterId     String?
+  /// مستحقات الطبيب من العيادة (حساب الطبيب) — المريض يدفع للمركز وليس مباشرة للطبيب
+  doctorClinicFee     Float    @default(0)
+  /// true إذا سمح مشرف المنصة بإضافة عيادة جديدة (زيادة سعر)
+  canAddExtraClinics  Boolean  @default(false)
+  /// CONSULTATION | EXAMINATION — للعرض بجانب السعر للمريض
+  patientFeeServiceType String @default("CONSULTATION")
+  /// MALE | FEMALE
+  gender              String?
 
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   specialty          Specialty          @relation(fields: [specialtyId], references: [id])
@@ -212,6 +225,29 @@ model Doctor {
   medicalNotes       ClinicMedicalNote[]
   patientCarePlans   ClinicPatientCarePlan[]
   platformPatientCarePlans PlatformPatientCarePlan[]
+  medicalCenterInvites     MedicalCenterDoctorInvite[]
+}
+
+/// طلب من مركز طبي لربط طبيب مسجّل مسبقاً — يظهر للطبيب للموافقة أو الرفض
+model MedicalCenterDoctorInvite {
+  id                      String    @id @default(cuid())
+  medicalCenterId         String
+  doctorId                String
+  /// PENDING | ACCEPTED | REJECTED
+  status                  String    @default("PENDING")
+  consultationFee         Float
+  doctorClinicFee         Float     @default(0)
+  patientFeeServiceType   String    @default("CONSULTATION")
+  proposedTimeSlotsJson   String    @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  respondedAt             DateTime?
+
+  medicalCenter MedicalCenter @relation(fields: [medicalCenterId], references: [id], onDelete: Cascade)
+  doctor        Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([medicalCenterId, status])
+  @@index([doctorId, status])
 }
 
 model Clinic {
@@ -224,10 +260,13 @@ model Clinic {
   mapUrl     String?
   isMain     Boolean @default(false)
   locationId String? // منطقة هذه العيادة (مدينة/قرية من الضفة الغربية)
+  /// عند الربط بمركز طبي (فرع المركز للطبيب)
+  medicalCenterId String?
 
-  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-  timeSlots    TimeSlot[]
+  doctor         Doctor         @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  medicalCenter  MedicalCenter? @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  appointments   Appointment[]
+  timeSlots      TimeSlot[]
 }
 
 model TimeSlot {
