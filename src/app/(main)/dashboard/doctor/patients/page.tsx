@@ -260,6 +260,7 @@ export default async function DoctorPatientsPage({
         defaultFee={(doctor as { consultationFee?: number }).consultationFee ?? 0}
         isDentist={isDentist}
         carePlanType={carePlanType}
+        doctorDisplayName={session.user?.name ?? ""}
       />
     </div>
   );

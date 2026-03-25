@@ -75,6 +75,11 @@ function LoginCard() {
         </div>
         <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
           <p className="text-sm text-gray-500">
+            <Link href="/forgot-password" className="text-blue-600 font-medium hover:underline">
+              نسيت كلمة المرور؟
+            </Link>
+          </p>
+          <p className="text-sm text-gray-500">
             ليس لديك حساب؟{" "}
             <Link href="/register" className="text-emerald-600 font-semibold hover:underline">
               إنشاء حساب جديد

@@ -106,6 +106,11 @@ function LoginDoctorForm() {
               </button>
             </div>
             {errors.password && <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>}
+            <div className="text-left">
+              <Link href="/forgot-password/doctor" className="text-sm text-blue-600 hover:underline">
+                نسيت كلمة المرور؟
+              </Link>
+            </div>
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
             {loading ? <><IconLoader className="h-4 w-4 animate-spin" /> جاري تسجيل الدخول...</> : "تسجيل الدخول"}

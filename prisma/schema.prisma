@@ -359,9 +359,12 @@ model ClinicPatientCarePlan {
   id              String   @id @default(cuid())
   doctorId        String
   clinicPatientId String   @unique
-  /// OB_GYN | PEDIATRICS | ORTHOPEDICS | UROLOGY_NEPHROLOGY | CARDIOLOGY | DENTAL | GENERIC
+  /// FETAL_IMAGING | OB_GYN | PEDIATRICS | ORTHOPEDICS | NEPHROLOGY | UROLOGY_NEPHROLOGY | CARDIOLOGY |
+  /// PSYCHIATRY | OPHTHALMOLOGY | ENT | PHYSICAL_MEDICINE_REHAB | SPORTS_MEDICINE | OCCUPATIONAL_MEDICINE |
+  /// GASTROENTEROLOGY | ENDOCRINOLOGY | RHEUMATOLOGY | INFECTIOUS_DISEASE | ONCOLOGY | HEMATOLOGY | PULMONOLOGY |
+  /// DENTAL | GENERIC — وحقل data.intlClinical للخطط المنظمة
   planType        String
-  /// بيانات الخطة حسب planType (حاسبة الحمل، أعضاء، إصابات، إلخ)
+  /// بيانات الخطة: followUpVisits[] على الجذر (موحّد)، intlClinical، إلخ
   data            Json     @default("{}")
   doctorNotes     String?
   createdAt       DateTime @default(now())
@@ -376,6 +379,7 @@ model PlatformPatientCarePlan {
   id            String   @id @default(cuid())
   doctorId      String
   patientUserId String
+  /// نفس قيم planType في ClinicPatientCarePlan
   planType      String
   data          Json     @default("{}")
   doctorNotes   String?

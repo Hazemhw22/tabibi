@@ -51,6 +51,7 @@ export default function DoctorSettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
+  const [linkedToMedicalCenter, setLinkedToMedicalCenter] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function DoctorSettingsPage() {
             setSelectedSpecialtyId(data.doctor.specialty.id);
           }
           if (data.doctor.gender) setGender(data.doctor.gender as "MALE" | "FEMALE");
+          setLinkedToMedicalCenter(Boolean(data.doctor.medicalCenterId));
           // تحميل صورة الطبيب من قاعدة البيانات أولاً، ثم من الـ session
           const dbImage = data.doctor.user?.image ?? data.doctor.User?.image ?? null;
           setAvatarUrl(dbImage || session?.user?.image || null);
@@ -100,6 +102,7 @@ export default function DoctorSettingsPage() {
           if (data.doctor.locationId) setLocationId(data.doctor.locationId);
           if (data.doctor.specialty?.id) setSelectedSpecialtyId(data.doctor.specialty.id);
           if (data.doctor.gender) setGender(data.doctor.gender as "MALE" | "FEMALE");
+          setLinkedToMedicalCenter(Boolean(data.doctor.medicalCenterId));
         }
       });
   };
@@ -330,7 +333,18 @@ export default function DoctorSettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1.5">
-                عند اختيار &quot;عدم العرض&quot; لن يظهر كارتك للمرضى ولن يستطيعوا الحجز عبر المنصة. فقط مرضى عيادتك يمكنهم الوصول إليك ويتلقون الرسائل على الهاتف.
+                عند «عدم العرض» لن يظهر ملفك في البحث العام عن الأطباء ولا في الصفحة الرئيسية للمرضى.
+                {linkedToMedicalCenter ? (
+                  <>
+                    {" "}
+                    وبما أنك مرتبطاً بمركز طبي، يبقى ظهورك وصفحة الحجز <strong>داخل صفحة ذلك المركز</strong> فقط، مع بقائك في لوحة تحكم المركز.
+                  </>
+                ) : (
+                  <>
+                    {" "}
+                    لن يتمكن مرضى جدد من حجزك عبر المنصة العامة؛ مرضى عيادتك المرتبطين بملفك يبقون كما هم.
+                  </>
+                )}
               </p>
             </div>
 

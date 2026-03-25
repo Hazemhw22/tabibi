@@ -45,6 +45,11 @@ export default function NewPatientPage() {
       const data = await res.json();
       if (res.ok) {
         toast.success("تم إضافة المريض بنجاح");
+        if (data.setupSmsSent === true) {
+          toast.message("أُرسلت للمريض رسالة برابط تعيين كلمة المرور.");
+        } else if (data.setupSmsSent === false) {
+          toast.warning("لم تُرسل رسالة رابط كلمة المرور — تحقق من الرقم وإعدادات SMS/واتساب.");
+        }
         router.push("/dashboard/doctor/patients");
         router.refresh();
       } else {

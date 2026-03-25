@@ -112,6 +112,7 @@ type Props = {
   defaultFee: number;
   isDentist: boolean;
   carePlanType: CarePlanType;
+  doctorDisplayName?: string;
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -126,6 +127,7 @@ export default function PatientsView({
   defaultFee,
   isDentist,
   carePlanType,
+  doctorDisplayName = "",
 }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -517,6 +519,13 @@ export default function PatientsView({
       const data = await res.json();
       if (res.ok) {
         toast.success("تم إضافة المريض ✓");
+        if (data.setupSmsSent === true) {
+          toast.message("أُرسلت للمريض رسالة برابط تعيين كلمة المرور (إن وُجدت إعدادات SMS/واتساب).");
+        } else if (data.setupSmsSent === false) {
+          toast.warning(
+            "لم تُرسل رسالة رابط كلمة المرور. أضف رقماً صحيحاً وتحقق من SMS_API_ID أو Twilio في الإعدادات.",
+          );
+        }
         setAddOpen(false);
         setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
         router.refresh();
@@ -1586,6 +1595,14 @@ export default function PatientsView({
                     patientId={selectedPatient.id}
                     patientSource={selectedPatient.source}
                     carePlanType={carePlanType}
+                    patientName={selectedPatient.name}
+                    doctorDisplayName={doctorDisplayName}
+                    patientPrintDemographics={{
+                      fileNumber: selectedPatient.fileNumber,
+                      gender: selectedPatient.gender,
+                      dateOfBirth: selectedPatient.dateOfBirth,
+                      guardian: null,
+                    }}
                   />
                 </div>
               )}

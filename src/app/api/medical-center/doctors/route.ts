@@ -47,7 +47,7 @@ const createDoctorSchema = z.object({
     .min(1),
 });
 
-/** أطباء المركز مع أوقات العمل المختصرة */
+/** أطباء المركز مع أوقات العمل المختصرة — كل المرتبطين بالمركز بغض النظر عن visibleToPatients */
 export async function GET() {
   try {
     const session = await auth();
@@ -63,6 +63,7 @@ export async function GET() {
       .select(`
         id,
         status,
+        visibleToPatients,
         consultationFee,
         doctorClinicFee,
         experienceYears,

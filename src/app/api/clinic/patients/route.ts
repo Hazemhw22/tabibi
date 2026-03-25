@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { linkClinicPatientAndSendPasswordSetup } from "@/lib/clinic-patient-invite";
 import { z } from "zod";
 
 const schema = z.object({
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
         notes: data.notes || null,
         fileNumber: data.fileNumber || null,
       })
-      .select("id, name, phone, email, fileNumber")
+      .select("id, name, phone, whatsapp, email, fileNumber, userId")
       .single();
 
     if (error) {
@@ -58,7 +59,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "فشل إضافة المريض. تأكد من وجود جدول ClinicPatient." }, { status: 500 });
     }
 
-    return NextResponse.json({ patient }, { status: 201 });
+    const phoneRaw = (data.whatsapp || data.phone || "").trim();
+    let setupSmsSent: boolean | null = null;
+    let mergedPatient = patient;
+    if (phoneRaw.replace(/\D/g, "").length >= 9) {
+      const invite = await linkClinicPatientAndSendPasswordSetup({
+        clinicPatientId: patient.id,
+        patientName: data.name,
+        phoneRaw,
+      });
+      setupSmsSent = invite.setupSmsSent;
+      if (invite.userId) {
+        mergedPatient = { ...patient, userId: invite.userId };
+      }
+    }
+
+    return NextResponse.json({ patient: mergedPatient, setupSmsSent }, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
     console.error(err);

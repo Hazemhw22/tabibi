@@ -18,11 +18,12 @@ export function normalizePatientPhone(input: string): {
 
 /**
  * يبحث عن مستخدم بدور مريض أو ينشئ حساباً جديداً (للحجز من المركز الطبي).
+ * `created: true` عند إنشاء حساب جديد في Auth — مفيد لإرسال رابط ضبط كلمة المرور.
  */
 export async function findOrCreatePatientByPhone(
   name: string,
   phoneRaw: string
-): Promise<{ id: string } | { error: string }> {
+): Promise<{ id: string; created: boolean } | { error: string }> {
   const { canonicalPhone, normalizedPhone, email } = normalizePatientPhone(phoneRaw);
 
   const { data: existing } = await supabaseAdmin
@@ -36,7 +37,7 @@ export async function findOrCreatePatientByPhone(
       return { error: "رقم الهاتف مسجّل كحساب ليس مريضاً" };
     }
     await supabaseAdmin.from("User").update({ name }).eq("id", existing.id);
-    return { id: existing.id };
+    return { id: existing.id, created: false };
   }
 
   const password = randomBytes(18).toString("hex");
@@ -75,5 +76,5 @@ export async function findOrCreatePatientByPhone(
     return { error: "فشل حفظ بيانات المريض" };
   }
 
-  return { id: userId };
+  return { id: userId, created: true };
 }

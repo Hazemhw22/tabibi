@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-/** تفاصيل مركز + الأطباء المعتمدين الظاهرين للمرضى */
+/** تفاصيل مركز + كل الأطباء المعتمدين المرتبطين به (بمن فيهم غير الظاهرين في قائمة الأطباء العامة) */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -41,11 +41,10 @@ export async function GET(
       return NextResponse.json({ error: "تعذر تحميل الأطباء" }, { status: 500 });
     }
 
-    const list = (doctors ?? []).filter((d: { visibleToPatients?: boolean }) => d.visibleToPatients !== false);
-
+    /** كل أطباء المركز المعتمدين — بمن فيهم غير الظاهرين في قائمة الأطباء العامة */
     return NextResponse.json({
       center,
-      doctors: list,
+      doctors: doctors ?? [],
     });
   } catch (e) {
     console.error(e);

@@ -62,3 +62,27 @@ export async function sendTransactionEmail(options: {
   }
 }
 
+/** رابط استعادة كلمة المرور (للمستخدمين الذين لديهم بريد حقيقي) */
+export async function sendPasswordResetEmail(to: string, resetLink: string): Promise<boolean> {
+  if (!resend || !apiKey) {
+    console.warn("[EMAIL] Resend غير مضبوط — لم يُرسل بريد استعادة كلمة المرور.");
+    return false;
+  }
+  const subject = "استعادة كلمة المرور — Tabibi";
+  const text = `اضغط على الرابط لتحديد كلمة مرور جديدة:\n${resetLink}\n\nإذا لم تطلب ذلك، تجاهل الرسالة.`;
+  const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; padding: 20px; direction: rtl;">
+  <p>اضغط على الزر أدناه لتحديد كلمة مرور جديدة لحسابك على Tabibi.</p>
+  <p><a href="${resetLink}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;">تعيين كلمة المرور</a></p>
+  <p style="font-size:12px;color:#666;">أو انسخ الرابط: <span dir="ltr">${resetLink}</span></p>
+</body></html>`;
+  try {
+    await resend.emails.send({ from: fromEmail, to, subject, html, text });
+    console.log("[EMAIL] بريد استعادة كلمة المرور →", to);
+    return true;
+  } catch (err) {
+    console.error("[EMAIL] فشل بريد استعادة كلمة المرور:", err);
+    return false;
+  }
+}
+

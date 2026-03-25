@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import IconPrinter from "@/components/icon/icon-printer";
 import { format, differenceInDays, addDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import IconLoader from "@/components/icon/icon-loader";
@@ -13,7 +14,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CarePlanType } from "@/lib/specialty-plan-registry";
-import { CARE_PLAN_LABELS } from "@/lib/specialty-plan-registry";
+import { CARE_PLAN_LABELS, isStructuredIntlCarePlan } from "@/lib/specialty-plan-registry";
 import { PregnancyWeekSvg } from "./pregnancy-week-svg";
 import {
   PediatricsBodySvg,
@@ -21,13 +22,38 @@ import {
   type PediatricOrganId,
 } from "./pediatrics-body-svg";
 import { CardiologyHeartSvg, CARDIO_ZONES, type CardiologyZoneId } from "./cardiology-heart-svg";
+import { FetalImagingCarePlanBlock } from "./fetal-imaging-care-plan-block";
+import { ClinicalIntlCarePlanBlock } from "./clinical-intl-care-plan-block";
+import { CarePlanFollowUpsSection } from "./care-plan-follow-ups-section";
 import { cn } from "@/lib/utils";
+import { printHtmlDocument } from "@/lib/print-html";
+import {
+  buildCarePlanLetterheadHtml,
+  type CarePlanLetterheadPatient,
+} from "@/lib/care-plan-print-html";
+import { getFollowUpVisitsFromPlanData } from "@/lib/care-plan-follow-ups";
+import { serializeCarePlanSectionsForPrint } from "@/lib/care-plan-print-serialize";
+
+function doctorDisplayNameAr(name: string | undefined): string {
+  const n = (name ?? "").trim();
+  if (!n) return "د. —";
+  if (/^د\.?\s*/u.test(n) || /^د\s/u.test(n)) return n;
+  return `د. ${n}`;
+}
 
 type Props = {
   carePlanType: CarePlanType;
   /** مريض عيادة: معرف ClinicPatient | مريض منصة: معرف User (المريض) */
   patientId: string;
   patientSource: "clinic" | "platform";
+  patientName?: string;
+  doctorDisplayName?: string;
+  patientPrintDemographics?: {
+    fileNumber?: string | null;
+    gender?: string | null;
+    dateOfBirth?: string | null;
+    guardian?: string | null;
+  };
 };
 
 function newId(prefix: string) {
@@ -39,7 +65,14 @@ function carePlanApiUrl(patientId: string, source: "clinic" | "platform") {
   return `/api/doctor/platform-patients/${patientId}/care-plan`;
 }
 
-export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props) {
+export function CarePlanPanel({
+  patientId,
+  patientSource,
+  carePlanType,
+  patientName = "",
+  doctorDisplayName = "",
+  patientPrintDemographics,
+}: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,6 +119,29 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
   useEffect(() => {
     void load();
   }, [load]);
+
+  const printPatient: CarePlanLetterheadPatient = useMemo(
+    () => ({
+      name: patientName || "—",
+      recordId: patientId,
+      fileNumber: patientPrintDemographics?.fileNumber,
+      gender: patientPrintDemographics?.gender,
+      dateOfBirth: patientPrintDemographics?.dateOfBirth,
+      guardian: patientPrintDemographics?.guardian,
+    }),
+    [patientId, patientName, patientPrintDemographics],
+  );
+
+  const doctorAr = doctorDisplayNameAr(doctorDisplayName);
+
+  const printBridge = useMemo(
+    () => ({
+      doctorDisplayNameAr: doctorAr,
+      patient: printPatient,
+      doctorNotes,
+    }),
+    [doctorAr, printPatient, doctorNotes],
+  );
 
   const save = async () => {
     setSaving(true);
@@ -137,24 +193,50 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
 
   const title = CARE_PLAN_LABELS[carePlanType] ?? "خطة العلاج";
 
+  const printStandardPlan = () => {
+    if (typeof window === "undefined") return;
+    if (carePlanType === "FETAL_IMAGING" || isStructuredIntlCarePlan(carePlanType)) return;
+    const sections = serializeCarePlanSectionsForPrint(carePlanType, data);
+    const html = buildCarePlanLetterheadHtml({
+      origin: window.location.origin,
+      documentTitleAr: title,
+      issuedAtAr: new Date().toLocaleString("ar", { dateStyle: "medium", timeStyle: "short" }),
+      doctor: { displayNameAr: doctorAr },
+      patient: printPatient,
+      sections,
+      followUpVisits: getFollowUpVisitsFromPlanData(data, carePlanType),
+      recommendationsText: doctorNotes,
+    });
+    printHtmlDocument(html, title);
+  };
+
+  const showStandardPrint =
+    carePlanType !== "FETAL_IMAGING" && !isStructuredIntlCarePlan(carePlanType);
+
   return (
     <div className="space-y-6 min-h-[200px]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <IconClipboardText className="h-4 w-4 text-blue-600" />
-            {title}
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            البيانات مرتبطة بهذا المريض وحسب تخصصك. المراجعات في قسم النساء والتوليد لا تُسجّل كتكلفة في الخطة.
-          </p>
+        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <IconClipboardText className="h-4 w-4 text-blue-600" />
+          {title}
+        </h3>
+        <div className="flex flex-wrap items-center gap-2">
+          {showStandardPrint && (
+            <Button type="button" size="sm" variant="outline" onClick={printStandardPlan} className="gap-2">
+              <IconPrinter className="h-4 w-4" />
+              طباعة / PDF
+            </Button>
+          )}
+          <Button type="button" size="sm" onClick={() => void save()} disabled={saving} className="gap-2">
+            {saving ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconCircleCheck className="h-4 w-4" />}
+            حفظ الخطة
+          </Button>
         </div>
-        <Button type="button" size="sm" onClick={() => void save()} disabled={saving} className="gap-2">
-          {saving ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconCircleCheck className="h-4 w-4" />}
-          حفظ الخطة
-        </Button>
       </div>
 
+      {carePlanType === "FETAL_IMAGING" && (
+        <FetalImagingCarePlanBlock data={data} setData={setData} printBridge={printBridge} />
+      )}
       {carePlanType === "OB_GYN" && (
         <ObGynBlock data={data} setData={setData} />
       )}
@@ -170,22 +252,52 @@ export function CarePlanPanel({ patientId, patientSource, carePlanType }: Props)
       {carePlanType === "CARDIOLOGY" && (
         <CardiologyBlock data={data} setData={setData} />
       )}
+      {isStructuredIntlCarePlan(carePlanType) && (
+        <ClinicalIntlCarePlanBlock
+          carePlanType={carePlanType}
+          data={data}
+          setData={setData}
+          printBridge={printBridge}
+        />
+      )}
       {(carePlanType === "GENERIC" || carePlanType === "DENTAL") && (
         <GenericBlock data={data} setData={setData} />
       )}
       {/* احتياط: أي نوع غير معروف يعرض الخطة العامة */}
       {![
+        "FETAL_IMAGING",
         "OB_GYN",
         "PEDIATRICS",
         "ORTHOPEDICS",
+        "NEPHROLOGY",
         "UROLOGY_NEPHROLOGY",
         "CARDIOLOGY",
+        "PSYCHIATRY",
+        "OPHTHALMOLOGY",
+        "ENT",
+        "PHYSICAL_MEDICINE_REHAB",
+        "SPORTS_MEDICINE",
+        "OCCUPATIONAL_MEDICINE",
+        "GASTROENTEROLOGY",
+        "ENDOCRINOLOGY",
+        "RHEUMATOLOGY",
+        "INFECTIOUS_DISEASE",
+        "ONCOLOGY",
+        "HEMATOLOGY",
+        "PULMONOLOGY",
         "GENERIC",
         "DENTAL",
       ].includes(carePlanType) && <GenericBlock data={data} setData={setData} />}
 
+      <CarePlanFollowUpsSection data={data} setData={setData} carePlanType={carePlanType} />
+
       <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-2">
-        <label className="text-xs font-semibold text-gray-700">ملاحظات الطبيب (عامة)</label>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-gray-700">ملاحظات الطبيب (عامة)</label>
+          <p className="text-[11px] text-gray-500 leading-snug">
+            خاصة بحسابك فقط؛ أطباء آخرون لهم ملاحظاتهم المنفصلة على نفس المريض (منصة أو ملف عيادة مرتبط بهم).
+          </p>
+        </div>
         <textarea
           value={doctorNotes}
           onChange={(e) => setDoctorNotes(e.target.value)}

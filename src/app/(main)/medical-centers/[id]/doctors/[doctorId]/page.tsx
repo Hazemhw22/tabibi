@@ -44,7 +44,6 @@ async function getCenterDoctor(centerId: string, doctorId: string) {
     .eq("id", doctorId)
     .eq("medicalCenterId", centerId)
     .eq("status", "APPROVED")
-    .eq("visibleToPatients", true)
     .single();
 
   if (error || !doctor) return null;

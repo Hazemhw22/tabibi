@@ -27,6 +27,8 @@ type Slot = { id: string; dayOfWeek: number; startTime: string; endTime: string;
 type Doc = {
   id: string;
   status: string;
+  /** إعداد الطبيب؛ اللوحة تعرض الجميع بغض النظر عن القيمة */
+  visibleToPatients?: boolean | null;
   consultationFee?: number;
   /** مستحقات الطبيب من العيادة (حساب الطبيب) */
   doctorClinicFee?: number;
@@ -52,6 +54,22 @@ function hoursSummary(slots: Slot[]) {
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([day, list]) => `${DAYS_AR[Number(day)]}: ${minMax(list)}`)
     .join(" · ");
+}
+
+function visibilityBadge(visibleToPatients: boolean | null | undefined) {
+  const on = visibleToPatients !== false;
+  if (on) {
+    return (
+      <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-800 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-300">
+        يظهر في البحث العام
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-800 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300">
+      عبر المركز فقط
+    </span>
+  );
 }
 
 function statusBadge(status: string) {
@@ -161,7 +179,6 @@ export default function CenterDoctorsPage() {
           searchPlaceholder="ابحث بالاسم، التخصص، البريد، الهاتف..."
           searchQuery={search}
           onSearchChange={setSearch}
-          summaryLabel="مجموع ما يدفعه المرضى للمركز / مستحقات الأطباء من العيادة (حسب الجدول المعروض)"
           summaryValue={`${formatNumber(totalPatientToCenter, { maximumFractionDigits: 0 })} ₪ | ${formatNumber(totalDoctorFromClinic, { maximumFractionDigits: 0 })} ₪`}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
@@ -184,6 +201,7 @@ export default function CenterDoctorsPage() {
                 <DataTableHeaderCell>الاسم</DataTableHeaderCell>
                 <DataTableHeaderCell>التخصص</DataTableHeaderCell>
                 <DataTableHeaderCell>الحالة</DataTableHeaderCell>
+                <DataTableHeaderCell className="whitespace-nowrap">الظهور للمرضى</DataTableHeaderCell>
                 <DataTableHeaderCell className="whitespace-nowrap">رسوم المريض للمركز</DataTableHeaderCell>
                 <DataTableHeaderCell className="whitespace-nowrap">مستحقات الطبيب من العيادة</DataTableHeaderCell>
                 <DataTableHeaderCell>أوقات العمل</DataTableHeaderCell>
@@ -207,6 +225,7 @@ export default function CenterDoctorsPage() {
                         </Badge>
                       </DataTableCell>
                       <DataTableCell>{statusBadge(d.status)}</DataTableCell>
+                      <DataTableCell>{visibilityBadge(d.visibleToPatients)}</DataTableCell>
                       <DataTableCell>
                         <span className={fee < 0 ? "font-semibold text-red-600 dark:text-red-400" : "font-semibold text-emerald-700 dark:text-emerald-400"}>
                           ₪{formatNumber(fee, { maximumFractionDigits: 0 })}
@@ -249,7 +268,10 @@ export default function CenterDoctorsPage() {
                           </p>
                           <p className="font-semibold text-gray-900 dark:text-white mt-1">د. {d.user?.name ?? "—"}</p>
                         </div>
-                        {statusBadge(d.status)}
+                        <div className="flex flex-col items-end gap-1">
+                          {statusBadge(d.status)}
+                          {visibilityBadge(d.visibleToPatients)}
+                        </div>
                       </div>
                       <Badge variant="secondary">{d.specialty?.nameAr ?? "—"}</Badge>
                       <p className="text-sm space-y-0.5">

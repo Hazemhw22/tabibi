@@ -196,6 +196,7 @@ export default async function DoctorsPage({
               id: string;
               locationId?: string | null;
               gender?: string | null;
+              patientFeeServiceType?: string | null;
               user?: { name?: string; phone?: string; image?: string | null };
               specialty?: { nameAr?: string };
               consultationFee?: number;
@@ -236,30 +237,39 @@ export default async function DoctorsPage({
                   </div>
 
                   <div className="p-3 flex flex-col flex-1">
-                    <Link href={`/doctors/${doctor.id}`} className="block">
-                      <h3 className="font-bold text-gray-900 dark:text-slate-100 text-xs leading-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1">
-                        د. {doctor.user?.name}
-                      </h3>
-                      <span className="inline-block text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-full mt-1">
-                        {doctor.specialty?.nameAr}
-                      </span>
+                    <Link href={`/doctors/${doctor.id}`} className="block min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-tight text-gray-900 transition-colors hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400">
+                          د. {doctor.user?.name}
+                        </h3>
+                        <span className="max-w-[46%] shrink-0 truncate rounded-full bg-blue-50 px-2 py-0.5 text-center text-[10px] font-medium text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                          {doctor.specialty?.nameAr}
+                        </span>
+                      </div>
                     </Link>
 
-                    {regionFullName && (
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <IconMapPin className="h-2.5 w-2.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                        <span className="text-[10px] text-gray-500 dark:text-slate-400 truncate">{regionFullName}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-1 mt-1">
-                      <IconClock className="h-2.5 w-2.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <IconClock className="h-2.5 w-2.5 shrink-0 text-gray-400 dark:text-slate-500" />
                       <span className="text-[10px] text-gray-500 dark:text-slate-400">{doctor.experienceYears} سنوات</span>
                     </div>
 
-                    <div className="mt-2 mb-2">
-                      <span className="text-sm font-bold text-green-600 dark:text-green-400">₪{doctor.consultationFee}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-slate-500 mr-1">/ استشارة</span>
+                    <div className="mt-2 mb-2 flex min-w-0 items-center justify-between gap-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-1">
+                        {regionFullName ? (
+                          <>
+                            <IconMapPin className="h-2.5 w-2.5 shrink-0 text-gray-400 dark:text-slate-500" />
+                            <span className="truncate text-[10px] text-gray-500 dark:text-slate-400">{regionFullName}</span>
+                          </>
+                        ) : (
+                          <span className="min-h-[1em] flex-1" aria-hidden />
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-baseline gap-0.5 whitespace-nowrap">
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400">₪{doctor.consultationFee}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500">
+                          / {doctor.patientFeeServiceType === "EXAMINATION" ? "كشف" : "استشارة"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 mt-auto">

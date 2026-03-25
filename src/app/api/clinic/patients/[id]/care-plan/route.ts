@@ -64,6 +64,7 @@ export async function GET(
       .from("ClinicPatientCarePlan")
       .select("id, planType, data, doctorNotes, updatedAt")
       .eq("clinicPatientId", clinicPatientId)
+      .eq("doctorId", doctor.id)
       .maybeSingle();
 
     if (planErr) {
@@ -132,11 +133,31 @@ export async function PUT(
 
     const now = new Date().toISOString();
 
-    const { data: existing } = await supabaseAdmin
+    const { data: planForThisDoctor } = await supabaseAdmin
       .from("ClinicPatientCarePlan")
       .select("id")
       .eq("clinicPatientId", clinicPatientId)
+      .eq("doctorId", doctor.id)
       .maybeSingle();
+
+    let existingId: string | null = planForThisDoctor?.id ?? null;
+
+    if (!existingId) {
+      const { data: planAny } = await supabaseAdmin
+        .from("ClinicPatientCarePlan")
+        .select("id, doctorId")
+        .eq("clinicPatientId", clinicPatientId)
+        .maybeSingle();
+      if (planAny?.id && planAny.doctorId !== doctor.id) {
+        return NextResponse.json(
+          {
+            error:
+              "خطة العلاج على هذا الملف مسجّلة لطبيب آخر. مواعيد المتابعة والملاحظات العامة وبيانات النموذج مرتبطة بالطبيب الذي أنشأها ولا تظهر لغيره.",
+          },
+          { status: 403 },
+        );
+      }
+    }
 
     let saved: {
       id: string;
@@ -146,7 +167,7 @@ export async function PUT(
       updatedAt: string;
     } | null = null;
 
-    if (existing?.id) {
+    if (existingId) {
       const { data: row, error: upErr } = await supabaseAdmin
         .from("ClinicPatientCarePlan")
         .update({
@@ -155,7 +176,8 @@ export async function PUT(
           doctorNotes: body.doctorNotes ?? null,
           updatedAt: now,
         })
-        .eq("id", existing.id)
+        .eq("id", existingId)
+        .eq("doctorId", doctor.id)
         .select("id, planType, data, doctorNotes, updatedAt")
         .single();
 

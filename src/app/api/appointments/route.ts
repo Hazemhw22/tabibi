@@ -38,19 +38,22 @@ export async function POST(req: Request) {
 
     const { data: doctorRow } = await supabaseAdmin
       .from("Doctor")
-      .select("id, visibleToPatients")
+      .select("id, visibleToPatients, medicalCenterId")
       .eq("id", data.doctorId)
       .single();
 
     if (doctorRow?.visibleToPatients === false && session.user.role !== "DOCTOR") {
-      const { data: clinicPatient } = await supabaseAdmin
-        .from("ClinicPatient")
-        .select("id")
-        .eq("doctorId", data.doctorId)
-        .eq("userId", session.user.id)
-        .maybeSingle();
-      if (!clinicPatient) {
-        return NextResponse.json({ error: "هذا الطبيب لا يقبل حجوزات من المرضى الجدد" }, { status: 403 });
+      const bookableViaCenter = Boolean(doctorRow?.medicalCenterId);
+      if (!bookableViaCenter) {
+        const { data: clinicPatient } = await supabaseAdmin
+          .from("ClinicPatient")
+          .select("id")
+          .eq("doctorId", data.doctorId)
+          .eq("userId", session.user.id)
+          .maybeSingle();
+        if (!clinicPatient) {
+          return NextResponse.json({ error: "هذا الطبيب لا يقبل حجوزات من المرضى الجدد" }, { status: 403 });
+        }
       }
     }
 
