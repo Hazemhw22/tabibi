@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* fallback values for when next/font/google is disabled */
+:root {
+  --font-tajawal: Tajawal, "Segoe UI", Arial, sans-serif;
+  --font-messiri: "El Messiri", Tajawal, "Segoe UI", Arial, sans-serif;
+}
+
 /* Enable dark: prefix when [data-theme="dark"] is on <html> */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 

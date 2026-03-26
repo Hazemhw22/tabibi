@@ -371,11 +371,9 @@ function ObGynBlock({
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="flex flex-col sm:flex-row gap-4 items-center [&>p]:hidden">
         <PregnancyWeekSvg week={displayWeek} />
-        <p className="text-xs text-gray-600 flex-1">
-          الرسم توضيحي تقريبي حسب الأسبوع. يمكن لاحقاً ربط صور تفصيلية لكل أسبوع من مجلد ثابت.
-        </p>
+       
       </div>
 
       <div>
