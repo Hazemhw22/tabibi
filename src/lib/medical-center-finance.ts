@@ -3,26 +3,34 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 /** لقطة مالية عند إنشاء موعد لطبيب مرتبط بمركز */
 export async function getAppointmentFinanceSnapshot(doctorId: string): Promise<{
   medicalCenterId: string | null;
+  consultationFeeSnapshot: number | null;
   doctorClinicFeeSnapshot: number | null;
 }> {
   const { data, error } = await supabaseAdmin
     .from("Doctor")
-    .select("medicalCenterId, doctorClinicFee")
+    .select("medicalCenterId, consultationFee, doctorClinicFee")
     .eq("id", doctorId)
     .maybeSingle();
 
   if (error || !data) {
-    return { medicalCenterId: null, doctorClinicFeeSnapshot: null };
+    return { medicalCenterId: null, consultationFeeSnapshot: null, doctorClinicFeeSnapshot: null };
   }
 
-  const mc = (data as { medicalCenterId?: string | null }).medicalCenterId;
+  const row = data as {
+    medicalCenterId?: string | null;
+    consultationFee?: number | null;
+    doctorClinicFee?: number | null;
+  };
+  const mc = row.medicalCenterId;
   if (!mc) {
-    return { medicalCenterId: null, doctorClinicFeeSnapshot: null };
+    return { medicalCenterId: null, consultationFeeSnapshot: null, doctorClinicFeeSnapshot: null };
   }
 
-  const docFee = Number((data as { doctorClinicFee?: number | null }).doctorClinicFee ?? 0);
+  const centerFee = Number(row.consultationFee ?? 0);
+  const docFee = Number(row.doctorClinicFee ?? 0);
   return {
     medicalCenterId: mc,
+    consultationFeeSnapshot: centerFee >= 0 ? centerFee : 0,
     doctorClinicFeeSnapshot: docFee >= 0 ? docFee : 0,
   };
 }

@@ -112,7 +112,7 @@ export async function POST(
     ]);
 
     const alreadyChargedDescs = new Set(
-      (existingTx ?? []).map((t: { description?: string; amount?: number }) => `${t.description ?? ""}:${t.amount ?? 0}`)
+      (existingTx ?? []).map((t: { description?: string; amount?: number }) => `${t.description ?? ""}:${t.amount ?? 0}`),
     );
     const oldCharged = new Map<string, boolean>();
     for (const row of oldPlan ?? []) {
@@ -192,16 +192,18 @@ export async function POST(
           ? (item.note || item.problemType.replace("OTHER:", ""))
           : (problemLabels[item.problemType] ?? item.problemType);
         const desc = `سن ${item.toothNumber} - ${label}`;
-        const chargeKey = `${desc}:${price}`;
-        if (alreadyChargedDescs.has(chargeKey)) continue;
+        const negativeAmount = -Math.abs(price);
+        const chargeKeyNegative = `${desc}:${negativeAmount}`;
+        const chargeKeyLegacyPositive = `${desc}:${price}`;
+        if (alreadyChargedDescs.has(chargeKeyNegative) || alreadyChargedDescs.has(chargeKeyLegacyPositive)) continue;
         await supabaseAdmin.from("ClinicTransaction").insert({
           clinicPatientId: id,
           type: "SERVICE",
           description: desc,
-          amount: price,
+          amount: negativeAmount,
           createdBy: session.user.id,
         });
-        alreadyChargedDescs.add(chargeKey);
+        alreadyChargedDescs.add(chargeKeyNegative);
         await supabaseAdmin
           .from("DentalToothPlan")
           .update({ chargedToBalance: true })

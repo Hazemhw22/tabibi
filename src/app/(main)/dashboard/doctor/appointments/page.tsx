@@ -28,6 +28,8 @@ type UnifiedAppointment = {
   endTime?: string;
   status: string;
   fee?: number;
+  doctorDue?: number;
+  isCenterBooking?: boolean;
   patientName: string;
   patientContact?: string;
   source: "platform" | "clinic";
@@ -50,7 +52,7 @@ export default async function DoctorAppointmentsPage() {
     supabaseAdmin
       .from("Appointment")
       .select(`
-        id, patientId, appointmentDate, startTime, endTime, status, fee,
+        id, patientId, appointmentDate, startTime, endTime, status, fee, medicalCenterId, doctorClinicFeeSnapshot,
         patient:User(name, phone, email)
       `)
       .eq("doctorId", doctor.id)
@@ -75,6 +77,8 @@ export default async function DoctorAppointmentsPage() {
     endTime?: string;
     status: string;
     fee?: number;
+    medicalCenterId?: string | null;
+    doctorClinicFeeSnapshot?: number | null;
     patient?: { name?: string; phone?: string; email?: string };
   }>;
   const clinicList = (clinicRes.data ?? []) as Array<{
@@ -96,6 +100,10 @@ export default async function DoctorAppointmentsPage() {
       endTime: a.endTime,
       status: a.status,
       fee: a.fee,
+      isCenterBooking: Boolean(a.medicalCenterId),
+      doctorDue: Boolean(a.medicalCenterId)
+        ? Number(a.doctorClinicFeeSnapshot ?? 0)
+        : Number(a.fee ?? 0),
       patientName: a.patient?.name ?? "—",
       patientContact: a.patient?.phone || a.patient?.email,
       source: "platform" as const,
@@ -217,8 +225,11 @@ export default async function DoctorAppointmentsPage() {
                       <DoctorActions appointmentId={a.id} mode="visit" />
                     )}
                     {a.fee != null && (
-                      <span className="text-sm font-semibold text-emerald-600 shrink-0">
-                        ₪{a.fee}
+                      <span
+                        className="text-sm font-semibold text-emerald-600 shrink-0"
+                        title={a.isCenterBooking ? "مستحق الطبيب من المركز" : "قيمة الموعد"}
+                      >
+                        ₪{a.doctorDue ?? a.fee}
                       </span>
                     )}
                     <Badge variant="outline" className="shrink-0 text-xs">

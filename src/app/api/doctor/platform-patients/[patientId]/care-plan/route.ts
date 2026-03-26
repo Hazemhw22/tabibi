@@ -3,6 +3,8 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import type { CarePlanType } from "@/lib/specialty-plan-registry";
+import { extractCarePlanServiceLines, normalizeCarePlanCosts } from "@/lib/care-plan-billing";
 
 const putSchema = z.object({
   planType: z.string().min(1),
@@ -126,10 +128,11 @@ export async function PUT(
       return NextResponse.json({ error: "المريض غير مرتبط بحجوزاتك" }, { status: 404 });
     }
 
-    const dataJson =
+    const rawDataJson =
       body.data !== undefined && body.data !== null
         ? (JSON.parse(JSON.stringify(body.data)) as Record<string, unknown>)
         : {};
+    const normalizedData = normalizeCarePlanCosts(body.planType as CarePlanType, rawDataJson);
 
     const now = new Date().toISOString();
 
@@ -153,7 +156,7 @@ export async function PUT(
         .from("PlatformPatientCarePlan")
         .update({
           planType: body.planType,
-          data: dataJson,
+          data: normalizedData,
           doctorNotes: body.doctorNotes ?? null,
           updatedAt: now,
         })
@@ -174,7 +177,7 @@ export async function PUT(
           doctorId: doctor.id,
           patientUserId,
           planType: body.planType,
-          data: dataJson,
+          data: normalizedData,
           doctorNotes: body.doctorNotes ?? null,
           createdAt: now,
           updatedAt: now,
@@ -191,6 +194,42 @@ export async function PUT(
 
     if (!saved) {
       return NextResponse.json({ error: "فشل الحفظ" }, { status: 500 });
+    }
+
+    // تسجيل تكاليف الخطة كخدمة (بالسالب) في معاملات مرضى المنصة بدون تكرار.
+    const serviceLines = extractCarePlanServiceLines(
+      body.planType as CarePlanType,
+      normalizedData,
+    );
+    if (serviceLines.length > 0) {
+      const { data: existingTx } = await supabaseAdmin
+        .from("PlatformPatientTransaction")
+        .select("description, amount")
+        .eq("doctorId", doctor.id)
+        .eq("patientId", patientUserId)
+        .eq("type", "SERVICE");
+
+      const existing = new Set(
+        (existingTx ?? []).map(
+          (t: { description?: string | null; amount?: number | null }) =>
+            `${t.description ?? ""}:${Number(t.amount ?? 0)}`,
+        ),
+      );
+
+      for (const line of serviceLines) {
+        const amount = -Math.abs(Number(line.amount || 0));
+        const key = `${line.description}:${amount}`;
+        if (existing.has(key)) continue;
+        await supabaseAdmin.from("PlatformPatientTransaction").insert({
+          doctorId: doctor.id,
+          patientId: patientUserId,
+          type: "SERVICE",
+          description: line.description,
+          amount,
+          notes: "تمت إضافته تلقائياً من خطة العلاج",
+        });
+        existing.add(key);
+      }
     }
 
     return NextResponse.json({

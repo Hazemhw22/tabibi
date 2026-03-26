@@ -2,18 +2,30 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /**
  * معرفات الأطباء المرتبطون بمركز: عبر Doctor.medicalCenterId أو عبر عيادة (Clinic.medicalCenterId).
- * يغطي حالات قديمة أو فشل جزئي في التحديث حيث وُجدت العيادة دون تعبئة medicalCenterId على Doctor.
+ * يغطي حالات قديمة أو فشل جزئي في التحديث:
+ * - وُجدت العيادة دون تعبئة medicalCenterId على Doctor.
+ * - وُجدت دعوة مقبولة (ACCEPTED) قبل/أثناء مزامنة الربط النهائي.
  */
 export async function getLinkedDoctorIdsForCenter(centerId: string): Promise<string[]> {
-  const [{ data: byDoctorCol }, { data: clinics }] = await Promise.all([
+  const [{ data: byDoctorCol }, { data: clinics }, invitesRes] = await Promise.all([
     supabaseAdmin.from("Doctor").select("id").eq("medicalCenterId", centerId),
     supabaseAdmin.from("Clinic").select("doctorId").eq("medicalCenterId", centerId),
+    supabaseAdmin
+      .from("MedicalCenterDoctorInvite")
+      .select("doctorId")
+      .eq("medicalCenterId", centerId)
+      .eq("status", "ACCEPTED"),
   ]);
   const fromDoctor = (byDoctorCol ?? []).map((r: { id: string }) => r.id);
   const fromClinic = (clinics ?? [])
     .map((r: { doctorId?: string | null }) => r.doctorId)
     .filter((id): id is string => Boolean(id));
-  return [...new Set([...fromDoctor, ...fromClinic])];
+  // في بعض البيئات قد لا يكون جدول الدعوات مفعّلاً؛ نتجاهله بدون كسر الجلب.
+  const inviteRows = invitesRes && !("error" in invitesRes && invitesRes.error) ? invitesRes.data : null;
+  const fromAcceptedInvites = (inviteRows ?? [])
+    .map((r: { doctorId?: string | null }) => r.doctorId)
+    .filter((id): id is string => Boolean(id));
+  return [...new Set([...fromDoctor, ...fromClinic, ...fromAcceptedInvites])];
 }
 
 /** هل يمكن للمركز إدارة هذا الطبيب (قائمة، تعديل، إلخ) */

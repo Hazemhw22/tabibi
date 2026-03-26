@@ -466,7 +466,16 @@ function PediatricsBlock({
   const rows = (data.organs as PedRow[]) || [];
   const [selected, setSelected] = useState<PediatricOrganId | null>("chest");
 
-  const problemIds = useMemo(() => rows.filter((r) => r.problem?.trim()).map((r) => r.organId), [rows]);
+  const problemIds = useMemo(
+    () => rows.filter((r) => r.problem?.trim() || (r.cost ?? 0) > 0).map((r) => r.organId),
+    [rows],
+  );
+
+  useEffect(() => {
+    if (!rows.length) return;
+    const withData = rows.find((r) => r.problem?.trim() || (r.cost ?? 0) > 0);
+    if (withData && selected !== withData.organId) setSelected(withData.organId);
+  }, [rows, selected]);
 
   const upsertRow = (organId: PediatricOrganId, patch: Partial<PedRow>) => {
     setData((d) => {
@@ -729,7 +738,16 @@ function CardiologyBlock({
   const rows = (data.cardiac as CardioRow[]) || [];
   const [selected, setSelected] = useState<CardiologyZoneId | null>("heart");
 
-  const problemIds = useMemo(() => rows.filter((r) => r.problem?.trim()).map((r) => r.zoneId), [rows]);
+  const problemIds = useMemo(
+    () => rows.filter((r) => r.problem?.trim() || (r.cost ?? 0) > 0).map((r) => r.zoneId),
+    [rows],
+  );
+
+  useEffect(() => {
+    if (!rows.length) return;
+    const withData = rows.find((r) => r.problem?.trim() || (r.cost ?? 0) > 0);
+    if (withData && selected !== withData.zoneId) setSelected(withData.zoneId);
+  }, [rows, selected]);
 
   const upsert = (zoneId: CardiologyZoneId, patch: Partial<CardioRow>) => {
     setData((d) => {
@@ -782,6 +800,23 @@ function CardiologyBlock({
                   onChange={(e) => upsert(selected, { cost: Math.max(0, Number(e.target.value) || 0) })}
                 />
               </div>
+            </div>
+          )}
+          {rows.some((r) => r.problem?.trim() || (r.cost ?? 0) > 0) && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5">
+              <p className="mb-1 text-[11px] font-semibold text-gray-600">المدخلات المحفوظة</p>
+              <ul className="space-y-1 text-xs text-gray-700">
+                {rows
+                  .filter((r) => r.problem?.trim() || (r.cost ?? 0) > 0)
+                  .map((r) => (
+                    <li key={r.zoneId} className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1">
+                      <span className="truncate">
+                        {CARDIO_ZONES.find((z) => z.id === r.zoneId)?.label ?? r.zoneId} — {r.problem || "بدون وصف"}
+                      </span>
+                      <span className="shrink-0 font-semibold text-blue-700">₪{r.cost ?? 0}</span>
+                    </li>
+                  ))}
+              </ul>
             </div>
           )}
         </div>

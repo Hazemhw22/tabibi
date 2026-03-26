@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export type CardiologyZoneId = "heart" | "aorta" | "coronary" | "veins";
@@ -21,48 +22,68 @@ type Props = {
 export function CardiologyHeartSvg({ selected, onSelect, problemIds = [] }: Props) {
   const pr = (id: CardiologyZoneId) => problemIds.includes(id);
   return (
-    <svg viewBox="0 0 160 180" className="w-full max-w-[200px] h-auto mx-auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="مخطط القلب والأوعية">
-      {/* أبهر */}
-      <path
-        d="M80 12 L88 40 L72 40 Z"
-        className={cn(
-          "cursor-pointer stroke-rose-700 stroke-2",
-          selected === "aorta" ? "fill-rose-300" : pr("aorta") ? "fill-amber-200" : "fill-rose-100 hover:fill-rose-200",
-        )}
+    <div className="relative mx-auto w-full max-w-[220px]" role="img" aria-label="مخطط القلب والأوعية">
+      <Image
+        src="/heart.svg"
+        alt="مخطط القلب"
+        width={220}
+        height={260}
+        className="h-auto w-full select-none"
+        priority={false}
+      />
+
+      <button
+        type="button"
         onClick={() => onSelect("aorta")}
-      />
-      <path
-        d="M80 40 Q120 50 130 80 Q125 100 100 110"
-        fill="none"
         className={cn(
-          "cursor-pointer stroke-2",
-          selected === "coronary" ? "stroke-red-600" : pr("coronary") ? "stroke-amber-600" : "stroke-red-300",
+          "absolute right-[47%] top-[8%] h-7 w-7 -translate-x-1/2 rounded-full border-2 transition",
+          selected === "aorta"
+            ? "border-rose-600 bg-rose-300/80"
+            : pr("aorta")
+              ? "border-amber-500 bg-amber-200/80"
+              : "border-transparent bg-rose-200/50 hover:border-rose-400",
         )}
-        strokeWidth="6"
-        strokeLinecap="round"
+        aria-label="الأبهر والشرايين"
+      />
+      <button
+        type="button"
         onClick={() => onSelect("coronary")}
-      />
-      {/* قلب */}
-      <path
-        d="M80 55 C55 45 40 70 50 95 C55 115 80 130 80 130 C80 130 105 115 110 95 C120 70 105 45 80 55z"
         className={cn(
-          "cursor-pointer stroke-red-800 stroke-2",
-          selected === "heart" ? "fill-red-300" : pr("heart") ? "fill-amber-200" : "fill-red-100 hover:fill-red-200",
+          "absolute right-[58%] top-[31%] h-8 w-8 rounded-full border-2 transition",
+          selected === "coronary"
+            ? "border-red-600 bg-red-300/80"
+            : pr("coronary")
+              ? "border-amber-500 bg-amber-200/80"
+              : "border-transparent bg-red-200/45 hover:border-red-400",
         )}
+        aria-label="الشريان التاجي"
+      />
+      <button
+        type="button"
         onClick={() => onSelect("heart")}
-      />
-      {/* وريد */}
-      <path
-        d="M50 75 Q30 90 35 115 Q40 130 55 135"
-        fill="none"
         className={cn(
-          "cursor-pointer stroke-2",
-          selected === "veins" ? "stroke-blue-600" : pr("veins") ? "stroke-amber-600" : "stroke-blue-300",
+          "absolute right-[46%] top-[43%] h-10 w-10 -translate-x-1/2 rounded-full border-2 transition",
+          selected === "heart"
+            ? "border-red-700 bg-red-300/85"
+            : pr("heart")
+              ? "border-amber-500 bg-amber-200/85"
+              : "border-transparent bg-red-200/45 hover:border-red-500",
         )}
-        strokeWidth="5"
-        strokeLinecap="round"
-        onClick={() => onSelect("veins")}
+        aria-label="القلب"
       />
-    </svg>
+      <button
+        type="button"
+        onClick={() => onSelect("veins")}
+        className={cn(
+          "absolute right-[38%] top-[57%] h-8 w-8 rounded-full border-2 transition",
+          selected === "veins"
+            ? "border-blue-600 bg-blue-300/80"
+            : pr("veins")
+              ? "border-amber-500 bg-amber-200/80"
+              : "border-transparent bg-blue-200/45 hover:border-blue-400",
+        )}
+        aria-label="الأوردة والدورة"
+      />
+    </div>
   );
 }

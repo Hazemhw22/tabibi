@@ -158,6 +158,8 @@ export async function POST(req: Request) {
     const patientId = patientResult.id;
 
     const clinicId = (slot as { clinicId?: string | null }).clinicId ?? null;
+    const fin = await getAppointmentFinanceSnapshot(data.doctorId);
+    const finalFee = fin.consultationFeeSnapshot ?? data.fee;
 
     const { data: appointment, error: insertErr } = await supabaseAdmin
       .from("Appointment")
@@ -170,10 +172,12 @@ export async function POST(req: Request) {
         startTime: data.startTime,
         endTime: data.endTime,
         notes: data.notes ?? null,
-        fee: data.fee,
+        fee: finalFee,
         status: "CONFIRMED",
         paymentStatus: "UNPAID",
         slotTurn: resolvedSlotTurn,
+        medicalCenterId: fin.medicalCenterId ?? centerId,
+        doctorClinicFeeSnapshot: fin.doctorClinicFeeSnapshot ?? 0,
       })
       .select("id")
       .single();
@@ -185,7 +189,7 @@ export async function POST(req: Request) {
 
     await supabaseAdmin.from("Payment").insert({
       appointmentId: appointment.id,
-      amount: data.fee,
+      amount: finalFee,
       status: "UNPAID",
       method: "clinic",
     });

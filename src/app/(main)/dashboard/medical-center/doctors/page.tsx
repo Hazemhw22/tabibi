@@ -235,17 +235,17 @@ export default function CenterDoctorsPage() {
           }
         >
           {viewMode === "table" ? (
-            <DataTable>
+            <DataTable className="min-w-[1150px]">
               <DataTableHead>
-                <DataTableHeaderCell className="w-14">تسلسل</DataTableHeaderCell>
-                <DataTableHeaderCell>الاسم</DataTableHeaderCell>
-                <DataTableHeaderCell>التخصص</DataTableHeaderCell>
-                <DataTableHeaderCell>الحالة</DataTableHeaderCell>
-                <DataTableHeaderCell className="whitespace-nowrap">الظهور للمرضى</DataTableHeaderCell>
-                <DataTableHeaderCell className="whitespace-nowrap">رسوم المريض للمركز</DataTableHeaderCell>
-                <DataTableHeaderCell className="whitespace-nowrap">مستحقات الطبيب من العيادة</DataTableHeaderCell>
-                <DataTableHeaderCell>أوقات العمل</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-center">إجراءات</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-14 text-center">تسلسل</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[210px]">الاسم</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[130px]">التخصص</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[120px]">الحالة</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[150px]">الظهور للمرضى</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[140px] text-center">رسوم المريض للمركز</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[170px] text-center">مستحقات الطبيب من العيادة</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[220px]">أوقات العمل</DataTableHeaderCell>
+                <DataTableHeaderCell className="w-[90px] text-center">إجراءات</DataTableHeaderCell>
               </DataTableHead>
               <DataTableBody>
                 {filtered.map((d, rowIndex) => {
@@ -258,26 +258,40 @@ export default function CenterDoctorsPage() {
                       <DataTableCell className="text-center font-semibold tabular-nums text-gray-700 dark:text-gray-300">
                         {seq}
                       </DataTableCell>
-                      <DataTableCell className="font-medium">د. {d.user?.name ?? "—"}</DataTableCell>
                       <DataTableCell>
-                        <Badge variant="outline" className="border-emerald-200 text-emerald-800 dark:border-emerald-800 dark:text-emerald-300">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-gray-900 dark:text-gray-100">
+                            د. {d.user?.name ?? "—"}
+                          </p>
+                          <p className="truncate text-xs text-gray-500 dark:text-gray-400" dir="ltr">
+                            {d.user?.email ?? d.user?.phone ?? "—"}
+                          </p>
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell>
+                        <Badge
+                          variant="outline"
+                          className="max-w-[120px] truncate border-emerald-200 text-emerald-800 dark:border-emerald-800 dark:text-emerald-300"
+                        >
                           {d.specialty?.nameAr ?? "—"}
                         </Badge>
                       </DataTableCell>
                       <DataTableCell>{statusBadge(d.status)}</DataTableCell>
                       <DataTableCell>{visibilityBadge(d.visibleToPatients)}</DataTableCell>
-                      <DataTableCell>
+                      <DataTableCell className="text-center">
                         <span className={fee < 0 ? "font-semibold text-red-600 dark:text-red-400" : "font-semibold text-emerald-700 dark:text-emerald-400"}>
                           ₪{formatNumber(fee, { maximumFractionDigits: 0 })}
                         </span>
                       </DataTableCell>
-                      <DataTableCell>
+                      <DataTableCell className="text-center">
                         <span className="font-semibold tabular-nums text-blue-800 dark:text-blue-300">
                           ₪{formatNumber(docClinic, { maximumFractionDigits: 0 })}
                         </span>
                       </DataTableCell>
-                      <DataTableCell className="max-w-[220px] text-xs text-gray-600 dark:text-gray-400">
-                        {hoursSummary(slots) || "—"}
+                      <DataTableCell className="text-xs leading-5 text-gray-600 dark:text-gray-400">
+                        <div className="max-w-[220px] whitespace-normal break-words">
+                          {hoursSummary(slots) || "—"}
+                        </div>
                       </DataTableCell>
                       <DataTableCell className="text-center">
                         <Link

@@ -135,6 +135,10 @@ export async function POST(req: Request) {
 
     const fin = await getAppointmentFinanceSnapshot(data.doctorId);
     const isBookedByDoctor = session.user.role === "DOCTOR";
+    const isCenterDoctorBooking = Boolean(fin.medicalCenterId);
+    const finalFee = isCenterDoctorBooking
+      ? (fin.consultationFeeSnapshot ?? 0)
+      : data.fee;
     const insertRow: Record<string, unknown> = {
       patientId,
       doctorId: data.doctorId,
@@ -144,7 +148,7 @@ export async function POST(req: Request) {
       startTime: data.startTime,
       endTime: data.endTime,
       notes: data.notes ?? null,
-      fee: data.fee,
+      fee: finalFee,
       // حجز المريض يحتاج موافقة الطبيب أولاً
       status: isBookedByDoctor ? "CONFIRMED" : "DRAFT",
       paymentStatus: "UNPAID",
@@ -170,7 +174,7 @@ export async function POST(req: Request) {
 
     await supabaseAdmin.from("Payment").insert({
       appointmentId: appointment.id,
-      amount: data.fee,
+      amount: finalFee,
       status: "UNPAID",
       method: "clinic",
     });
