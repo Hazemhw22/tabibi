@@ -44,8 +44,8 @@ enum DoctorStatus {
 }
 
 enum TransactionType {
-  SERVICE   // خدمة مقدمة - مبلغ سالب (دين على المريض)
-  PAYMENT   // دفعة من المريض - مبلغ موجب
+  SERVICE // خدمة مقدمة - مبلغ سالب (دين على المريض)
+  PAYMENT // دفعة من المريض - مبلغ موجب
 }
 
 enum ClinicAppointmentStatus {
@@ -73,16 +73,16 @@ model User {
   image         String?
   password      String?
   phone         String?
-  regionId      String?   // منطقة المريض (مدينة/قرية من الضفة الغربية)
+  regionId      String? // منطقة المريض (مدينة/قرية من الضفة الغربية)
   role          Role      @default(PATIENT)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  doctorProfile Doctor?
-  appointments  Appointment[] @relation("PatientAppointments")
-  reviews       Review[]
+  accounts                 Account[]
+  sessions                 Session[]
+  doctorProfile            Doctor?
+  appointments             Appointment[]             @relation("PatientAppointments")
+  reviews                  Review[]
   /// خطط علاج من أطباء المنصة (مريض مسجل User)
   platformPatientCarePlans PlatformPatientCarePlan[]
 
@@ -93,7 +93,7 @@ model User {
   staffType       String? // مثال: محاسب، نظافة، استقبال...
   educationLevel  String? // مثال: دبلوم، بكالوريوس
   salaryMonthly   Float?
-  attendanceNotes String? @db.Text
+  attendanceNotes String?        @db.Text
 
   medicalCenterPatientDocsAsPatient MedicalCenterPatientDocument[] @relation("MedicalCenterDocPatient")
   medicalCenterPatientDocsUploaded  MedicalCenterPatientDocument[] @relation("MedicalCenterDocUploader")
@@ -103,24 +103,24 @@ model User {
 
 /// سجل رسائل SMS/WhatsApp داخل المنصة
 model MessageLog {
-  id              String        @id @default(cuid())
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   createdByUserId String
   createdByRole   Role
   medicalCenterId String?
   doctorId        String?
 
-  provider        String        @default("ASTRA")
-  channel         String        @default("SMS") // SMS | WHATSAPP
-  to              String
-  body            String        @db.Text
-  status          MessageStatus @default(PENDING)
-  providerResponse String?      @db.Text
+  provider         String        @default("ASTRA")
+  channel          String        @default("SMS") // SMS | WHATSAPP
+  to               String
+  body             String        @db.Text
+  status           MessageStatus @default(PENDING)
+  providerResponse String?       @db.Text
 
-  createdBy       User          @relation("MessageLogSender", fields: [createdByUserId], references: [id], onDelete: Cascade)
-  medicalCenter   MedicalCenter? @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
-  doctor          Doctor?       @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  createdBy     User           @relation("MessageLogSender", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  medicalCenter MedicalCenter? @relation("MedicalCenterMessageLogs", fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  doctor        Doctor?        @relation("DoctorMessageLogs", fields: [doctorId], references: [id], onDelete: SetNull)
 
   @@index([createdByUserId, createdAt])
   @@index([medicalCenterId, createdAt])
@@ -177,33 +177,34 @@ model Specialty {
 
 /// مركز طبي (مجموعة أطباء تحت سقف واحد)
 model MedicalCenter {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  nameAr      String?
-  address     String
-  city        String   @default("الخليل")
-  phone       String?
-  locationId  String?
-  description String?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
+  id                  String    @id @default(cuid())
+  name                String
+  slug                String    @unique
+  nameAr              String?
+  address             String
+  city                String    @default("الخليل")
+  phone               String?
+  locationId          String?
+  description         String?
+  imageUrl            String?
+  isActive            Boolean   @default(true)
   /// PENDING | APPROVED | REJECTED — موافقة مشرف المنصة + اشتراك سنوي 1500 ₪
-  approvalStatus     String    @default("APPROVED")
+  approvalStatus      String    @default("APPROVED")
   subscriptionEndDate DateTime?
   /// JSON: [{ "dayOfWeek": 0-6, "startTime": "09:00", "endTime": "17:00" }] — أوقات عمل المركز (للعرض والإدارة)
-  operatingHoursJson String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  operatingHoursJson  String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  staffUsers       User[]            @relation("MedicalCenterStaff")
+  staffUsers       User[]                         @relation("MedicalCenterStaff")
   doctors          Doctor[]
   emergencyVisits  EmergencyVisit[]
-  appointments     Appointment[] @relation("CenterAppointments")
+  appointments     Appointment[]                  @relation("CenterAppointments")
   /// عيادات مرتبطة بهذا المركز (فرع المركز لكل طبيب)
   linkedClinics    Clinic[]
   doctorInvites    MedicalCenterDoctorInvite[]
   patientDocuments MedicalCenterPatientDocument[]
+  messageLogs      MessageLog[]                   @relation("MedicalCenterMessageLogs")
 }
 
 /// نتيجة تحليل أو أشعة يُرفعها موظف المركز لمريض المنصة
@@ -237,7 +238,7 @@ model EmergencyVisit {
   complaint          String? // الشكوى / المرض
   amount             Float
   paymentStatus      PaymentStatus @default(UNPAID)
-  paymentMethod      String?       // نقدي، بطاقة، ...
+  paymentMethod      String? // نقدي، بطاقة، ...
   notes              String?
   registeredByUserId String?
   createdAt          DateTime      @default(now())
@@ -261,56 +262,57 @@ model Doctor {
   updatedAt       DateTime     @updatedAt
 
   /// basic | premium | enterprise
-  subscriptionPlan    String?
+  subscriptionPlan      String?
   /// monthly | half_year | yearly
-  subscriptionPeriod  String?
+  subscriptionPeriod    String?
   /// تاريخ انتهاء الاشتراك
-  subscriptionEndDate DateTime?
+  subscriptionEndDate   DateTime?
   /// رقم الواتساب للتواصل
-  whatsapp            String?
-  visibleToPatients   Boolean  @default(true)
+  whatsapp              String?
+  visibleToPatients     Boolean   @default(true)
   /// معرف الموقع من قائمة مدن وقرى الضفة الغربية
-  locationId          String?
+  locationId            String?
   /// إن وُجد: الطبيب ضمن هذا المركز الطبي (يظهر في صفحة المركز)
-  medicalCenterId     String?
+  medicalCenterId       String?
   /// مستحقات الطبيب من العيادة (حساب الطبيب) — المريض يدفع للمركز وليس مباشرة للطبيب
-  doctorClinicFee     Float    @default(0)
+  doctorClinicFee       Float     @default(0)
   /// true إذا سمح مشرف المنصة بإضافة عيادة جديدة (زيادة سعر)
-  canAddExtraClinics  Boolean  @default(false)
+  canAddExtraClinics    Boolean   @default(false)
   /// CONSULTATION | EXAMINATION — للعرض بجانب السعر للمريض
-  patientFeeServiceType String @default("CONSULTATION")
+  patientFeeServiceType String    @default("CONSULTATION")
   /// MALE | FEMALE
-  gender              String?
+  gender                String?
 
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialty          Specialty          @relation(fields: [specialtyId], references: [id])
-  medicalCenter      MedicalCenter?     @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
-  clinics            Clinic[]
-  timeSlots          TimeSlot[]
-  appointments       Appointment[]
-  reviews            Review[]
-  clinicPatients     ClinicPatient[]
-  clinicAppointments ClinicAppointment[]
-  medicalNotes       ClinicMedicalNote[]
-  patientCarePlans   ClinicPatientCarePlan[]
+  user                     User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty                Specialty                   @relation(fields: [specialtyId], references: [id])
+  medicalCenter            MedicalCenter?              @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  clinics                  Clinic[]
+  timeSlots                TimeSlot[]
+  appointments             Appointment[]
+  reviews                  Review[]
+  clinicPatients           ClinicPatient[]
+  clinicAppointments       ClinicAppointment[]
+  medicalNotes             ClinicMedicalNote[]
+  patientCarePlans         ClinicPatientCarePlan[]
   platformPatientCarePlans PlatformPatientCarePlan[]
   medicalCenterInvites     MedicalCenterDoctorInvite[]
+  messageLogs              MessageLog[]                @relation("DoctorMessageLogs")
 }
 
 /// طلب من مركز طبي لربط طبيب مسجّل مسبقاً — يظهر للطبيب للموافقة أو الرفض
 model MedicalCenterDoctorInvite {
-  id                      String    @id @default(cuid())
-  medicalCenterId         String
-  doctorId                String
+  id                    String    @id @default(cuid())
+  medicalCenterId       String
+  doctorId              String
   /// PENDING | ACCEPTED | REJECTED
-  status                  String    @default("PENDING")
-  consultationFee         Float
-  doctorClinicFee         Float     @default(0)
-  patientFeeServiceType   String    @default("CONSULTATION")
-  proposedTimeSlotsJson   String    @db.Text
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  respondedAt             DateTime?
+  status                String    @default("PENDING")
+  consultationFee       Float
+  doctorClinicFee       Float     @default(0)
+  patientFeeServiceType String    @default("CONSULTATION")
+  proposedTimeSlotsJson String    @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  respondedAt           DateTime?
 
   medicalCenter MedicalCenter @relation(fields: [medicalCenterId], references: [id], onDelete: Cascade)
   doctor        Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
@@ -320,75 +322,75 @@ model MedicalCenterDoctorInvite {
 }
 
 model Clinic {
-  id         String  @id @default(cuid())
-  doctorId   String
-  name       String
-  address    String
-  city       String  @default("الخليل")
-  phone      String?
-  mapUrl     String?
-  isMain     Boolean @default(false)
-  locationId String? // منطقة هذه العيادة (مدينة/قرية من الضفة الغربية)
+  id              String  @id @default(cuid())
+  doctorId        String
+  name            String
+  address         String
+  city            String  @default("الخليل")
+  phone           String?
+  mapUrl          String?
+  isMain          Boolean @default(false)
+  locationId      String? // منطقة هذه العيادة (مدينة/قرية من الضفة الغربية)
   /// عند الربط بمركز طبي (فرع المركز للطبيب)
   medicalCenterId String?
 
-  doctor         Doctor         @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  medicalCenter  MedicalCenter? @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
-  appointments   Appointment[]
-  timeSlots      TimeSlot[]
+  doctor        Doctor         @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  medicalCenter MedicalCenter? @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  appointments  Appointment[]
+  timeSlots     TimeSlot[]
 }
 
 model TimeSlot {
-  id        String   @id @default(cuid())
-  doctorId  String
-  clinicId  String?
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  isActive  Boolean  @default(true)
+  id           String   @id @default(cuid())
+  doctorId     String
+  clinicId     String?
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+  isActive     Boolean  @default(true)
   /// عدد الحجوزات المسموحة لنفس الدور (نفس الفترة) — مثلاً 2 يعني دوران في نفس الوقت
-  slotCapacity Int   @default(1)
-  createdAt DateTime @default(now())
+  slotCapacity Int      @default(1)
+  createdAt    DateTime @default(now())
 
-  doctor       Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinic       Clinic?       @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   appointments Appointment[]
 }
 
 model Appointment {
-  id              String            @id @default(cuid())
-  patientId       String
-  doctorId        String
-  clinicId        String?
-  timeSlotId      String?
-  appointmentDate DateTime
-  startTime       String
-  endTime         String
-  status          AppointmentStatus @default(DRAFT)
-  paymentStatus   PaymentStatus     @default(UNPAID)
-  notes           String?
+  id                      String            @id @default(cuid())
+  patientId               String
+  doctorId                String
+  clinicId                String?
+  timeSlotId              String?
+  appointmentDate         DateTime
+  startTime               String
+  endTime                 String
+  status                  AppointmentStatus @default(DRAFT)
+  paymentStatus           PaymentStatus     @default(UNPAID)
+  notes                   String?
   /// ما يدفعه المريض للمركز (إيراد المركز من الاستشارة)
-  fee             Float
+  fee                     Float
   /// عند الحجز عبر طبيب مرتبط بمركز: معرف المركز
-  medicalCenterId String?
+  medicalCenterId         String?
   /// لقطة لمستحقات الطبيب من العيادة وقت الحجز (حساب الطبيب)
   doctorClinicFeeSnapshot Float?
-  stripePaymentId String?
-  stripeSessionId String?
+  stripePaymentId         String?
+  stripeSessionId         String?
   /// رقم الدور ضمن نفس الفترة (1..slotCapacity) — يحدد المريض أي دور يحجز
-  slotTurn        Int?
+  slotTurn                Int?
   /// يطابق followUpVisits[].id في خطة العلاج — لعرض الموعد في لوحة المريض بعد حفظ الخطة
-  carePlanFollowUpId String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  carePlanFollowUpId      String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
-  patient         User             @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctor          Doctor           @relation(fields: [doctorId], references: [id])
-  clinic          Clinic?          @relation(fields: [clinicId], references: [id])
-  timeSlot        TimeSlot?        @relation(fields: [timeSlotId], references: [id])
-  medicalCenter   MedicalCenter?   @relation("CenterAppointments", fields: [medicalCenterId], references: [id], onDelete: SetNull)
-  payment         Payment?
-  review          Review?
+  patient       User           @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctor        Doctor         @relation(fields: [doctorId], references: [id])
+  clinic        Clinic?        @relation(fields: [clinicId], references: [id])
+  timeSlot      TimeSlot?      @relation(fields: [timeSlotId], references: [id])
+  medicalCenter MedicalCenter? @relation("CenterAppointments", fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  payment       Payment?
+  review        Review?
 }
 
 model Payment {
@@ -444,20 +446,20 @@ model ClinicPatient {
   userId      String?
   name        String
   phone       String?
-  whatsapp    String?   // رقم الواتساب لإرسال رسائل الدفعات والديون
+  whatsapp    String? // رقم الواتساب لإرسال رسائل الدفعات والديون
   email       String?
   dateOfBirth DateTime?
-  gender      String?   // male | female
+  gender      String? // male | female
   address     String?
   bloodType   String?
   allergies   String?
   notes       String?
-  fileNumber  String?   // رقم الملف
+  fileNumber  String? // رقم الملف
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  doctor             Doctor               @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  doctor             Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   transactions       ClinicTransaction[]
   clinicAppointments ClinicAppointment[]
   medicalNotes       ClinicMedicalNote[]
@@ -504,16 +506,16 @@ model PlatformPatientCarePlan {
 
 /// المعاملات المالية: خدمات (دين سالب) أو دفعات (موجب)
 model ClinicTransaction {
-  id               String          @id @default(cuid())
-  clinicPatientId  String
-  type             TransactionType
-  description      String
+  id              String          @id @default(cuid())
+  clinicPatientId String
+  type            TransactionType
+  description     String
   /// المبلغ المطلق - الإشارة تُحدد من النوع (SERVICE=سالب، PAYMENT=موجب)
-  amount           Float
-  date             DateTime        @default(now())
-  notes            String?
-  createdBy        String?         // doctor user id
-  createdAt        DateTime        @default(now())
+  amount          Float
+  date            DateTime        @default(now())
+  notes           String?
+  createdBy       String? // doctor user id
+  createdAt       DateTime        @default(now())
 
   clinicPatient ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade)
 }
@@ -541,9 +543,9 @@ model ClinicMedicalNote {
   id              String   @id @default(cuid())
   doctorId        String
   clinicPatientId String
-  allergies       String?  // حساسية / تنبيهات تخص هذه الملاحظة
-  diagnosis       String?  // الحالة المرضية الأساسية
-  treatment       String?  // ما قام به الطبيب / خطة العلاج
+  allergies       String? // حساسية / تنبيهات تخص هذه الملاحظة
+  diagnosis       String? // الحالة المرضية الأساسية
+  treatment       String? // ما قام به الطبيب / خطة العلاج
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
