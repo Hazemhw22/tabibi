@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import IconSun from "@/components/icon/icon-sun";
 import IconMoon from "@/components/icon/icon-moon";
 import IconUser from "@/components/icon/icon-user";
@@ -19,34 +19,15 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useTabibiThemeToggle } from "@/lib/tabibi-theme";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { theme, toggle: toggleTheme } = useTabibiThemeToggle();
 
   const role = session?.user?.role;
-
-  // تهيئة الثيم من localStorage / النظام (مؤجل لتجنب setState متزامن في الـ effect)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("tabibi-theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-    const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
-    document.documentElement.dataset.theme = initial;
-    const id = setTimeout(() => setTheme(initial), 0);
-    return () => clearTimeout(id);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("tabibi-theme", next);
-      document.documentElement.dataset.theme = next;
-    }
-  };
 
   const getDashboardLink = () => {
     switch (role) {
@@ -116,7 +97,7 @@ export default function Navbar() {
             </Button>
             {session ? (
               <div className="flex items-center gap-3">
-                <NotificationBell theme="light" />
+                <NotificationBell theme={theme === "dark" ? "dark" : "light"} />
                 <div className="relative">
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}

@@ -6,7 +6,7 @@ import IconSun from "@/components/icon/icon-sun";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -17,38 +17,15 @@ import IconLogout from "@/components/icon/icon-logout";
 import IconCaretDown from "@/components/icon/icon-caret-down";
 import Dropdown, { type DropdownHandle } from "@/components/ui/dropdown";
 import DashboardGlobalSearch from "@/components/dashboard/dashboard-global-search";
-import { LanguageToggle } from "@/components/layout/language-toggle";
+import { useTabibiThemeToggle } from "@/lib/tabibi-theme";
 
 export default function DashboardHeader() {
   const { data: session } = useSession();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  /** نفس القيمة على الـ SSR والعميل (للتصيير الأول) — ثم المزامنة من localStorage بعد mount */
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { isDark, toggle: toggleTheme } = useTabibiThemeToggle();
   const userMenuRef = useRef<DropdownHandle>(null);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("tabibi-theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
-      setTheme(initial);
-      document.documentElement.dataset.theme = initial;
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("tabibi-theme", next);
-      document.documentElement.dataset.theme = next;
-      window.dispatchEvent(new CustomEvent("tabibi-theme-change", { detail: next }));
-    }
-  };
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -80,16 +57,6 @@ export default function DashboardHeader() {
           ? "/dashboard/medical-center/settings"
           : "/settings";
 
-  // --- التعديل هنا ---
-  // إذا كان المستخدم طبيب أو مركز طبي، نجعل isDark دائماً true
-  const forceDarkMode = role === "DOCTOR" || role === "MEDICAL_CENTER_ADMIN";
-  const isDark = forceDarkMode ? true : theme === "dark";
-  
-  // إخفاء زر التبديل إذا كان الوضع إجباري غامق
-  const showThemeToggle = !forceDarkMode;
-
-  const showLangToggle = role === "DOCTOR" || role === "MEDICAL_CENTER_ADMIN";
-
   return (
     <header
       className={cn(
@@ -102,21 +69,18 @@ export default function DashboardHeader() {
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {showThemeToggle && (
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={cn(
-              "rounded-lg p-2.5 transition-colors",
-              isDark ? "text-gray-400 hover:bg-gray-800 hover:text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-            )}
-            title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
-          >
-            {isDark ? <IconSun className="h-[18px] w-[18px]" /> : <IconMoon className="h-[18px] w-[18px]" />}
-          </button>
-        )}
-
-        {showLangToggle && <LanguageToggle isDark={isDark} />}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className={cn(
+            "rounded-lg p-2.5 transition-colors",
+            isDark ? "text-gray-400 hover:bg-gray-800 hover:text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+          )}
+          title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+          aria-label={isDark ? "التبديل إلى الوضع النهاري" : "التبديل إلى الوضع الليلي"}
+        >
+          {isDark ? <IconSun className="h-[18px] w-[18px]" /> : <IconMoon className="h-[18px] w-[18px]" />}
+        </button>
 
         <NotificationBell theme={isDark ? "dark" : "light"} />
 

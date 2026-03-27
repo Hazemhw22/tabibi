@@ -2,12 +2,10 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
-
-const THEME_EVENT = "tabibi-theme-change";
+import { applyTabibiTheme } from "@/lib/tabibi-theme";
 
 /**
- * السايدبار والهيدر يفرضان مظهرًا داكنًا للطبيب ومدير المركز، بينما قواعد globals.css
- * تعتمد على html[data-theme="dark"]. بدون المزامنة يبقى المحتوى فاتحًا والثيم غير متسق.
+ * للطبيب ومدير المركز: افتراضي داكن عند أول زيارة (بدون تفضيل محفوظ)، مع احترام اختيار المستخدم لاحقاً.
  */
 export function DashboardThemeSync() {
   const { data: session, status } = useSession();
@@ -17,9 +15,12 @@ export function DashboardThemeSync() {
     const role = session?.user?.role;
     if (role !== "DOCTOR" && role !== "MEDICAL_CENTER_ADMIN") return;
     try {
-      document.documentElement.dataset.theme = "dark";
-      window.localStorage.setItem("tabibi-theme", "dark");
-      window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: "dark" }));
+      const stored = window.localStorage.getItem("tabibi-theme");
+      if (stored === "light" || stored === "dark") {
+        applyTabibiTheme(stored);
+        return;
+      }
+      applyTabibiTheme("dark");
     } catch {
       /* ignore */
     }

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
+import { useTabibiTheme } from "@/lib/tabibi-theme";
 import { cn } from "@/lib/utils";
 import IconMenuDashboard from "@/components/icon/menu/icon-menu-dashboard";
 import IconUsersGroup from "@/components/icon/icon-users-group";
@@ -238,46 +239,17 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
   );
 }
 
-const THEME_EVENT = "tabibi-theme-change";
-
-/** التعديل الجوهري: إجبار الوضع الغامق للطبيب والمركز الطبي */
-function useEffectiveDark(
-  theme: "light" | "dark",
-  role: string | undefined
-): boolean {
-  // إذا كان طبيب أو مركز طبي، نستخدم الوضع الغامق دائماً بغض النظر عن ثيم النظام
-  if (role === "DOCTOR" || role === "MEDICAL_CENTER_ADMIN") return true;
-  return theme === "dark";
-}
-
 export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [doctorInfo, setDoctorInfo] = useState<{ status: string | null; specialty: string | null; image: string | null; gender: string | null }>({ status: null, specialty: null, image: null, gender: null });
   const [centerInfo, setCenterInfo] = useState<{ image: string | null; name: string | null }>({ image: null, name: null });
   const [patientInfo, setPatientInfo] = useState<{ image: string | null; gender: string | null }>({ image: null, gender: null });
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("tabibi-theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initial = stored === "dark" || (!stored && prefersDark) ? "dark" : "light";
-      setTheme(initial);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: CustomEvent<"light" | "dark">) => setTheme(e.detail);
-    window.addEventListener(THEME_EVENT, handler as EventListener);
-    return () => window.removeEventListener(THEME_EVENT, handler as EventListener);
-  }, []);
-
   const role = session?.user?.role;
-  const effectiveDark = useEffectiveDark(theme, role);
+  const theme = useTabibiTheme();
+  const effectiveDark = theme === "dark";
 
   useEffect(() => {
     if (role === "DOCTOR") {
