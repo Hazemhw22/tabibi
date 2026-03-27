@@ -5,6 +5,7 @@ import { sendSms, buildTransactionSmsMessage } from "@/lib/sms";
 import { sendTransactionEmail } from "@/lib/email";
 import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
+import { ledgerBalance } from "@/lib/patient-transaction-math";
 
 const schema = z.object({
   type: z.enum(["SERVICE", "PAYMENT"]),
@@ -71,6 +72,9 @@ export async function POST(
     const body = await req.json();
     const data = schema.parse(body);
 
+    const amountStored =
+      data.type === "SERVICE" ? -Math.abs(data.amount) : Math.abs(data.amount);
+
     const { data: row, error } = await supabaseAdmin
       .from("PlatformPatientTransaction")
       .insert({
@@ -78,7 +82,7 @@ export async function POST(
         patientId,
         type: data.type,
         description: data.description,
-        amount: data.amount,
+        amount: amountStored,
         notes: data.notes ?? null,
       })
       .select("id, type, description, amount, date, notes")
@@ -97,10 +101,7 @@ export async function POST(
         .select("type, amount")
         .eq("doctorId", doctor.id)
         .eq("patientId", patientId);
-      balanceAfter = (allTx ?? []).reduce(
-        (s, t) => (t.type === "PAYMENT" ? s + t.amount : s - t.amount),
-        0
-      );
+      balanceAfter = ledgerBalance(allTx ?? []);
     }
 
     let smsSent: boolean | null = null;
@@ -113,7 +114,7 @@ export async function POST(
     if (phone) {
       const msg = buildTransactionSmsMessage({
         type: data.type,
-        amount: data.amount,
+        amount: Math.abs(data.amount),
         description: data.description,
         doctorName: session.user.name ?? undefined,
         balanceAfter,
@@ -129,7 +130,7 @@ export async function POST(
       await sendTransactionEmail({
         to: email,
         type: data.type,
-        amount: data.amount,
+        amount: Math.abs(data.amount),
         description: data.description,
         doctorName: session.user.name,
         balanceAfter,
@@ -145,7 +146,7 @@ export async function POST(
       patientName:   patientUser?.name ?? null,
       type:          data.type,
       description:   data.description,
-      amount:        data.amount,
+      amount:        Math.abs(data.amount),
       doctorName:    session.user.name,
       patientId,
       patientSource: "platform",

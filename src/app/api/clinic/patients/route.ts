@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { linkClinicPatientAndSendPasswordSetup } from "@/lib/clinic-patient-invite";
+import {
+  linkClinicPatientAndSendPasswordSetup,
+  notifyClinicPatientLinkedExisting,
+} from "@/lib/clinic-patient-invite";
+import { phonesMatchLast9 } from "@/lib/patient-account";
 import { z } from "zod";
 
 const schema = z.object({
@@ -16,6 +20,8 @@ const schema = z.object({
   allergies: z.string().optional(),
   notes: z.string().optional(),
   fileNumber: z.string().optional(),
+  /** اختياري: حساب منصة موجود اختاره الطبيب بعد البحث بالهاتف */
+  existingUserId: z.string().uuid().optional(),
 });
 
 export async function POST(req: Request) {
@@ -35,6 +41,34 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = schema.parse(body);
 
+    const phoneRaw = (data.whatsapp || data.phone || "").trim();
+
+    if (data.existingUserId) {
+      if (phoneRaw.replace(/\D/g, "").length < 9) {
+        return NextResponse.json(
+          { error: "رقم الهاتف مطلوب لربط حساب موجود" },
+          { status: 400 },
+        );
+      }
+      const { data: u, error: uErr } = await supabaseAdmin
+        .from("User")
+        .select("id, role, phone")
+        .eq("id", data.existingUserId)
+        .single();
+      if (uErr || !u) {
+        return NextResponse.json({ error: "الحساب غير موجود" }, { status: 400 });
+      }
+      if (u.role !== "PATIENT") {
+        return NextResponse.json({ error: "الحساب المختار ليس مريضاً" }, { status: 400 });
+      }
+      if (!phonesMatchLast9(u.phone, phoneRaw)) {
+        return NextResponse.json(
+          { error: "رقم الهاتف لا يطابق الحساب المختار" },
+          { status: 400 },
+        );
+      }
+    }
+
     const { data: patient, error } = await supabaseAdmin
       .from("ClinicPatient")
       .insert({
@@ -50,6 +84,7 @@ export async function POST(req: Request) {
         allergies: data.allergies || null,
         notes: data.notes || null,
         fileNumber: data.fileNumber || null,
+        userId: data.existingUserId ?? null,
       })
       .select("id, name, phone, whatsapp, email, fileNumber, userId")
       .single();
@@ -59,10 +94,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "فشل إضافة المريض. تأكد من وجود جدول ClinicPatient." }, { status: 500 });
     }
 
-    const phoneRaw = (data.whatsapp || data.phone || "").trim();
     let setupSmsSent: boolean | null = null;
     let mergedPatient = patient;
-    if (phoneRaw.replace(/\D/g, "").length >= 9) {
+
+    if (data.existingUserId) {
+      await supabaseAdmin.from("User").update({ name: data.name }).eq("id", data.existingUserId);
+      if (phoneRaw.replace(/\D/g, "").length >= 9) {
+        setupSmsSent = await notifyClinicPatientLinkedExisting(phoneRaw);
+      }
+    } else if (phoneRaw.replace(/\D/g, "").length >= 9) {
       const invite = await linkClinicPatientAndSendPasswordSetup({
         clinicPatientId: patient.id,
         patientName: data.name,

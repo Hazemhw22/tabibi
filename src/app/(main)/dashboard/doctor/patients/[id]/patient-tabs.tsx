@@ -541,7 +541,7 @@ export default function PatientTabs({
                         {tx.type === "PAYMENT" ? "دفعة" : "خدمة"}
                       </Badge>
                       <span className={`font-semibold shrink-0 ${tx.type === "PAYMENT" ? "text-green-600" : "text-red-600"}`}>
-                        {tx.type === "PAYMENT" ? "+" : "-"}₪{tx.amount}
+                        {tx.type === "PAYMENT" ? "+" : "-"}₪{Math.abs(Number(tx.amount))}
                       </span>
                     </div>
                   ))}

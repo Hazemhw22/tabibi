@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { authInlineLabelClass } from "@/lib/auth-ui-classes";
 
 export default function RegisterMedicalCenterPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function RegisterMedicalCenterPage() {
     <Card className="w-full max-w-lg shadow-xl border-0">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
-          <IconBuilding className="h-6 w-6 text-blue-600" />
+          <IconBuilding className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           تسجيل مركز طبي
         </CardTitle>
         <CardDescription>
@@ -62,7 +63,7 @@ export default function RegisterMedicalCenterPage() {
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium">اسم المسؤول</label>
+            <label className={authInlineLabelClass}>اسم المسؤول</label>
             <Input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -71,7 +72,7 @@ export default function RegisterMedicalCenterPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">البريد الإلكتروني</label>
+            <label className={authInlineLabelClass}>البريد الإلكتروني</label>
             <Input
               type="email"
               value={form.email}
@@ -81,7 +82,7 @@ export default function RegisterMedicalCenterPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">كلمة المرور</label>
+            <label className={authInlineLabelClass}>كلمة المرور</label>
             <Input
               type="password"
               value={form.password}
@@ -92,7 +93,7 @@ export default function RegisterMedicalCenterPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">هاتف المسؤول</label>
+            <label className={authInlineLabelClass}>هاتف المسؤول</label>
             <Input
               value={form.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -100,9 +101,9 @@ export default function RegisterMedicalCenterPage() {
               className="mt-1"
             />
           </div>
-          <hr className="border-gray-200" />
+          <hr className="border-gray-200 dark:border-slate-700" />
           <div>
-            <label className="text-sm font-medium">اسم المركز</label>
+            <label className={authInlineLabelClass}>اسم المركز</label>
             <Input
               value={form.centerName}
               onChange={(e) => setForm((f) => ({ ...f, centerName: e.target.value }))}
@@ -111,7 +112,7 @@ export default function RegisterMedicalCenterPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">عنوان المركز</label>
+            <label className={authInlineLabelClass}>عنوان المركز</label>
             <Input
               value={form.centerAddress}
               onChange={(e) => setForm((f) => ({ ...f, centerAddress: e.target.value }))}
@@ -121,7 +122,7 @@ export default function RegisterMedicalCenterPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">المدينة</label>
+              <label className={authInlineLabelClass}>المدينة</label>
               <Input
                 value={form.centerCity}
                 onChange={(e) => setForm((f) => ({ ...f, centerCity: e.target.value }))}
@@ -129,7 +130,7 @@ export default function RegisterMedicalCenterPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">هاتف المركز (اختياري)</label>
+              <label className={authInlineLabelClass}>هاتف المركز (اختياري)</label>
               <Input
                 value={form.centerPhone}
                 onChange={(e) => setForm((f) => ({ ...f, centerPhone: e.target.value }))}
@@ -142,12 +143,12 @@ export default function RegisterMedicalCenterPage() {
             إنشاء الحساب
           </Button>
         </form>
-        <p className="text-center text-sm text-gray-500 mt-4">
-          <Link href="/register" className="text-blue-600 hover:underline">
+        <p className="mt-4 text-center text-sm text-gray-500 dark:text-slate-500">
+          <Link href="/register" className="text-blue-600 dark:text-blue-400">
             أنواع تسجيل أخرى
           </Link>
           {" · "}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link href="/login" className="text-blue-600 dark:text-blue-400">
             تسجيل الدخول
           </Link>
         </p>

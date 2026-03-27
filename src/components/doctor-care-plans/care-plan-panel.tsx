@@ -171,7 +171,7 @@ export function CarePlanPanel({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-gray-500 gap-2">
+      <div className="flex items-center justify-center py-16 text-gray-500 dark:text-gray-400 gap-2">
         <IconLoader className="h-5 w-5 animate-spin" />
         جاري تحميل الخطة...
       </div>
@@ -180,9 +180,9 @@ export function CarePlanPanel({
 
   if (loadError) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 text-sm text-amber-950">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 text-sm text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100">
         <p className="font-semibold">تعذّر تحميل خطة العلاج</p>
-        <p className="text-amber-900/90 whitespace-pre-wrap">{loadError}</p>
+        <p className="text-amber-900/90 dark:text-amber-200/90 whitespace-pre-wrap">{loadError}</p>
         <Button type="button" size="sm" variant="outline" onClick={() => void load()} className="gap-2">
           <IconRefresh className="h-4 w-4" />
           إعادة المحاولة
@@ -216,8 +216,8 @@ export function CarePlanPanel({
   return (
     <div className="space-y-6 min-h-[200px]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <IconClipboardText className="h-4 w-4 text-blue-600" />
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <IconClipboardText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           {title}
         </h3>
         <div className="flex flex-wrap items-center gap-2">
@@ -291,10 +291,10 @@ export function CarePlanPanel({
 
       <CarePlanFollowUpsSection data={data} setData={setData} carePlanType={carePlanType} />
 
-      <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-2">
+      <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-2 dark:border-slate-700 dark:bg-slate-900/50">
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-700">ملاحظات الطبيب (عامة)</label>
-          <p className="text-[11px] text-gray-500 leading-snug">
+          <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">ملاحظات الطبيب (عامة)</label>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
             خاصة بحسابك فقط؛ أطباء آخرون لهم ملاحظاتهم المنفصلة على نفس المريض (منصة أو ملف عيادة مرتبط بهم).
           </p>
         </div>
@@ -303,7 +303,7 @@ export function CarePlanPanel({
           onChange={(e) => setDoctorNotes(e.target.value)}
           rows={4}
           placeholder="أي توصيات أو ملاحظات إضافية تظهر للفريق أو في المراجعات القادمة..."
-          className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+          className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-500"
         />
       </div>
 
@@ -342,29 +342,29 @@ function ObGynBlock({
   const displayWeek = pregnancy && !pregnancy.invalid ? Math.min(Math.max(pregnancy.weeks, 0), 42) : 12;
 
   return (
-    <div className="space-y-4 rounded-xl border border-pink-100 bg-pink-50/40 p-4">
+    <div className="space-y-4 rounded-xl border border-pink-100 bg-pink-50/40 p-4 dark:border-pink-900/40 dark:bg-pink-950/25">
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="text-xs font-medium text-gray-700 mb-1 block">
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">
             أول يوم في آخر دورة (LMP)
           </label>
           <input
             type="date"
             value={lmp}
             onChange={(e) => setData((d) => ({ ...d, lmpDate: e.target.value }))}
-            className="h-9 w-full rounded-lg border border-gray-300 px-3 text-sm"
+            className="h-9 w-full rounded-lg border border-gray-300 px-3 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
           />
         </div>
         {pregnancy && !pregnancy.invalid && (
-          <div className="rounded-lg bg-white border border-pink-200 p-3 text-sm space-y-1">
+          <div className="rounded-lg bg-white border border-pink-200 p-3 text-sm space-y-1 dark:bg-slate-900/60 dark:border-pink-800/50">
             <div>
-              <span className="text-gray-600">عمر الحمل: </span>
-              <strong className="text-pink-800">
+              <span className="text-gray-600 dark:text-gray-400">عمر الحمل: </span>
+              <strong className="text-pink-800 dark:text-pink-300">
                 {pregnancy.weeks} أسبوعاً {pregnancy.daysR > 0 ? `و ${pregnancy.daysR} يوماً` : ""}
               </strong>
             </div>
             <div>
-              <span className="text-gray-600">التاريخ المتوقع للولادة: </span>
+              <span className="text-gray-600 dark:text-gray-400">التاريخ المتوقع للولادة: </span>
               <strong dir="ltr">{format(pregnancy.edd, "dd/MM/yyyy", { locale: ar })}</strong>
             </div>
           </div>
@@ -378,7 +378,7 @@ function ObGynBlock({
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-gray-800">مراجعات المتابعة (بدون تكلفة في الخطة)</span>
+          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">مراجعات المتابعة (بدون تكلفة في الخطة)</span>
           <Button
             type="button"
             size="sm"
@@ -399,10 +399,10 @@ function ObGynBlock({
         </div>
         <div className="space-y-2">
           {reviewVisits.length === 0 && (
-            <p className="text-xs text-gray-400">لا مراجعات بعد — أضف مواعيد المتابعة الدورية.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">لا مراجعات بعد — أضف مواعيد المتابعة الدورية.</p>
           )}
           {reviewVisits.map((rv) => (
-            <div key={rv.id} className="flex flex-wrap gap-2 items-end rounded-lg border border-white bg-white p-2">
+            <div key={rv.id} className="flex flex-wrap gap-2 items-end rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900/60">
               <input
                 type="date"
                 value={rv.date}
@@ -414,7 +414,7 @@ function ObGynBlock({
                     return { ...d, reviewVisits: list };
                   })
                 }
-                className="h-8 rounded border border-gray-200 px-2 text-xs"
+                className="h-8 rounded border border-gray-200 px-2 text-xs dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
               />
               <Input
                 className="h-8 flex-1 min-w-[120px] text-xs"
@@ -488,8 +488,8 @@ function PediatricsBlock({
   const rowFor = (id: PediatricOrganId) => rows.find((r) => r.organId === id);
 
   return (
-    <div className="rounded-xl border border-sky-100 bg-sky-50/30 p-4 space-y-4">
-      <p className="text-xs text-gray-600">
+    <div className="rounded-xl border border-sky-100 bg-sky-50/30 p-4 space-y-4 dark:border-sky-900/40 dark:bg-sky-950/20">
+      <p className="text-xs text-gray-600 dark:text-gray-400">
         اختر عضواً من المخطط، ثم سجّل المشكلة والتكلفة المقترحة (اختياري).
       </p>
       <div className="flex flex-col md:flex-row gap-6">
@@ -503,7 +503,9 @@ function PediatricsBlock({
                 onClick={() => setSelected(o.id)}
                 className={cn(
                   "text-[11px] px-2 py-1 rounded-full border",
-                  selected === o.id ? "bg-sky-600 text-white border-sky-600" : "bg-white border-gray-200",
+                  selected === o.id
+                    ? "bg-sky-600 text-white border-sky-600"
+                    : "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-200",
                 )}
               >
                 {o.label}
@@ -511,8 +513,8 @@ function PediatricsBlock({
             ))}
           </div>
           {selected && (
-            <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
-              <div className="text-xs font-semibold text-gray-800">
+            <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2 dark:border-slate-700 dark:bg-slate-900/60">
+              <div className="text-xs font-semibold text-gray-800 dark:text-gray-200">
                 {PEDIATRIC_ORGANS.find((x) => x.id === selected)?.label}
               </div>
               <Input
@@ -522,7 +524,7 @@ function PediatricsBlock({
                 className="text-sm"
               />
               <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-600 shrink-0">تكلفة تقريبية (₪)</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 shrink-0">تكلفة تقريبية (₪)</span>
                 <Input
                   type="number"
                   min={0}
@@ -553,9 +555,9 @@ function OrthopedicsBlock({
 }) {
   const injuries = (data.injuries as OrthoRow[]) || [];
   return (
-    <div className="rounded-xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
+    <div className="rounded-xl border border-amber-100 bg-amber-50/30 p-4 space-y-3 dark:border-amber-900/40 dark:bg-amber-950/25">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-semibold text-gray-800">الإصابات ومدة العلاج والتكلفة</span>
+        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">الإصابات ومدة العلاج والتكلفة</span>
         <Button
           type="button"
           size="sm"
@@ -575,7 +577,7 @@ function OrthopedicsBlock({
         </Button>
       </div>
       {injuries.map((row) => (
-        <div key={row.id} className="grid gap-2 sm:grid-cols-[1fr_100px_100px_auto] items-end rounded-lg border bg-white p-2">
+        <div key={row.id} className="grid gap-2 sm:grid-cols-[1fr_100px_100px_auto] items-end rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900/60">
           <Input
             placeholder="نوع الإصابة (مثال: التواء، كسر...)"
             value={row.injuryType}
@@ -590,7 +592,7 @@ function OrthopedicsBlock({
             className="text-sm"
           />
           <div>
-            <label className="text-[10px] text-gray-500">المدة (يوم)</label>
+            <label className="text-[10px] text-gray-500 dark:text-gray-400">المدة (يوم)</label>
             <Input
               type="number"
               min={0}
@@ -607,7 +609,7 @@ function OrthopedicsBlock({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-500">تكلفة (₪)</label>
+            <label className="text-[10px] text-gray-500 dark:text-gray-400">تكلفة (₪)</label>
             <Input
               type="number"
               min={0}
@@ -639,7 +641,7 @@ function OrthopedicsBlock({
           </Button>
         </div>
       ))}
-      {injuries.length === 0 && <p className="text-xs text-gray-400">لا إصابات مسجّلة.</p>}
+      {injuries.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500">لا إصابات مسجّلة.</p>}
     </div>
   );
 }
@@ -656,9 +658,9 @@ function UrologyBlock({
 }) {
   const issues = (data.issues as UroRow[]) || [];
   return (
-    <div className="rounded-xl border border-violet-100 bg-violet-50/30 p-4 space-y-3">
+    <div className="rounded-xl border border-violet-100 bg-violet-50/30 p-4 space-y-3 dark:border-violet-900/40 dark:bg-violet-950/20">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-semibold text-gray-800">المشكلة والتكلفة</span>
+        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">المشكلة والتكلفة</span>
         <Button
           type="button"
           size="sm"
@@ -675,7 +677,7 @@ function UrologyBlock({
         </Button>
       </div>
       {issues.map((row) => (
-        <div key={row.id} className="flex flex-wrap gap-2 items-end rounded-lg border bg-white p-2">
+        <div key={row.id} className="flex flex-wrap gap-2 items-end rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900/60">
           <Input
             className="flex-1 min-w-[160px] text-sm"
             placeholder="وصف المشكلة (كلى، مسالك، التهاب...)"
@@ -718,7 +720,7 @@ function UrologyBlock({
           </Button>
         </div>
       ))}
-      {issues.length === 0 && <p className="text-xs text-gray-400">لا مشاكل مسجّلة.</p>}
+      {issues.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500">لا مشاكل مسجّلة.</p>}
     </div>
   );
 }
@@ -760,8 +762,8 @@ function CardiologyBlock({
   const rowFor = (id: CardiologyZoneId) => rows.find((r) => r.zoneId === id);
 
   return (
-    <div className="rounded-xl border border-red-100 bg-red-50/20 p-4 space-y-4">
-      <p className="text-xs text-gray-600">اختر منطقة من الرسم ثم سجّل التشخيص والتكلفة التقديرية.</p>
+    <div className="rounded-xl border border-red-100 bg-red-50/20 p-4 space-y-4 dark:border-red-900/40 dark:bg-red-950/20">
+      <p className="text-xs text-gray-600 dark:text-gray-400">اختر منطقة من الرسم ثم سجّل التشخيص والتكلفة التقديرية.</p>
       <div className="flex flex-col md:flex-row gap-6">
         <CardiologyHeartSvg selected={selected} onSelect={(id) => setSelected(id)} problemIds={problemIds} />
         <div className="flex-1 space-y-2">
@@ -773,7 +775,9 @@ function CardiologyBlock({
                 onClick={() => setSelected(z.id)}
                 className={cn(
                   "text-[11px] px-2 py-1 rounded-full border",
-                  selected === z.id ? "bg-red-600 text-white border-red-600" : "bg-white border-gray-200",
+                  selected === z.id
+                    ? "bg-red-600 text-white border-red-600"
+                    : "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-200",
                 )}
               >
                 {z.label}
@@ -781,7 +785,7 @@ function CardiologyBlock({
             ))}
           </div>
           {selected && (
-            <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+            <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2 dark:border-slate-700 dark:bg-slate-900/60">
               <Input
                 placeholder="مشكلة / تشخيص"
                 value={rowFor(selected)?.problem || ""}
@@ -789,7 +793,7 @@ function CardiologyBlock({
                 className="text-sm"
               />
               <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-600">تكلفة (₪)</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">تكلفة (₪)</span>
                 <Input
                   type="number"
                   min={0}
@@ -801,17 +805,17 @@ function CardiologyBlock({
             </div>
           )}
           {rows.some((r) => r.problem?.trim() || (r.cost ?? 0) > 0) && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5">
-              <p className="mb-1 text-[11px] font-semibold text-gray-600">المدخلات المحفوظة</p>
-              <ul className="space-y-1 text-xs text-gray-700">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 dark:border-slate-700 dark:bg-slate-900/50">
+              <p className="mb-1 text-[11px] font-semibold text-gray-600 dark:text-gray-400">المدخلات المحفوظة</p>
+              <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                 {rows
                   .filter((r) => r.problem?.trim() || (r.cost ?? 0) > 0)
                   .map((r) => (
-                    <li key={r.zoneId} className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1">
+                    <li key={r.zoneId} className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 dark:bg-slate-950/80">
                       <span className="truncate">
                         {CARDIO_ZONES.find((z) => z.id === r.zoneId)?.label ?? r.zoneId} — {r.problem || "بدون وصف"}
                       </span>
-                      <span className="shrink-0 font-semibold text-blue-700">₪{r.cost ?? 0}</span>
+                      <span className="shrink-0 font-semibold text-blue-700 dark:text-blue-400">₪{r.cost ?? 0}</span>
                     </li>
                   ))}
               </ul>
@@ -835,9 +839,9 @@ function GenericBlock({
 }) {
   const items = (data.items as GenRow[]) || [];
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+    <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-900/40">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-semibold text-gray-800">بنود الخطة</span>
+        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">بنود الخطة</span>
         <Button
           type="button"
           size="sm"
@@ -854,7 +858,7 @@ function GenericBlock({
         </Button>
       </div>
       {items.map((row) => (
-        <div key={row.id} className="grid gap-2 sm:grid-cols-[120px_1fr_100px_auto] items-end rounded-lg border bg-white p-2">
+        <div key={row.id} className="grid gap-2 sm:grid-cols-[120px_1fr_100px_auto] items-end rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900/60">
           <Input
             placeholder="عنوان"
             value={row.label}
@@ -908,7 +912,7 @@ function GenericBlock({
           </Button>
         </div>
       ))}
-      {items.length === 0 && <p className="text-xs text-gray-400">أضف بنوداً للخطة العلاجية.</p>}
+      {items.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500">أضف بنوداً للخطة العلاجية.</p>}
     </div>
   );
 }

@@ -5,7 +5,11 @@ import { z } from "zod";
 
 const patchSchema = z.object({
   description: z.string().min(1).optional(),
-  amount: z.number().positive().optional(),
+  /** دفعات موجبة وخدمات سالبة — لا نقبل الصفر فقط */
+  amount: z
+    .number()
+    .refine((n) => Number.isFinite(n) && n !== 0, { message: "المبلغ يجب أن يكون غير صفر" })
+    .optional(),
   notes: z.string().nullable().optional(),
   date: z.string().optional(),
 });
@@ -22,7 +26,7 @@ async function getDoctorIdByUserId(userId: string): Promise<string | null> {
 async function verifyPlatformTxOwner(txId: string, doctorId: string) {
   const { data: tx } = await supabaseAdmin
     .from("PlatformPatientTransaction")
-    .select("id, doctorId")
+    .select("id, doctorId, type")
     .eq("id", txId)
     .maybeSingle();
 
@@ -53,7 +57,12 @@ export async function PATCH(
 
     const updates: Record<string, unknown> = {};
     if (data.description !== undefined) updates.description = data.description;
-    if (data.amount !== undefined) updates.amount = data.amount;
+    if (data.amount !== undefined) {
+      const typ = (tx as { type?: string }).type;
+      if (typ === "SERVICE") updates.amount = -Math.abs(data.amount);
+      else if (typ === "PAYMENT") updates.amount = Math.abs(data.amount);
+      else updates.amount = data.amount;
+    }
     if (data.notes !== undefined) updates.notes = data.notes;
     if (data.date !== undefined) updates.date = new Date(data.date).toISOString();
 
@@ -91,7 +100,11 @@ export async function DELETE(
     const tx = await verifyPlatformTxOwner(id, doctorId);
     if (!tx) return NextResponse.json({ error: "غير موجود أو غير مصرح" }, { status: 404 });
 
-    await supabaseAdmin.from("PlatformPatientTransaction").delete().eq("id", id);
+    const { error: delErr } = await supabaseAdmin
+      .from("PlatformPatientTransaction")
+      .delete()
+      .eq("id", id);
+    if (delErr) return NextResponse.json({ error: "فشل الحذف" }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });

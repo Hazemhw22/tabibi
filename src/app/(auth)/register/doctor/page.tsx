@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
+import { authLabelClass, authPasswordInputClass, authPasswordToggleClass, authSelectClass } from "@/lib/auth-ui-classes";
 
 type Specialty = { id: string; name: string; nameAr: string };
 
@@ -93,8 +94,8 @@ export default function RegisterDoctorPage() {
           <Input label="البريد الإلكتروني" type="email" placeholder="doctor@example.com" icon={<IconMail className="h-4 w-4" />} error={errors.email?.message} {...register("email")} dir="ltr" />
           <Input label="رقم الهاتف" type="tel" placeholder="05991234567" icon={<IconPhone className="h-4 w-4" />} error={errors.phone?.message} {...register("phone")} dir="ltr" />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">التخصص</label>
-            <select className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" {...register("specialtyId")}>
+            <label className={authLabelClass}>التخصص</label>
+            <select className={authSelectClass} {...register("specialtyId")}>
               <option value="">اختر التخصص</option>
               {specialties.map((s) => <option key={s.id} value={s.id}>{s.nameAr}</option>)}
             </select>
@@ -102,11 +103,20 @@ export default function RegisterDoctorPage() {
           </div>
           <Input label="رقم الواتساب (اختياري — يُستخدم رقم الهاتف إن تركته فارغاً)" type="tel" placeholder="05991234567" icon={<IconPhone className="h-4 w-4" />} error={errors.whatsapp?.message} {...register("whatsapp")} dir="ltr" />
           <div className="w-full">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">كلمة المرور</label>
+            <label className={authLabelClass}>كلمة المرور</label>
             <div className="relative">
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400"><IconLock className="h-4 w-4" /></div>
-              <input type={showPassword ? "text" : "password"} placeholder="••••••••" className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" autoComplete="new-password" {...register("password")} dir="ltr" />
-              <button type="button" className="absolute inset-y-0 left-3 flex items-center text-gray-400 hover:text-gray-600" onClick={() => setShowPassword(!showPassword)}>
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 dark:text-slate-500">
+                <IconLock className="h-4 w-4" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                className={authPasswordInputClass}
+                autoComplete="new-password"
+                {...register("password")}
+                dir="ltr"
+              />
+              <button type="button" className={authPasswordToggleClass} onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
               </button>
             </div>
@@ -118,12 +128,16 @@ export default function RegisterDoctorPage() {
           </Button>
         </form>
         <div className="mt-6 text-center">
-          <p className="text-base text-gray-600">
+          <p className="text-base text-gray-600 dark:text-slate-400">
             لديك حساب طبيب؟{" "}
-            <Link href="/login/doctor" className="text-blue-600 font-semibold hover:underline">تسجيل الدخول</Link>
+            <Link href="/login/doctor" className="font-semibold text-blue-600 dark:text-blue-400">
+              تسجيل الدخول
+            </Link>
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            <Link href="/register" className="hover:underline">إنشاء حساب مريض</Link>
+          <p className="mt-2 text-sm text-gray-500 dark:text-slate-500">
+            <Link href="/register" className="dark:hover:text-slate-300">
+              إنشاء حساب مريض
+            </Link>
           </p>
         </div>
       </CardContent>

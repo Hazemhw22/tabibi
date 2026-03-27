@@ -5,10 +5,12 @@ import { sendSms, sendWhatsApp, buildTransactionSmsMessage } from "@/lib/sms";
 import { sendTransactionEmail } from "@/lib/email";
 import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
+import { ledgerBalance } from "@/lib/patient-transaction-math";
 
 const schema = z.object({
   type: z.enum(["SERVICE", "PAYMENT"]),
   description: z.string().min(1),
+  /** المبلغ المدخل موجباً؛ تُخزَّن الخدمة سالبة والدفعة موجبة */
   amount: z.number().positive(),
   notes: z.string().optional(),
   date: z.string().optional(),
@@ -51,6 +53,9 @@ export async function POST(
     const body = await req.json();
     const data = schema.parse(body);
 
+    const amountStored =
+      data.type === "SERVICE" ? -Math.abs(data.amount) : Math.abs(data.amount);
+
     /* ── Insert transaction ─────────────────────────────────── */
     const { data: transaction, error: txError } = await supabaseAdmin
       .from("ClinicTransaction")
@@ -58,7 +63,7 @@ export async function POST(
         clinicPatientId: id,
         type: data.type,
         description: data.description,
-        amount: data.amount,
+        amount: amountStored,
         notes: data.notes ?? null,
         date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
         createdBy: session.user.id,
@@ -78,16 +83,13 @@ export async function POST(
         .from("ClinicTransaction")
         .select("type, amount")
         .eq("clinicPatientId", id);
-      balanceAfter = (allTx ?? []).reduce(
-        (s, t) => (t.type === "PAYMENT" ? s + t.amount : s - t.amount),
-        0
-      );
+      balanceAfter = ledgerBalance(allTx ?? []);
     }
 
     /* ── WhatsApp / SMS ─────────────────────────────────────── */
     const msg = buildTransactionSmsMessage({
       type: data.type,
-      amount: data.amount,
+      amount: Math.abs(data.amount),
       description: data.description,
       doctorName: session.user.name ?? undefined,
       balanceAfter,
@@ -114,7 +116,7 @@ export async function POST(
       await sendTransactionEmail({
         to: email,
         type: data.type,
-        amount: data.amount,
+        amount: Math.abs(data.amount),
         description: data.description,
         doctorName: session.user.name,
         balanceAfter,
@@ -133,7 +135,7 @@ export async function POST(
       patientName:   patient.name ?? null,
       type:          data.type,
       description:   data.description,
-      amount:        data.amount,
+      amount:        Math.abs(data.amount),
       doctorName:    session.user.name,
       patientId:     id,
     });

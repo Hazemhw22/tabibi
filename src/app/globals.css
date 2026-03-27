@@ -31,6 +31,13 @@ body {
   min-width: 0;
 }
 
+@layer base {
+  a,
+  a:visited {
+    text-decoration: none;
+  }
+}
+
 /* تطبيق خط El Messiri على العناوين */
 h1, h2, h3,
 .font-heading {
@@ -91,6 +98,62 @@ html[data-theme="dark"] .text-black        { color: var(--dm-text)       !import
 html[data-theme="dark"] .text-amber-900    { color: #fde68a               !important; }
 html[data-theme="dark"] .text-amber-700    { color: #fcd34d               !important; }
 html[data-theme="dark"] .text-green-700    { color: #86efac               !important; }
+
+/* ── Slate (كثير في لوحات الطبيب/المركز) — بدونها تبقى ألوان فاتحة على خلفية داكنة ── */
+html[data-theme="dark"] .text-slate-900   { color: var(--dm-text)       !important; }
+html[data-theme="dark"] .text-slate-800   { color: var(--dm-text)       !important; }
+html[data-theme="dark"] .text-slate-700   { color: #cbd5e1               !important; }
+html[data-theme="dark"] .text-slate-600   { color: var(--dm-text-muted) !important; }
+html[data-theme="dark"] .text-slate-500   { color: var(--dm-text-muted) !important; }
+html[data-theme="dark"] .text-slate-400   { color: var(--dm-text-faint) !important; }
+html[data-theme="dark"] .text-slate-300   { color: #cbd5e1               !important; }
+
+html[data-theme="dark"] .bg-slate-50      { background-color: var(--dm-bg)       !important; }
+html[data-theme="dark"] .bg-slate-100      { background-color: var(--dm-input-bg) !important; }
+html[data-theme="dark"] .bg-slate-200      { background-color: var(--dm-hover)    !important; }
+
+html[data-theme="dark"] .bg-slate-50\/80   { background-color: rgba(15, 23, 42, 0.85) !important; }
+html[data-theme="dark"] .bg-slate-50\/60:hover,
+html[data-theme="dark"] .hover\:bg-slate-50\/60:hover {
+  background-color: rgba(51, 65, 85, 0.45) !important;
+}
+
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200 { border-color: var(--dm-border-soft) !important; }
+
+/* ── ألوان تنبيه / شارات في لوحات الإدارة والطبيب ── */
+html[data-theme="dark"] .bg-yellow-50     { background-color: #422006 !important; }
+html[data-theme="dark"] .border-yellow-200 { border-color: #78350f !important; }
+html[data-theme="dark"] .text-yellow-800   { color: #fde68a !important; }
+html[data-theme="dark"] .text-yellow-600   { color: #fbbf24 !important; }
+
+html[data-theme="dark"] .bg-red-50         { background-color: #200505 !important; }
+html[data-theme="dark"] .border-red-200    { border-color: #7f1d1d !important; }
+html[data-theme="dark"] .text-red-800      { color: #fecaca !important; }
+html[data-theme="dark"] .text-red-600      { color: #f87171 !important; }
+
+html[data-theme="dark"] .bg-orange-50      { background-color: rgba(124, 45, 18, 0.45) !important; }
+html[data-theme="dark"] .bg-orange-50\/50  { background-color: rgba(124, 45, 18, 0.35) !important; }
+html[data-theme="dark"] .border-orange-200 { border-color: #9a3412 !important; }
+html[data-theme="dark"] .bg-orange-100     { background-color: rgba(124, 45, 18, 0.55) !important; }
+html[data-theme="dark"] .text-orange-800   { color: #fdba74 !important; }
+html[data-theme="dark"] .text-orange-600   { color: #fb923c !important; }
+
+html[data-theme="dark"] .bg-sky-50         { background-color: rgba(30, 58, 138, 0.35) !important; }
+html[data-theme="dark"] .border-sky-100    { border-color: #1e3a8a !important; }
+html[data-theme="dark"] .text-sky-800      { color: #bae6fd !important; }
+
+html[data-theme="dark"] .bg-indigo-100     { background-color: rgba(49, 46, 129, 0.45) !important; }
+html[data-theme="dark"] .text-indigo-600   { color: #a5b4fc !important; }
+
+html[data-theme="dark"] .bg-purple-100    { background-color: rgba(88, 28, 135, 0.4) !important; }
+html[data-theme="dark"] .text-purple-600   { color: #d8b4fe !important; }
+
+html[data-theme="dark"] .bg-violet-50      { background-color: rgba(91, 33, 182, 0.22) !important; }
+html[data-theme="dark"] .text-violet-500    { color: #c4b5fd !important; }
+html[data-theme="dark"] .text-violet-600   { color: #a78bfa !important; }
+
+html[data-theme="dark"] .bg-sky-100        { background-color: rgba(30, 58, 138, 0.45) !important; }
 
 /* ── Borders ── */
 html[data-theme="dark"] .border-gray-50,

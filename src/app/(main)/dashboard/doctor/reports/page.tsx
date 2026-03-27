@@ -10,6 +10,8 @@ import IconInfoCircle from "@/components/icon/icon-info-circle";
 import IconReceipt from "@/components/icon/icon-receipt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
+import { cn } from "@/lib/utils";
 
 export default async function DoctorReportsPage() {
   const session = await auth();
@@ -141,29 +143,29 @@ export default async function DoctorReportsPage() {
   const clinicTx = clinicTxList;
   const platformTx = platformTxList;
   const totalPaymentsAdded =
-    clinicTx.filter((t) => t.type === "PAYMENT").reduce((s, t) => s + t.amount, 0) +
-    platformTx.filter((t) => t.type === "PAYMENT").reduce((s, t) => s + t.amount, 0);
+    clinicTx.filter((t) => t.type === "PAYMENT").reduce((s, t) => s + Math.abs(t.amount), 0) +
+    platformTx.filter((t) => t.type === "PAYMENT").reduce((s, t) => s + Math.abs(t.amount), 0);
   const totalServices =
-    clinicTx.filter((t) => t.type === "SERVICE").reduce((s, t) => s + t.amount, 0) +
-    platformTx.filter((t) => t.type === "SERVICE").reduce((s, t) => s + t.amount, 0);
+    clinicTx.filter((t) => t.type === "SERVICE").reduce((s, t) => s + Math.abs(t.amount), 0) +
+    platformTx.filter((t) => t.type === "SERVICE").reduce((s, t) => s + Math.abs(t.amount), 0);
   const totalEarnings = revenue + totalPaymentsAdded;
   const debtAfterDeduction = Math.max(0, totalServices - totalPaymentsAdded);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">التقارير</h1>
-      <p className="text-gray-500 mb-8">ملخص أداء المواعيد والإيرادات</p>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-slate-100">التقارير</h1>
+      <p className="mb-8 text-gray-500 dark:text-slate-400">ملخص أداء المواعيد والإيرادات</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600">
+              <div className="rounded-xl bg-blue-100 p-2.5 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
                 <IconCalendar className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{aptList.length}</p>
-                <p className="text-xs text-gray-500">إجمالي المواعيد</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{aptList.length}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">إجمالي المواعيد</p>
               </div>
             </div>
           </CardContent>
@@ -171,12 +173,12 @@ export default async function DoctorReportsPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-green-100 text-green-600">
+              <div className="rounded-xl bg-green-100 p-2.5 text-green-600 dark:bg-green-950/40 dark:text-green-400">
                 <IconCircleCheck className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{completed.length}</p>
-                <p className="text-xs text-gray-500">مواعيد منجزة</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{completed.length}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">مواعيد منجزة</p>
               </div>
             </div>
           </CardContent>
@@ -184,12 +186,12 @@ export default async function DoctorReportsPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600">
+              <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
                 <IconTrendingUp className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">₪{totalEarnings.toFixed(0)}</p>
-                <p className="text-xs text-gray-500">إجمالي الأرباح</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">₪{totalEarnings.toFixed(0)}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">إجمالي الأرباح</p>
               </div>
             </div>
           </CardContent>
@@ -197,12 +199,12 @@ export default async function DoctorReportsPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600">
+              <div className="rounded-xl bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
                 <IconInfoCircle className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">₪{debtAfterDeduction.toFixed(0)}</p>
-                <p className="text-xs text-gray-500">الديون المستحقة</p>
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">₪{debtAfterDeduction.toFixed(0)}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">الديون المستحقة</p>
               </div>
             </div>
           </CardContent>
@@ -210,22 +212,24 @@ export default async function DoctorReportsPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-purple-100 text-purple-600">
+              <div className="rounded-xl bg-purple-100 p-2.5 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300">
                 <IconTrendingUp className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{aptList.length ? ((completed.length / aptList.length) * 100).toFixed(0) : 0}%</p>
-                <p className="text-xs text-gray-500">نسبة الإنجاز</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                  {aptList.length ? ((completed.length / aptList.length) * 100).toFixed(0) : 0}%
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">نسبة الإنجاز</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="overflow-hidden border-0 shadow-lg shadow-gray-200/50 rounded-2xl">
-        <CardHeader className="bg-gradient-to-l from-slate-50 to-white border-b border-gray-100 px-6 py-5">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 rounded-xl bg-slate-100 text-slate-600">
+      <Card className="overflow-hidden rounded-2xl border-0 shadow-lg shadow-gray-200/50 dark:border dark:border-slate-700/80 dark:shadow-slate-950/50">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-l from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
+          <CardTitle className="flex items-center gap-3 text-lg dark:text-slate-100">
+            <div className="rounded-xl bg-slate-100 p-2 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               <IconReceipt className="h-5 w-5" />
             </div>
             الدفعات والديون
@@ -233,50 +237,58 @@ export default async function DoctorReportsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {txRows.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <IconReceipt className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="py-12 text-center text-gray-500 dark:text-slate-400">
+              <IconReceipt className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-slate-600" />
               <p>لا توجد دفعات أو ديون مسجلة</p>
             </div>
           ) : (
-            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
-              <table className="w-full text-sm min-w-[560px]">
+            <div className="-mx-3 touch-pan-x overflow-x-auto px-3 scrollbar-hide sm:mx-0 sm:px-0">
+              <table className="min-w-[560px] w-full text-sm">
                 <thead>
-                  <tr className="text-right border-b border-gray-100 bg-gray-50/80">
-                    <th className="py-3 px-4 font-semibold text-gray-600">التاريخ</th>
-                    <th className="py-3 px-4 font-semibold text-gray-600">المريض</th>
-                    <th className="py-3 px-4 font-semibold text-gray-600">النوع</th>
-                    <th className="py-3 px-4 font-semibold text-gray-600">الوصف</th>
-                    <th className="py-3 px-4 font-semibold text-gray-600">المبلغ</th>
-                    <th className="py-3 px-4 font-semibold text-gray-600">المصدر</th>
+                  <tr className="border-b border-gray-100 bg-gray-50/80 text-right dark:border-slate-700 dark:bg-slate-800/60">
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">التاريخ</th>
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">المريض</th>
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">النوع</th>
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">الوصف</th>
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">المبلغ</th>
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">المصدر</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {txRows.map((row) => (
-                    <tr key={`${row.source}-${row.id}`} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="py-3 px-4 text-gray-700">
-                        {row.date ? format(new Date(row.date), "d MMM yyyy", { locale: ar }) : "—"}
-                      </td>
-                      <td className="py-3 px-4 font-medium text-gray-900">{row.patientName}</td>
-                      <td className="py-3 px-4">
-                        {row.type === "PLATFORM_INCOME" ? (
-                          <Badge className="bg-blue-100 text-blue-800 border-0">وارد المنصة</Badge>
-                        ) : (
-                          <Badge variant={row.type === "PAYMENT" ? "default" : "secondary"}>
-                            {row.type === "PAYMENT" ? "دفعة" : "خدمة / دين"}
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700/80">
+                  {txRows.map((row) => {
+                    const signed = Number(row.amount);
+                    return (
+                      <tr
+                        key={`${row.source}-${row.id}`}
+                        className="transition-colors hover:bg-gray-50/80 dark:hover:bg-slate-800/50"
+                      >
+                        <td className="px-4 py-3 text-gray-700 dark:text-slate-300">
+                          {row.date ? format(new Date(row.date), "d MMM yyyy", { locale: ar }) : "—"}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">{row.patientName}</td>
+                        <td className="px-4 py-3">
+                          {row.type === "PLATFORM_INCOME" ? (
+                            <Badge className="border-0 bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200">
+                              وارد المنصة
+                            </Badge>
+                          ) : (
+                            <Badge variant={row.type === "PAYMENT" ? "default" : "secondary"}>
+                              {row.type === "PAYMENT" ? "دفعة" : "خدمة / دين"}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-slate-400">{row.description}</td>
+                        <td className={cn("px-4 py-3 font-semibold tabular-nums", amountSignedColorClass(signed))}>
+                          {formatSignedShekel(signed)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline" className="text-xs dark:border-slate-600 dark:text-slate-300">
+                            {row.source}
                           </Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-gray-600">{row.description}</td>
-                      <td className={`py-3 px-4 font-semibold ${
-                        row.type === "PLATFORM_INCOME" || row.type === "PAYMENT" ? "text-green-600" : "text-amber-600"
-                      }`}>
-                        {row.type === "SERVICE" ? "-" : "+"}₪{row.amount}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant="outline" className="text-xs">{row.source}</Badge>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -284,21 +296,21 @@ export default async function DoctorReportsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-8 overflow-hidden border-0 shadow-lg shadow-gray-200/50 rounded-2xl">
-        <CardHeader className="bg-gradient-to-l from-slate-50 to-white border-b border-gray-100 px-6 py-5">
-          <CardTitle className="text-lg">ملخص المواعيد حسب الحالة</CardTitle>
+      <Card className="mt-8 overflow-hidden rounded-2xl border-0 shadow-lg shadow-gray-200/50 dark:border dark:border-slate-700/80 dark:shadow-slate-950/50">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-l from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
+          <CardTitle className="text-lg dark:text-slate-100">ملخص المواعيد حسب الحالة</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 touch-pan-x scrollbar-hide">
-            <table className="w-full text-sm min-w-[320px]">
+          <div className="-mx-3 touch-pan-x overflow-x-auto px-3 scrollbar-hide sm:mx-0 sm:px-0">
+            <table className="min-w-[320px] w-full text-sm">
               <thead>
-                <tr className="text-right border-b border-gray-100 bg-gray-50/80">
-                  <th className="py-3 px-4 font-semibold text-gray-600">الحالة</th>
-                  <th className="py-3 px-4 font-semibold text-gray-600">العدد</th>
-                  <th className="py-3 px-4 font-semibold text-gray-600">النسبة</th>
+                <tr className="border-b border-gray-100 bg-gray-50/80 text-right dark:border-slate-700 dark:bg-slate-800/60">
+                  <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">الحالة</th>
+                  <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">العدد</th>
+                  <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">النسبة</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700/80">
                 {["DRAFT", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW"].map((status) => {
                   const count = aptList.filter((a: { status: string }) => a.status === status).length;
                   const pct = aptList.length ? ((count / aptList.length) * 100).toFixed(1) : "0";
@@ -310,10 +322,12 @@ export default async function DoctorReportsPage() {
                     NO_SHOW: "لم يحضر",
                   };
                   return (
-                    <tr key={status} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="py-3 px-4 font-medium text-gray-900">{labels[status] ?? status}</td>
-                      <td className="py-3 px-4 text-gray-700">{count}</td>
-                      <td className="py-3 px-4 text-gray-600">{pct}%</td>
+                    <tr key={status} className="transition-colors hover:bg-gray-50/80 dark:hover:bg-slate-800/50">
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">
+                        {labels[status] ?? status}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700 dark:text-slate-300">{count}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-slate-400">{pct}%</td>
                     </tr>
                   );
                 })}

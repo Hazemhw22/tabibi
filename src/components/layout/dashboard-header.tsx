@@ -17,6 +17,7 @@ import IconLogout from "@/components/icon/icon-logout";
 import IconCaretDown from "@/components/icon/icon-caret-down";
 import Dropdown, { type DropdownHandle } from "@/components/ui/dropdown";
 import DashboardGlobalSearch from "@/components/dashboard/dashboard-global-search";
+import { LanguageToggle } from "@/components/layout/language-toggle";
 
 export default function DashboardHeader() {
   const { data: session } = useSession();
@@ -87,6 +88,8 @@ export default function DashboardHeader() {
   // إخفاء زر التبديل إذا كان الوضع إجباري غامق
   const showThemeToggle = !forceDarkMode;
 
+  const showLangToggle = role === "DOCTOR" || role === "MEDICAL_CENTER_ADMIN";
+
   return (
     <header
       className={cn(
@@ -112,6 +115,8 @@ export default function DashboardHeader() {
             {isDark ? <IconSun className="h-[18px] w-[18px]" /> : <IconMoon className="h-[18px] w-[18px]" />}
           </button>
         )}
+
+        {showLangToggle && <LanguageToggle isDark={isDark} />}
 
         <NotificationBell theme={isDark ? "dark" : "light"} />
 

@@ -7,9 +7,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col">
-      <div className="flex items-center justify-center px-3 sm:px-4 pt-6 sm:pt-8 pb-2 sm:pb-4">
-        <Link href="/" className="flex items-center gap-2 text-blue-600 font-bold text-xl sm:text-2xl">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="flex items-center justify-center px-3 pb-2 pt-6 sm:px-4 sm:pb-4 sm:pt-8">
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-xl font-bold text-blue-600 dark:text-blue-400 sm:text-2xl"
+        >
           <Image
             src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
             alt="Tabibi"
@@ -20,7 +23,7 @@ export default function AuthLayout({
           />
         </Link>
       </div>
-      <div className="flex-1 flex items-center justify-center px-3 sm:px-4 pb-8 sm:pb-12 w-full min-w-0">
+      <div className="flex w-full min-w-0 flex-1 items-center justify-center px-3 pb-8 sm:px-4 sm:pb-12">
         {children}
       </div>
     </div>

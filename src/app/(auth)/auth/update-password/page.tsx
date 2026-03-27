@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { authLabelClass, authPasswordInputRightIconClass } from "@/lib/auth-ui-classes";
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -88,12 +89,12 @@ export default function UpdatePasswordPage() {
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
         {sessionError && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm p-3">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-100">
             {sessionError}
           </div>
         )}
         {!sessionReady && !sessionError && (
-          <div className="flex justify-center py-8 text-gray-500 gap-2">
+          <div className="flex justify-center gap-2 py-8 text-gray-500 dark:text-slate-400">
             <IconLoader className="h-6 w-6 animate-spin" />
             جاري التحقق من الرابط...
           </div>
@@ -101,16 +102,16 @@ export default function UpdatePasswordPage() {
         {sessionReady && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">كلمة المرور الجديدة</label>
+              <label className={authLabelClass}>كلمة المرور الجديدة</label>
               <div className="relative">
-                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 dark:text-slate-500">
                   <IconLock className="h-4 w-4" />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={authPasswordInputRightIconClass}
                   autoComplete="new-password"
                   dir="ltr"
                   minLength={6}
@@ -135,7 +136,10 @@ export default function UpdatePasswordPage() {
           </form>
         )}
         <div className="text-center pt-2">
-          <Link href="/login" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400"
+          >
             <IconArrowForward className="h-4 w-4" />
             العودة لتسجيل الدخول
           </Link>

@@ -170,8 +170,12 @@ export default async function PatientDashboard() {
       ["CONFIRMED", "DRAFT"].includes(a.status) && new Date(a.appointmentDate) >= new Date()
   );
 
-  const totalPaidFromManual = txRows.filter((t) => t.type === "PAYMENT").reduce((sum, t) => sum + (t.amount ?? 0), 0);
-  const totalServices = txRows.filter((t) => t.type === "SERVICE").reduce((sum, t) => sum + (t.amount ?? 0), 0);
+  const totalPaidFromManual = txRows
+    .filter((t) => t.type === "PAYMENT")
+    .reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0);
+  const totalServices = txRows
+    .filter((t) => t.type === "SERVICE")
+    .reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0);
   const totalDebts = Math.max(0, totalServices - totalPaidFromManual);
   const latestAppointments = list.slice(0, 5);
   const nextAppointment = (upcoming[0] ?? null) as Record<string, unknown> | null;
@@ -240,7 +244,7 @@ export default async function PatientDashboard() {
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <IconMapPin className="h-4 w-4 text-blue-500 shrink-0" />
             <span>عرض الأطباء في: <span className="font-semibold text-gray-900 dark:text-slate-100">{getLocationById(patientRegionId)?.nameAr ?? patientRegionId}</span></span>
-            <Link href="/dashboard/patient/settings" className="mr-auto text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline shrink-0">تعديل</Link>
+            <Link href="/dashboard/patient/settings" className="mr-auto text-xs text-blue-600 dark:text-blue-400 font-medium shrink-0">تعديل</Link>
           </div>
         )}
 
@@ -603,7 +607,7 @@ export default async function PatientDashboard() {
                       <p className="text-[10px] text-gray-400 dark:text-slate-500">{tx.date ? format(new Date(tx.date), "dd/MM/yyyy") : "—"}</p>
                     </div>
                     <p className={`text-sm font-bold shrink-0 ${tx.type === "PAYMENT" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                      {tx.type === "PAYMENT" ? "+" : "-"}₪{tx.amount}
+                      {tx.type === "PAYMENT" ? "+" : "-"}₪{Math.abs(Number(tx.amount))}
                     </p>
                   </div>
                 ))}

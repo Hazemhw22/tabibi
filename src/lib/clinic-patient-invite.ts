@@ -1,10 +1,23 @@
-import { findOrCreatePatientByPhone, normalizePatientPhone } from "@/lib/patient-account";
-import { generatePasswordRecoveryLink } from "@/lib/auth-recovery";
+import { findOrCreatePatientByPhone } from "@/lib/patient-account";
 import { sendSms, sendWhatsApp } from "@/lib/sms";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-function buildPasswordSetupSms(link: string): string {
-  return `Tabibi: تم ربط رقمك بحساب على المنصة. اضبط كلمة المرور من الرابط:\n${link}`;
+function buildNewAccountSms(): string {
+  return `Tabibi: تم إنشاء حسابك على المنصة. كلمة المرور هي أرقام رقم هاتفك فقط (بدون مسافات). يمكنك تسجيل الدخول من التطبيق أو الموقع.`;
+}
+
+function buildLinkedExistingSms(): string {
+  return `Tabibi: تم ربط ملفك في عيادة الطبيب على المنصة.`;
+}
+
+/** إشعار واتساب/SMS عند ربط ملف عيادة بحساب مريض موجود مسبقاً */
+export async function notifyClinicPatientLinkedExisting(phoneRaw: string): Promise<boolean> {
+  const digits = phoneRaw.replace(/\D/g, "");
+  if (digits.length < 9) return false;
+  const body = buildLinkedExistingSms();
+  let sent = await sendWhatsApp(phoneRaw, body);
+  if (!sent) sent = await sendSms(phoneRaw, body);
+  return sent;
 }
 
 /**
@@ -38,14 +51,7 @@ export async function linkClinicPatientAndSendPasswordSetup(options: {
     return { userId: acc.id, setupSmsSent: false };
   }
 
-  const { email } = normalizePatientPhone(phoneRaw);
-  const link = await generatePasswordRecoveryLink(email);
-  if (!link) {
-    console.warn("[clinic-patient-invite] لم يُولَّد رابط الاستعادة");
-    return { userId: acc.id, setupSmsSent: false };
-  }
-
-  const body = buildPasswordSetupSms(link);
+  const body = acc.created ? buildNewAccountSms() : buildLinkedExistingSms();
   let sent = await sendWhatsApp(phoneRaw, body);
   if (!sent) {
     sent = await sendSms(phoneRaw, body);

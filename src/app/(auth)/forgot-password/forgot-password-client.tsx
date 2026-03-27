@@ -67,7 +67,7 @@ export function ForgotPasswordClient({
       <CardContent className="pt-4">
         {sent ? (
           <div className="text-center py-4 space-y-4">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-gray-600 dark:text-slate-400">
               إذا كان الحساب مسجّلاً: ستصلك رسالة نصية (للمريض برقم هاتف) أو بريد إلكتروني يحتوي رابطاً لتعيين كلمة
               مرور جديدة. افتح الرابط ثم أدخل كلمة المرور وتأكيدها.
             </p>
@@ -97,7 +97,7 @@ export function ForgotPasswordClient({
           </form>
         )}
         <div className="mt-6 text-center">
-          <Link href="/login" className="text-sm text-blue-600 hover:underline">
+          <Link href="/login" className="text-sm text-blue-600 dark:text-blue-400">
             تسجيل الدخول
           </Link>
         </div>

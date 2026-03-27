@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { resolveCarePlanType, type CarePlanType } from "@/lib/specialty-plan-registry";
+import { ledgerBalance } from "@/lib/patient-transaction-math";
 import PatientsView from "./patients-view";
 
 export type AppointmentRow = {
@@ -182,9 +183,7 @@ export default async function DoctorPatientsPage({
           duration: a.duration,
           notes: (a as { notes?: string | null }).notes ?? null,
         }));
-        const balance = transactions.reduce(
-          (s, t) => t.type === "PAYMENT" ? s + t.amount : s - t.amount, 0
-        );
+        const balance = ledgerBalance(transactions);
         const medicalNotes: MedicalNote[] = (notesData ?? []).map((n) => ({
           id: n.id,
           allergies: (n as { allergies?: string | null }).allergies ?? null,
@@ -234,9 +233,7 @@ export default async function DoctorPatientsPage({
           fee: a.fee,
           notes: (a as { notes?: string | null }).notes ?? null,
         }));
-        const balance = transactions.reduce(
-          (s, t) => t.type === "PAYMENT" ? s + t.amount : s - t.amount, 0
-        );
+        const balance = ledgerBalance(transactions);
         selectedPatient = {
           id: selectedId, name: userData?.name ?? "—",
           phone: userData?.phone ?? null,

@@ -90,7 +90,7 @@ export default function EmergencyPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-      <Link href="/dashboard/medical-center" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+      <Link href="/dashboard/medical-center" className="text-sm text-blue-600 mb-4 inline-block">
         ← الرئيسية
       </Link>
       <h1 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">

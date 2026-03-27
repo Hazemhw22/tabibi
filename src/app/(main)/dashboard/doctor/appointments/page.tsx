@@ -10,14 +10,16 @@ import IconUser from "@/components/icon/icon-user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DoctorActions from "../doctor-actions";
+import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
+import { cn } from "@/lib/utils";
 
 const STATUS: Record<string, { label: string; className: string }> = {
-  DRAFT: { label: "مسودة", className: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "مؤكد", className: "bg-blue-100 text-blue-800" },
-  COMPLETED: { label: "منجز", className: "bg-emerald-100 text-emerald-800" },
-  CANCELLED: { label: "ملغي", className: "bg-red-100 text-red-800" },
-  NO_SHOW: { label: "لم يحضر", className: "bg-gray-100 text-gray-700" },
-  SCHEDULED: { label: "مجدول", className: "bg-sky-100 text-sky-800" },
+  DRAFT: { label: "مسودة", className: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200" },
+  CONFIRMED: { label: "مؤكد", className: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200" },
+  COMPLETED: { label: "منجز", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" },
+  CANCELLED: { label: "ملغي", className: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200" },
+  NO_SHOW: { label: "لم يحضر", className: "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200" },
+  SCHEDULED: { label: "مجدول", className: "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200" },
 };
 
 type UnifiedAppointment = {
@@ -134,27 +136,30 @@ export default async function DoctorAppointmentsPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="font-heading text-2xl font-bold text-gray-900 mb-1">المواعيد</h1>
-        <p className="text-gray-500">مواعيد المنصة + المواعيد المضافة من العيادة</p>
+        <h1 className="mb-1 font-heading text-2xl font-bold text-gray-900 dark:text-slate-100">المواعيد</h1>
+        <p className="text-gray-500 dark:text-slate-400">مواعيد المنصة + المواعيد المضافة من العيادة</p>
       </div>
 
-      <Card className="mb-6">
+      <Card className="mb-6 dark:border dark:border-slate-700/80">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">الحجوزات القادمة</CardTitle>
+          <CardTitle className="text-base dark:text-slate-100">الحجوزات القادمة</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
             {upcomingMonthDays.map((day) => {
               const dateObj = new Date(currentYear, currentMonth, day);
               const isToday = day === now.getDate();
               return (
                 <div
                   key={day}
-                  className={`min-w-11 h-11 rounded-xl border text-sm font-semibold flex items-center justify-center ${
-                    isToday ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700"
-                  }`}
+                  className={cn(
+                    "flex h-11 min-w-11 items-center justify-center rounded-xl border text-sm font-semibold",
+                    isToday
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-slate-200 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200",
+                  )}
                   title={format(dateObj, "EEEE d MMMM", { locale: ar })}
                 >
                   {day}
@@ -165,57 +170,65 @@ export default async function DoctorAppointmentsPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-0 shadow-lg shadow-gray-200/50 rounded-2xl">
-        <CardHeader className="bg-gradient-to-l from-slate-50 to-white border-b border-gray-100 px-6 py-5">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
+      <Card className="overflow-hidden rounded-2xl border-0 shadow-lg shadow-gray-200/50 dark:border dark:border-slate-700/80 dark:shadow-slate-950/50">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-l from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
+          <CardTitle className="flex items-center gap-3 text-lg dark:text-slate-100">
+            <div className="rounded-xl bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
               <IconCalendar className="h-5 w-5" />
             </div>
             قائمة المواعيد
-            <Badge variant="secondary" className="mr-auto font-normal">
+            <Badge variant="secondary" className="mr-auto font-normal dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {unified.length} موعد
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {unified.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
-              <IconCalendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <div className="py-16 text-center text-gray-500 dark:text-slate-400">
+              <IconCalendar className="mx-auto mb-4 h-12 w-12 text-gray-300 dark:text-slate-600" />
               <p className="font-medium">لا توجد مواعيد حتى الآن</p>
-              <p className="text-sm mt-1">ستظهر هنا مواعيد الحجز من المنصة والمواعيد التي تضيفها للمرضى</p>
+              <p className="mt-1 text-sm">ستظهر هنا مواعيد الحجز من المنصة والمواعيد التي تضيفها للمرضى</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-100 dark:divide-slate-700/80">
               {unified.map((a) => {
-                const config = STATUS[a.status] ?? { label: a.status, className: "bg-gray-100 text-gray-700" };
+                const config = STATUS[a.status] ?? {
+                  label: a.status,
+                  className: "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200",
+                };
+                const feeSigned =
+                  a.fee != null ? (a.isCenterBooking ? Number(a.doctorDue ?? a.fee) : Number(a.fee)) : null;
                 return (
                   <div
                     key={`${a.source}-${a.id}`}
-                    className="flex flex-wrap items-center gap-4 px-6 py-4 hover:bg-gray-50/80 transition-colors"
+                    className="flex flex-wrap items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80 dark:hover:bg-slate-800/50"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                        <IconUser className="h-5 w-5 text-slate-600" />
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                        <IconUser className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{a.patientName}</p>
-                        <p className="text-xs text-gray-500 truncate" dir="ltr">
+                        <p className="truncate font-semibold text-gray-900 dark:text-slate-100">{a.patientName}</p>
+                        <p className="truncate text-xs text-gray-500 dark:text-slate-400" dir="ltr">
                           {a.patientContact || "—"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <IconClock className="h-4 w-4 text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
+                      <IconClock className="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
                       <span>{format(new Date(a.date), "d MMM yyyy", { locale: ar })}</span>
-                      <span className="text-gray-400">•</span>
-                      <span>{a.time}{a.endTime ? ` - ${a.endTime}` : ""}</span>
+                      <span className="text-gray-400 dark:text-slate-600">•</span>
+                      <span>
+                        {a.time}
+                        {a.endTime ? ` - ${a.endTime}` : ""}
+                      </span>
                     </div>
                     {a.title && (
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
+                      <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm text-gray-500 dark:bg-slate-800 dark:text-slate-300">
                         {a.title}
                       </span>
                     )}
-                    <Badge className={`shrink-0 ${config.className} border-0`}>
+                    <Badge className={cn("shrink-0 border-0", config.className)}>
                       {config.label}
                     </Badge>
                     {a.source === "platform" && a.status === "DRAFT" && (
@@ -224,20 +237,20 @@ export default async function DoctorAppointmentsPage() {
                     {a.source === "platform" && a.status === "CONFIRMED" && (
                       <DoctorActions appointmentId={a.id} mode="visit" />
                     )}
-                    {a.fee != null && (
+                    {feeSigned != null && (
                       <span
-                        className="text-sm font-semibold text-emerald-600 shrink-0"
+                        className={cn("shrink-0 text-sm font-semibold tabular-nums", amountSignedColorClass(feeSigned))}
                         title={a.isCenterBooking ? "مستحق الطبيب من المركز" : "قيمة الموعد"}
                       >
-                        ₪{a.doctorDue ?? a.fee}
+                        {formatSignedShekel(feeSigned)}
                       </span>
                     )}
-                    <Badge variant="outline" className="shrink-0 text-xs">
+                    <Badge variant="outline" className="shrink-0 text-xs dark:border-slate-600 dark:text-slate-300">
                       {a.source === "platform" ? "منصة" : "عيادة"}
                     </Badge>
                     <Link
                       href={`/dashboard/doctor/patients/${a.patientId}`}
-                      className="text-xs text-blue-600 hover:underline shrink-0"
+                      className="shrink-0 text-xs text-blue-600 dark:text-blue-400"
                     >
                       ملف المريض
                     </Link>

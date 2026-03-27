@@ -30,9 +30,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { format, differenceInYears } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ClinicPatientPhoneLookupField } from "@/components/clinic-patient-phone-lookup";
 import type { PatientListItem, SelectedPatient, AppointmentRow, TransactionRow } from "./page";
 import type { CarePlanType } from "@/lib/specialty-plan-registry";
 import { CarePlanPanel } from "@/components/doctor-care-plans/care-plan-panel";
+import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
+import { transactionSignedDelta } from "@/lib/patient-transaction-math";
 
 /* ─── Tab definitions ────────────────────────────────────────────── */
 const BASE_TABS = [
@@ -94,12 +97,12 @@ const DENTAL_CHART_LAYOUT: { num: number; cx: number; cy: number; w: number; h: 
 ];
 
 const APT_STATUS: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  SCHEDULED:  { label: "مجدول",   color: "text-blue-600 bg-blue-50",    icon: IconClock },
-  DRAFT:      { label: "مسودة",   color: "text-gray-600 bg-gray-100",   icon: IconClock },
-  CONFIRMED:  { label: "مؤكد",    color: "text-indigo-600 bg-indigo-50", icon: IconCircleCheck },
-  COMPLETED:  { label: "منجز",    color: "text-green-600 bg-green-50",  icon: IconCircleCheck },
-  CANCELLED:  { label: "ملغي",    color: "text-red-500 bg-red-50",      icon: IconXCircle },
-  NO_SHOW:    { label: "لم يحضر", color: "text-yellow-600 bg-yellow-50", icon: IconXCircle }, 
+  SCHEDULED:  { label: "مجدول",   color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50 dark:text-blue-300",    icon: IconClock },
+  DRAFT:      { label: "مسودة",   color: "text-gray-600 bg-gray-100 dark:bg-slate-700 dark:text-slate-200",   icon: IconClock },
+  CONFIRMED:  { label: "مؤكد",    color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 dark:text-indigo-300", icon: IconCircleCheck },
+  COMPLETED:  { label: "منجز",    color: "text-green-600 bg-green-50 dark:bg-green-950/40 dark:text-green-300",  icon: IconCircleCheck },
+  CANCELLED:  { label: "ملغي",    color: "text-red-500 bg-red-50 dark:bg-red-950/40 dark:text-red-300",      icon: IconXCircle },
+  NO_SHOW:    { label: "لم يحضر", color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/40 dark:text-yellow-200", icon: IconXCircle },
 };
 
 /* ─── Props ──────────────────────────────────────────────────────── */
@@ -140,6 +143,7 @@ export default function PatientsView({
   /* add-patient modal */
   const [addOpen,    setAddOpen]    = useState(false);
   const [addLoading, setAddLoading] = useState(false);
+  const [addExistingUserId, setAddExistingUserId] = useState<string | null>(null);
   const [addForm, setAddForm] = useState({
     name:"", email:"", whatsapp:"", gender:"",
     dateOfBirth:"", address:"", bloodType:"",
@@ -514,19 +518,23 @@ export default function PatientsView({
       const res  = await fetch("/api/clinic/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify({
+          ...addForm,
+          ...(addExistingUserId ? { existingUserId: addExistingUserId } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("تم إضافة المريض ✓");
         if (data.setupSmsSent === true) {
-          toast.message("أُرسلت للمريض رسالة برابط تعيين كلمة المرور (إن وُجدت إعدادات SMS/واتساب).");
+          toast.message("أُرسلت للمريض رسالة SMS/واتساب (إن وُجدت الإعدادات).");
         } else if (data.setupSmsSent === false) {
           toast.warning(
-            "لم تُرسل رسالة رابط كلمة المرور. أضف رقماً صحيحاً وتحقق من SMS_API_ID أو Twilio في الإعدادات.",
+            "لم تُرسل رسالة للمريض. تحقق من الرقم وإعدادات SMS/واتساب.",
           );
         }
         setAddOpen(false);
+        setAddExistingUserId(null);
         setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
         router.refresh();
         openPatient({ id: data.patient.id, name: data.patient.name, source: "clinic", appointmentCount: 0 });
@@ -547,7 +555,12 @@ export default function PatientsView({
     try {
       const res = await fetch(txUrl(selectedPatient!.id, selectedPatient!.source), {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type:"SERVICE", description:serviceDesc, amount:Number(serviceAmount), notes:serviceNotes || undefined }),
+        body: JSON.stringify({
+          type: "SERVICE",
+          description: serviceDesc,
+          amount: Math.abs(Number(serviceAmount)),
+          notes: serviceNotes || undefined,
+        }),
       });
       if (res.ok) {
         toast.success("تم إضافة الخدمة ✓");
@@ -563,7 +576,12 @@ export default function PatientsView({
     try {
       const res = await fetch(txUrl(selectedPatient!.id, selectedPatient!.source), {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type:"PAYMENT", description:paymentDesc, amount:Number(paymentAmount), notes:paymentNotes || undefined }),
+        body: JSON.stringify({
+          type: "PAYMENT",
+          description: paymentDesc,
+          amount: Math.abs(Number(paymentAmount)),
+          notes: paymentNotes || undefined,
+        }),
       });
       if (res.ok) {
         toast.success("تم تسجيل الدفعة ✓");
@@ -651,7 +669,10 @@ export default function PatientsView({
         setConfirmDeleteId(null);
         router.refresh();
       } else {
-        toast.error("حدث خطأ");
+        const data = await res.json().catch(() => ({}));
+        toast.error(
+          (data as { error?: string }).error || "تعذّر حذف المعاملة",
+        );
       }
     } finally {
       setDeleting(false);
@@ -659,18 +680,30 @@ export default function PatientsView({
   };
 
   /* edit transaction */
-  type EditState = { id: string; description: string; amount: string; notes: string };
+  type EditState = {
+    id: string;
+    type: string;
+    description: string;
+    amount: string;
+    notes: string;
+  };
   const [editTx, setEditTx] = useState<EditState | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const startEdit = (t: TransactionRow) =>
-    setEditTx({ id: t.id, description: t.description, amount: String(t.amount), notes: t.notes ?? "" });
+    setEditTx({
+      id: t.id,
+      type: t.type,
+      description: t.description,
+      amount: String(t.type === "SERVICE" ? Math.abs(Number(t.amount)) : Number(t.amount)),
+      notes: t.notes ?? "",
+    });
 
   const saveEdit = async () => {
     if (!editTx) return;
     const amount = Number(editTx.amount);
-    if (!editTx.description.trim() || !amount || amount <= 0) {
-      toast.error("الوصف والمبلغ مطلوبان");
+    if (!editTx.description.trim() || !Number.isFinite(amount) || Math.abs(amount) === 0) {
+      toast.error("الوصف والمبلغ مطلوبان (أدخل المبلغ كقيمة موجبة)");
       return;
     }
     setSavingEdit(true);
@@ -684,7 +717,7 @@ export default function PatientsView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description: editTx.description.trim(),
-          amount,
+          amount: Math.abs(amount),
           notes: editTx.notes.trim() || null,
         }),
       });
@@ -700,43 +733,58 @@ export default function PatientsView({
 
   const services      = selectedPatient?.transactions.filter((t) => t.type === "SERVICE") ?? [];
   const pmts          = selectedPatient?.transactions.filter((t) => t.type === "PAYMENT") ?? [];
-  const totalServices = services.reduce((s, t) => s + t.amount, 0);
-  const totalPayments = pmts.reduce((s, t) => s + t.amount, 0);
+  const totalServices = services.reduce((s, t) => s + transactionSignedDelta(t), 0);
+  const totalPayments = pmts.reduce((s, t) => s + transactionSignedDelta(t), 0);
   const lastVisit     = selectedPatient?.appointments?.[0];
 
   /* ════════════════════════════════════════════════════════════════
      RENDER
   ════════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex h-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div className="flex h-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
       {/* ══ COLUMN 1 (RIGHT) — Patient List ══════════════════════ */}
-      <div className="flex w-60 shrink-0 flex-col border-l border-gray-200">
+      <div className="flex w-60 shrink-0 flex-col border-l border-gray-200 dark:border-slate-700">
 
         {/* Top bar */}
-        <div className="shrink-0 space-y-2 border-b border-gray-100 p-3">
+        <div className="shrink-0 space-y-2 border-b border-gray-100 p-3 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">{filtered.length} مريض</span>
+            <span className="text-xs text-gray-400 dark:text-slate-500">{filtered.length} مريض</span>
             <button
               type="button"
-              onClick={() => setAddOpen(true)}
+              onClick={() => {
+                setAddExistingUserId(null);
+                setAddForm({
+                  name: "",
+                  email: "",
+                  whatsapp: "",
+                  gender: "",
+                  dateOfBirth: "",
+                  address: "",
+                  bloodType: "",
+                  allergies: "",
+                  notes: "",
+                  fileNumber: "",
+                });
+                setAddOpen(true);
+              }}
               className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
             >
               <IconPlus className="h-3.5 w-3.5" /> إضافة
             </button>
           </div>
           <div className="relative">
-            <IconSearch className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <IconSearch className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
             <input
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="بحث عن مريض..."
-              className="h-9 w-full rounded-lg border border-gray-200 pr-8 pl-8 text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white pr-8 pl-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
             {search && (
               <button type="button" onClick={() => handleSearch("")}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">
                 <IconX className="h-3.5 w-3.5" />
               </button>
             )}
@@ -746,9 +794,9 @@ export default function PatientsView({
         {/* List */}
         <ul className="flex-1 overflow-y-auto space-y-1.5 px-2 py-2">
           {filtered.length === 0 ? (
-            <li className="flex flex-col items-center justify-center py-12 text-center px-4 h-full">
-              <IconUsers className="h-10 w-10 text-gray-200 mb-2" />
-              <p className="text-sm text-gray-400">{search ? "لا توجد نتائج" : "لا يوجد مرضى"}</p>
+            <li className="flex h-full flex-col items-center justify-center px-4 py-12 text-center">
+              <IconUsers className="mb-2 h-10 w-10 text-gray-200 dark:text-slate-600" />
+              <p className="text-sm text-gray-400 dark:text-slate-500">{search ? "لا توجد نتائج" : "لا يوجد مرضى"}</p>
             </li>
           ) : filtered.map((p) => {
             const active = selectedId === p.id;
@@ -759,28 +807,28 @@ export default function PatientsView({
                   type="button"
                   onClick={() => openPatient(p)}
                   className={cn(
-                    "relative flex w-full items-center gap-3 rounded-xl border border-gray-200/95 py-2.5 pe-3 ps-3 text-right shadow-sm transition-colors",
+                    "relative flex w-full items-center gap-3 rounded-xl border border-gray-200/95 py-2.5 pe-3 ps-3 text-right shadow-sm transition-colors dark:border-slate-600",
                     active
                       ? isClinic
-                        ? "border-s-[3px] border-s-emerald-200"
-                        : "border-s-[3px] border-s-blue-200"
+                        ? "border-s-[3px] border-s-emerald-200 dark:border-s-emerald-600"
+                        : "border-s-[3px] border-s-blue-200 dark:border-s-blue-500"
                       : isClinic
                         ? "border-s-[3px] border-s-emerald-500"
                         : "border-s-[3px] border-s-blue-500",
-                    active ? "bg-blue-600 border-gray-200/30" : "bg-white hover:bg-gray-50/90"
+                    active ? "border-gray-200/30 bg-blue-600" : "bg-white hover:bg-gray-50/90 dark:bg-slate-800/80 dark:hover:bg-slate-800"
                   )}
                 >
                   <div className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                    active ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
+                    active ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300"
                   )}>
                     <IconUser className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={cn("truncate text-sm font-medium", active ? "text-white" : "text-gray-900")}>
+                    <p className={cn("truncate text-sm font-medium", active ? "text-white" : "text-gray-900 dark:text-slate-100")}>
                       {p.name}
                     </p>
-                    <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400")}>
+                    <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400 dark:text-slate-500")}>
                       {isClinic
                         ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.whatsapp ?? "—")
                         : `${p.appointmentCount} موعد · منصة`}
@@ -803,7 +851,7 @@ export default function PatientsView({
       </div>
 
       {/* ══ COLUMN 2 (CENTER) — Patient Details ══════════════════ */}
-      <div className="flex flex-1 flex-col overflow-hidden bg-gray-50/40 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-gray-50/40 dark:bg-slate-950/50">
         {selectedPatient ? (
           <>
             {/* شريط لوني أعلى التفاصيل (نفس منطق القائمة) */}
@@ -815,14 +863,14 @@ export default function PatientsView({
               aria-hidden
             />
             {/* Header */}
-            <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 space-y-4">
+            <div className="shrink-0 space-y-4 border-b border-gray-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900/90">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 shrink-0 rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center text-xl font-bold text-blue-600">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 text-xl font-bold text-blue-600 dark:from-blue-900/60 dark:to-indigo-900/60 dark:text-blue-300">
                   {selectedPatient.name.charAt(0)}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-gray-900">{selectedPatient.name}</h2>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">{selectedPatient.name}</h2>
                     <Badge variant={selectedPatient.source === "clinic" ? "secondary" : "default"} className="text-xs">
                       {selectedPatient.source === "clinic" ? "عيادة" : "منصة"}
                     </Badge>
@@ -837,7 +885,7 @@ export default function PatientsView({
                       </Button>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-slate-400">
                     {age != null && <span>العمر: {age} سنة</span>}
                     {selectedPatient.whatsapp && (
                       <span className="flex items-center gap-1" dir="ltr">
@@ -845,7 +893,7 @@ export default function PatientsView({
                       </span>
                     )}
                     {selectedPatient.allergies && (
-                      <span className="flex items-center gap-1 text-amber-600 text-xs font-medium">
+                      <span className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
                         <IconExclamationTriangle className="h-3.5 w-3.5" />{selectedPatient.allergies}
                       </span>
                     )}
@@ -855,34 +903,43 @@ export default function PatientsView({
 
               {/* 4 info cards */}
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
-                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5">
-                  <div className="text-xs text-gray-400 mb-0.5">آخر زيارة</div>
-                  <div className="text-sm font-semibold text-gray-800">
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <div className="mb-0.5 text-xs text-gray-400 dark:text-slate-500">آخر زيارة</div>
+                  <div className="text-sm font-semibold text-gray-800 dark:text-slate-100">
                     {lastVisit
                       ? format(new Date(lastVisit.appointmentDate), "d MMM yyyy")
                       : "—"}
                   </div>
                 </div>
-                <div className={cn("rounded-xl border px-3.5 py-2.5",
-                  selectedPatient.balance < 0 ? "border-red-200 bg-red-50"
-                  : selectedPatient.balance > 0 ? "border-green-200 bg-green-50"
-                  : "border-gray-100 bg-gray-50")}>
-                  <div className="text-xs text-gray-400 mb-0.5">الرصيد</div>
-                  <div className={cn("text-sm font-bold",
-                    selectedPatient.balance < 0 ? "text-red-600"
-                    : selectedPatient.balance > 0 ? "text-green-600" : "text-gray-700")}>
-                    {selectedPatient.balance >= 0 ? "+" : ""}₪{selectedPatient.balance.toFixed(0)}
+                <div
+                  className={cn(
+                    "rounded-xl border px-3.5 py-2.5",
+                    selectedPatient.balance < 0
+                      ? "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30"
+                      : selectedPatient.balance > 0
+                        ? "border-green-200 bg-green-50 dark:border-emerald-900/50 dark:bg-emerald-950/30"
+                        : "border-gray-100 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/60",
+                  )}
+                >
+                  <div className="mb-0.5 text-xs text-gray-400 dark:text-slate-500">الرصيد</div>
+                  <div
+                    className={cn(
+                      "text-sm font-bold tabular-nums",
+                      amountSignedColorClass(selectedPatient.balance),
+                    )}
+                  >
+                    {formatSignedShekel(selectedPatient.balance)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5">
-                  <div className="text-xs text-gray-400 mb-0.5">نوع الملف</div>
-                  <div className="text-sm font-semibold text-gray-800 truncate">
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <div className="mb-0.5 text-xs text-gray-400 dark:text-slate-500">نوع الملف</div>
+                  <div className="truncate text-sm font-semibold text-gray-800 dark:text-slate-100">
                     {selectedPatient.source === "clinic" ? "مريض عيادة" : "مريض منصة"}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5">
-                  <div className="text-xs text-gray-400 mb-0.5">عدد الزيارات</div>
-                  <div className="text-sm font-bold text-gray-800">
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <div className="mb-0.5 text-xs text-gray-400 dark:text-slate-500">عدد الزيارات</div>
+                  <div className="text-sm font-bold text-gray-800 dark:text-slate-100">
                     {selectedPatient.appointments.length}
                   </div>
                 </div>
@@ -1040,20 +1097,29 @@ export default function PatientsView({
               {activeTab === "transactions" && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center">
-                      <div className="text-xs text-red-400">الخدمات</div>
-                      <div className="text-base font-bold text-red-600 mt-0.5">₪{totalServices.toFixed(0)}</div>
+                    <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center dark:border-red-900/40 dark:bg-red-950/25">
+                      <div className="text-xs text-red-500 dark:text-red-400">الخدمات</div>
+                      <div className={cn("mt-0.5 text-base font-bold tabular-nums", amountSignedColorClass(totalServices))}>
+                        {formatSignedShekel(totalServices)}
+                      </div>
                     </div>
-                    <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center">
-                      <div className="text-xs text-green-400">الدفعات</div>
-                      <div className="text-base font-bold text-green-600 mt-0.5">₪{totalPayments.toFixed(0)}</div>
+                    <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center dark:border-emerald-900/40 dark:bg-emerald-950/25">
+                      <div className="text-xs text-emerald-600 dark:text-emerald-400">الدفعات</div>
+                      <div className={cn("mt-0.5 text-base font-bold tabular-nums", amountSignedColorClass(totalPayments))}>
+                        {formatSignedShekel(totalPayments)}
+                      </div>
                     </div>
-                    <div className={cn("rounded-xl border px-4 py-3 text-center",
-                      selectedPatient.balance < 0 ? "border-red-100 bg-red-50" : "border-green-100 bg-green-50")}>
-                      <div className="text-xs text-gray-400">الرصيد</div>
-                      <div className={cn("text-base font-bold mt-0.5",
-                        selectedPatient.balance < 0 ? "text-red-600" : "text-green-600")}>
-                        {selectedPatient.balance >= 0 ? "+" : ""}₪{selectedPatient.balance.toFixed(0)}
+                    <div
+                      className={cn(
+                        "rounded-xl border px-4 py-3 text-center",
+                        selectedPatient.balance < 0
+                          ? "border-red-100 bg-red-50 dark:border-red-900/40 dark:bg-red-950/25"
+                          : "border-green-100 bg-green-50 dark:border-emerald-900/40 dark:bg-emerald-950/25",
+                      )}
+                    >
+                      <div className="text-xs text-gray-400 dark:text-slate-500">الرصيد</div>
+                      <div className={cn("mt-0.5 text-base font-bold tabular-nums", amountSignedColorClass(selectedPatient.balance))}>
+                        {formatSignedShekel(selectedPatient.balance)}
                       </div>
                     </div>
                   </div>
@@ -1122,22 +1188,31 @@ export default function PatientsView({
                       لا توجد معاملات مسجّلة
                     </div>
                   ) : (
-                    <div className="table-scroll-mobile w-full min-w-0 rounded-xl border border-gray-200 bg-white -mx-2 px-2 sm:mx-0 sm:px-0">
-                      <table className="w-full text-sm min-w-[520px]">
-                        <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400">
+                    <div className="table-scroll-mobile -mx-2 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-2 sm:mx-0 sm:px-0 dark:border-slate-700 dark:bg-slate-900/90">
+                      <table className="min-w-[520px] w-full text-sm">
+                        <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs text-gray-400 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-500">
                           <tr>
                             <th className="px-4 py-3 font-medium">التاريخ</th>
                             <th className="px-4 py-3 font-medium">البيان</th>
-                            <th className="px-4 py-3 text-center font-medium text-red-500">مدين</th>
-                            <th className="px-4 py-3 text-center font-medium text-green-600">دائن</th>
+                            <th className="px-4 py-3 text-center font-medium text-red-500 dark:text-red-400">ديون</th>
+                            <th className="px-4 py-3 text-center font-medium text-emerald-600 dark:text-emerald-400">دفعات</th>
                             <th className="w-20 px-4 py-3" />
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-50 dark:divide-slate-700/80">
                           {selectedPatient.transactions.map((t) => {
                             const isEditing = editTx?.id === t.id;
+                            const svcSigned =
+                              t.type === "SERVICE" ? transactionSignedDelta(t) : 0;
+                            const paySigned = t.type === "PAYMENT" ? transactionSignedDelta(t) : 0;
                             return (
-                              <tr key={t.id} className={cn("transition-colors", isEditing ? "bg-blue-50/40" : "hover:bg-gray-50/50")}>
+                              <tr
+                                key={t.id}
+                                className={cn(
+                                  "transition-colors",
+                                  isEditing ? "bg-blue-50/40 dark:bg-blue-950/30" : "hover:bg-gray-50/50 dark:hover:bg-slate-800/50",
+                                )}
+                              >
                                 {isEditing ? (
                                   /* ── Inline edit row ── */
                                   <>
@@ -1189,23 +1264,23 @@ export default function PatientsView({
                                 ) : (
                                   /* ── Normal row ── */
                                   <>
-                                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-400">
+                                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-400 dark:text-slate-500">
                                       {format(new Date(t.date), "dd/MM/yyyy")}
                                     </td>
                                     <td className="px-4 py-3">
                                       <div className="flex items-center gap-2">
                                         {t.type === "SERVICE"
-                                          ? <IconTrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
-                                          : <IconTrendingUp   className="h-3.5 w-3.5 shrink-0 text-green-500" />}
-                                        <span className="font-medium text-gray-900">{t.description}</span>
+                                          ? <IconTrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400 dark:text-red-400" />
+                                          : <IconTrendingUp   className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />}
+                                        <span className="font-medium text-gray-900 dark:text-slate-100">{t.description}</span>
                                       </div>
-                                      {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400">{t.notes}</p>}
+                                      {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400 dark:text-slate-500">{t.notes}</p>}
                                     </td>
-                                    <td className="px-4 py-3 text-center font-bold text-red-600">
-                                      {t.type === "SERVICE" ? `₪${t.amount.toFixed(0)}` : "—"}
+                                    <td className={cn("px-4 py-3 text-center font-bold tabular-nums", t.type === "SERVICE" ? amountSignedColorClass(svcSigned) : "text-slate-400 dark:text-slate-600")}>
+                                      {t.type === "SERVICE" ? formatSignedShekel(svcSigned) : "—"}
                                     </td>
-                                    <td className="px-4 py-3 text-center font-bold text-green-600">
-                                      {t.type === "PAYMENT" ? `₪${t.amount.toFixed(0)}` : "—"}
+                                    <td className={cn("px-4 py-3 text-center font-bold tabular-nums", t.type === "PAYMENT" ? amountSignedColorClass(paySigned) : "text-slate-400 dark:text-slate-600")}>
+                                      {t.type === "PAYMENT" ? formatSignedShekel(paySigned) : "—"}
                                     </td>
                                     <td className="px-4 py-3">
                                       <div className="flex items-center gap-2">
@@ -1872,7 +1947,20 @@ export default function PatientsView({
                 <Input label="الاسم الكامل *" placeholder="محمد أحمد" value={addForm.name} onChange={(e) => setAdd("name", e.target.value)} />
                 <Input label="رقم الملف" placeholder="001" value={addForm.fileNumber} onChange={(e) => setAdd("fileNumber", e.target.value)} />
               </div>
-              <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
+              <ClinicPatientPhoneLookupField
+                whatsapp={addForm.whatsapp}
+                onWhatsappChange={(v) => setAdd("whatsapp", v)}
+                onSelectUser={(u) => {
+                  setAddForm((p) => ({
+                    ...p,
+                    name: u.name?.trim() || p.name,
+                    email: u.email || "",
+                  }));
+                  setAddExistingUserId(u.id);
+                }}
+                existingUserId={addExistingUserId}
+                onClearExistingUser={() => setAddExistingUserId(null)}
+              />
               <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
               <div className="grid grid-cols-3 gap-4">
                 <div>

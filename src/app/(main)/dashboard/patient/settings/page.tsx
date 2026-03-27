@@ -34,7 +34,7 @@ export default async function PatientSettingsPage() {
         </div>
         <Link
           href="/dashboard/patient"
-          className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:underline"
+          className="text-blue-600 text-sm font-medium flex items-center gap-1 "
         >
           لوحة التحكم
           <IconArrowForward className="h-4 w-4" />

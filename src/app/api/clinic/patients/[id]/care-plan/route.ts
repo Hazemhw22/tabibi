@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { CarePlanType } from "@/lib/specialty-plan-registry";
 import { extractCarePlanServiceLines, normalizeCarePlanCosts } from "@/lib/care-plan-billing";
+import { syncCarePlanFollowUpsToAppointments } from "@/lib/care-plan-appointment-sync";
 
 const putSchema = z.object({
   planType: z.string().min(1),
@@ -119,7 +120,7 @@ export async function PUT(
 
     const { data: patient } = await supabaseAdmin
       .from("ClinicPatient")
-      .select("id")
+      .select("id, userId")
       .eq("id", clinicPatientId)
       .eq("doctorId", doctor.id)
       .maybeSingle();
@@ -248,6 +249,19 @@ export async function PUT(
         });
         existing.add(key);
       }
+    }
+
+    const dataObj =
+      saved.data && typeof saved.data === "object" && saved.data !== null
+        ? (saved.data as Record<string, unknown>)
+        : {};
+    if (patient.userId) {
+      await syncCarePlanFollowUpsToAppointments({
+        patientUserId: patient.userId as string,
+        doctorId: doctor.id,
+        planData: dataObj,
+        planType: saved.planType,
+      });
     }
 
     return NextResponse.json({

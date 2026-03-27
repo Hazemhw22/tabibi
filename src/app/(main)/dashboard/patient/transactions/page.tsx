@@ -155,7 +155,7 @@ export default async function PatientTransactionsPage() {
                           tx.type === "PAYMENT" ? "text-emerald-600" : "text-amber-600"
                         }`}
                       >
-                        {tx.type === "PAYMENT" ? "+" : "-"}₪{tx.amount}
+                        {tx.type === "PAYMENT" ? "+" : "-"}₪{Math.abs(Number(tx.amount))}
                       </td>
                       <td className="py-3 whitespace-nowrap">
                         <Badge variant="outline" className="text-xs">

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { ledgerBalance } from "@/lib/patient-transaction-math";
 import PatientsView from "./patients-view";
 
 export default async function PatientsPage({
@@ -40,11 +41,8 @@ export default async function PatientsPage({
 
   // حساب الرصيد لكل مريض
   type PatientItem = (typeof patients)[number];
-  type TxItem = (typeof patients)[number]["transactions"][number];
   const patientsWithBalance = patients.map((p: PatientItem) => {
-    const balance = p.transactions.reduce((sum: number, t: TxItem) => {
-      return t.type === "PAYMENT" ? sum + t.amount : sum - t.amount;
-    }, 0);
+    const balance = ledgerBalance(p.transactions);
     return {
       id: p.id,
       name: p.name,
@@ -83,10 +81,7 @@ async function getSelectedPatient(patientId: string, doctorId: string) {
     },
   });
   if (!patient) return null;
-  type TxItem = (typeof patient.transactions)[number];
-  const balance = patient.transactions.reduce((sum: number, t: TxItem) => {
-    return t.type === "PAYMENT" ? sum + t.amount : sum - t.amount;
-  }, 0);
+  const balance = ledgerBalance(patient.transactions);
   return {
     ...patient,
     balance,

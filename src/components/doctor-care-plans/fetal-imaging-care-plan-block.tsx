@@ -247,15 +247,15 @@ export function FetalImagingCarePlanBlock({ data, setData, printBridge }: Props)
         </div>
 
         {images.length === 0 ? (
-          <p className="text-xs text-gray-400 py-4 text-center border border-dashed border-gray-200 rounded-lg bg-white/60">
+          <p className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center border border-dashed border-gray-200 rounded-lg bg-white/60 dark:border-slate-700 dark:bg-slate-900/50">
             لم تُرفع صور بعد
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {images.map((im) => (
-              <div key={im.id} className="rounded-lg border border-gray-200 bg-white p-2 space-y-2">
+              <div key={im.id} className="rounded-lg border border-gray-200 bg-white p-2 space-y-2 dark:border-slate-700 dark:bg-slate-900/60">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={im.dataUrl} alt="" className="w-full max-h-48 object-contain rounded-md bg-gray-50" />
+                <img src={im.dataUrl} alt="" className="w-full max-h-48 object-contain rounded-md bg-gray-50 dark:bg-slate-950" />
                 <Input
                   className="h-8 text-xs"
                   placeholder="وصف مختصر (اختياري)"

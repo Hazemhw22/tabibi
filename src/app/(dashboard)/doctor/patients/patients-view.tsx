@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { format, differenceInYears } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ClinicPatientPhoneLookupField } from "@/components/clinic-patient-phone-lookup";
+import { transactionSignedDelta } from "@/lib/patient-transaction-math";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 type PatientListItem = {
@@ -115,6 +117,7 @@ export default function PatientsView({
   /* add-patient modal */
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addLoading,   setAddLoading]   = useState(false);
+  const [addExistingUserId, setAddExistingUserId] = useState<string | null>(null);
   const [addForm, setAddForm] = useState({
     name: "", email: "", whatsapp: "", gender: "",
     dateOfBirth: "", address: "", bloodType: "",
@@ -186,12 +189,16 @@ export default function PatientsView({
       const res  = await fetch("/api/clinic/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify({
+          ...addForm,
+          ...(addExistingUserId ? { existingUserId: addExistingUserId } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("تم إضافة المريض بنجاح ✓");
         setAddModalOpen(false);
+        setAddExistingUserId(null);
         setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
         router.refresh();
         if (data.patient?.id) openPatient(data.patient.id);
@@ -272,8 +279,8 @@ export default function PatientsView({
 
   const services      = selectedPatient?.transactions.filter((t) => t.type === "SERVICE") ?? [];
   const payments      = selectedPatient?.transactions.filter((t) => t.type === "PAYMENT") ?? [];
-  const totalServices = services.reduce((s, t) => s + t.amount, 0);
-  const totalPayments = payments.reduce((s, t) => s + t.amount, 0);
+  const totalServices = services.reduce((s, t) => s + transactionSignedDelta(t), 0);
+  const totalPayments = payments.reduce((s, t) => s + transactionSignedDelta(t), 0);
   const lastVisit     = selectedPatient?.clinicAppointments?.[0];
 
   /* ═════════════════════════════════════════════════════════════════
@@ -293,7 +300,22 @@ export default function PatientsView({
             <span className="text-xs text-gray-400">{filtered.length} مريض</span>
             <button
               type="button"
-              onClick={() => setAddModalOpen(true)}
+              onClick={() => {
+                setAddExistingUserId(null);
+                setAddForm({
+                  name: "",
+                  email: "",
+                  whatsapp: "",
+                  gender: "",
+                  dateOfBirth: "",
+                  address: "",
+                  bloodType: "",
+                  allergies: "",
+                  notes: "",
+                  fileNumber: "",
+                });
+                setAddModalOpen(true);
+              }}
               className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
             >
               <IconPlus className="h-3.5 w-3.5" /> إضافة
@@ -668,8 +690,8 @@ export default function PatientsView({
                           <tr>
                             <th className="px-4 py-3 font-medium">التاريخ</th>
                             <th className="px-4 py-3 font-medium">البيان</th>
-                            <th className="px-4 py-3 font-medium text-red-500">مدين</th>
-                            <th className="px-4 py-3 font-medium text-green-600">دائن</th>
+                            <th className="px-4 py-3 font-medium text-red-500">ديون</th>
+                            <th className="px-4 py-3 font-medium text-green-600">دفعات</th>
                             <th className="px-4 py-3" />
                           </tr>
                         </thead>
@@ -689,10 +711,10 @@ export default function PatientsView({
                                 {t.notes && <p className="mr-5 mt-0.5 text-xs text-gray-400">{t.notes}</p>}
                               </td>
                               <td className="px-4 py-3 text-center font-bold text-red-600">
-                                {t.type === "SERVICE" ? `₪${t.amount.toFixed(0)}` : "—"}
+                                {t.type === "SERVICE" ? `-₪${Math.abs(Number(t.amount)).toFixed(0)}` : "—"}
                               </td>
                               <td className="px-4 py-3 text-center font-bold text-green-600">
-                                {t.type === "PAYMENT" ? `₪${t.amount.toFixed(0)}` : "—"}
+                                {t.type === "PAYMENT" ? `₪${Math.abs(Number(t.amount)).toFixed(0)}` : "—"}
                               </td>
                               <td className="px-4 py-3">
                                 <button
@@ -803,10 +825,21 @@ export default function PatientsView({
                 <Input label="الاسم الكامل *" placeholder="محمد أحمد" value={addForm.name} onChange={(e) => setAdd("name", e.target.value)} />
                 <Input label="رقم الملف" placeholder="001" value={addForm.fileNumber} onChange={(e) => setAdd("fileNumber", e.target.value)} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)" value={addForm.whatsapp} onChange={(e) => setAdd("whatsapp", e.target.value)} dir="ltr" />
-                <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
-              </div>
+              <ClinicPatientPhoneLookupField
+                whatsapp={addForm.whatsapp}
+                onWhatsappChange={(v) => setAdd("whatsapp", v)}
+                onSelectUser={(u) => {
+                  setAddForm((p) => ({
+                    ...p,
+                    name: u.name?.trim() || p.name,
+                    email: u.email || "",
+                  }));
+                  setAddExistingUserId(u.id);
+                }}
+                existingUserId={addExistingUserId}
+                onClearExistingUser={() => setAddExistingUserId(null)}
+              />
+              <Input label="البريد الإلكتروني" type="email" placeholder="email@example.com" value={addForm.email} onChange={(e) => setAdd("email", e.target.value)} dir="ltr" />
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">الجنس</label>

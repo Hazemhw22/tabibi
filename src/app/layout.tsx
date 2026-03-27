@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
+import { ThemeInit } from "@/components/theme-init";
+import { LanguageInit } from "@/components/layout/language-init";
 
 export const metadata: Metadata = {
   title: "Tabibi - حجز مواعيد الأطباء في فلسطين",
@@ -26,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`font-sans antialiased bg-gray-50`}>
+      <body className="font-sans antialiased bg-gray-50 dark:bg-slate-950">
+        <ThemeInit />
+        <LanguageInit />
         <SessionProvider>
           {children}
           <Toaster position="top-center" richColors dir="rtl" />

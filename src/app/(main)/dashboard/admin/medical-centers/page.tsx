@@ -70,7 +70,7 @@ export default function AdminMedicalCentersPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <Link href="/dashboard/admin" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+        <Link href="/dashboard/admin" className="text-sm text-blue-600 mb-4 inline-block">
           ← لوحة الإدارة
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

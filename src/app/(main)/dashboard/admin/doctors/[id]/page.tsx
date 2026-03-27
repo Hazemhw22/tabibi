@@ -115,7 +115,7 @@ export default async function AdminDoctorDetailPage({
       <div className="flex items-center justify-between mb-8">
         <Link
           href="/dashboard/admin/doctors"
-          className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:underline"
+          className="text-blue-600 text-sm font-medium flex items-center gap-1 "
         >
           <IconArrowForward className="h-4 w-4" />
           العودة لقائمة الأطباء

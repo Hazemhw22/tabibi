@@ -172,7 +172,7 @@ export default function CenterDoctorDetailPage() {
   if (!doctor) {
     return (
       <div className="p-8">
-        <Link href="/dashboard/medical-center/doctors" className="text-blue-600 hover:underline">
+        <Link href="/dashboard/medical-center/doctors" className="text-blue-600 ">
           ← العودة للقائمة
         </Link>
         <p className="mt-4 text-gray-600">لم يُعثر على الطبيب.</p>
@@ -182,7 +182,7 @@ export default function CenterDoctorDetailPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
-      <Link href="/dashboard/medical-center/doctors" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+      <Link href="/dashboard/medical-center/doctors" className="text-sm text-blue-600 mb-4 inline-block">
         ← أطباء المركز
       </Link>
       <h1 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
@@ -196,7 +196,7 @@ export default function CenterDoctorDetailPage() {
           href={`/doctors/${doctor.id}`}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+          className="inline-flex items-center gap-1 text-sm text-blue-600 "
         >
           صفحة الحجز العامة للمريض
           <IconLink className="h-3.5 w-3.5" />

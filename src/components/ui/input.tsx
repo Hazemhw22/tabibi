@@ -15,14 +15,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1.5"
+            className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300"
           >
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 dark:text-slate-500">
               {icon}
             </div>
           )}
@@ -31,7 +31,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             className={cn(
               "flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+              "focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500",
+              "dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-400",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "transition-colors duration-200",
               icon && "pr-10",

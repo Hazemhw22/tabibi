@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { ledgerBalance } from "@/lib/patient-transaction-math";
 import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import IconPhone from "@/components/icon/icon-phone";
 import IconExclamationTriangle from "@/components/icon/icon-exclamation-triangle";
@@ -30,11 +31,7 @@ export default async function PatientDetailPage({
 
   if (!patient || patient.doctorId !== doctor.id) notFound();
 
-  // حساب الرصيد الكلي
-  type TxItem = (typeof patient.transactions)[number];
-  const balance = patient.transactions.reduce((sum: number, t: TxItem) => {
-    return t.type === "PAYMENT" ? sum + t.amount : sum - t.amount;
-  }, 0);
+  const balance = ledgerBalance(patient.transactions);
 
   const age = patient.dateOfBirth
     ? differenceInYears(new Date(), new Date(patient.dateOfBirth))

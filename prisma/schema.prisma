@@ -308,6 +308,8 @@ model Appointment {
   stripeSessionId String?
   /// رقم الدور ضمن نفس الفترة (1..slotCapacity) — يحدد المريض أي دور يحجز
   slotTurn        Int?
+  /// يطابق followUpVisits[].id في خطة العلاج — لعرض الموعد في لوحة المريض بعد حفظ الخطة
+  carePlanFollowUpId String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 

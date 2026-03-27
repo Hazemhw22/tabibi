@@ -72,7 +72,7 @@ export async function MedicalCentersPreview() {
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-4 text-left group-hover:underline">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-4 text-left ">
                       عرض الأطباء والحجز ←
                     </p>
                   </CardContent>

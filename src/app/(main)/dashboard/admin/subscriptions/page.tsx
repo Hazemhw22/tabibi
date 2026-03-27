@@ -117,7 +117,7 @@ export default async function AdminSubscriptionsPage() {
               <p>لا توجد اشتراكات مسجلة</p>
               <Link
                 href="/dashboard/admin/doctors"
-                className="text-blue-600 text-sm mt-2 inline-block hover:underline"
+                className="text-blue-600 text-sm mt-2 inline-block "
               >
                 إدارة الأطباء
               </Link>

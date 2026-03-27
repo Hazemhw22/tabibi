@@ -43,7 +43,7 @@ export default function CenterAppointmentsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <Link href="/dashboard/medical-center" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+      <Link href="/dashboard/medical-center" className="text-sm text-blue-600 mb-4 inline-block">
         ← الرئيسية
       </Link>
 

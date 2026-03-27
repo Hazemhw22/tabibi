@@ -329,7 +329,7 @@ export default function CenterPublicBooking({
             {isLoggedIn && !isPatient && (
               <p className="text-sm text-gray-600 dark:text-slate-400">
                 لتتمكن من الحجز، استخدم حساب مريض أو{" "}
-                <Link href="/register/patient" className="text-blue-600 hover:underline">
+                <Link href="/register/patient" className="text-blue-600 ">
                   أنشئ حساب مريض
                 </Link>
                 .

@@ -52,11 +52,11 @@ export function CarePlanFollowUpsSection({ data, setData, carePlanType }: Props)
   };
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white/90 p-3 space-y-3 shadow-sm">
+    <section className="rounded-lg border border-slate-200 bg-white/90 p-3 space-y-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <header className="space-y-1">
-          <h4 className="text-sm font-semibold text-gray-900">مواعيد المتابعة</h4>
-          <p className="text-[11px] text-gray-500 leading-snug max-w-xl">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">مواعيد المتابعة</h4>
+          <p className="text-[11px] text-gray-500 leading-snug max-w-xl dark:text-gray-400">
             تُحفظ مع خطة العلاج الخاصة بحسابك. إن زار المريض أكثر من طبيب، لا يرى كل طبيب مواعيد أو ملاحظات الطبيب الآخر.
           </p>
         </header>
@@ -74,40 +74,40 @@ export function CarePlanFollowUpsSection({ data, setData, carePlanType }: Props)
       </div>
 
       {visits.length === 0 ? (
-        <p className="text-xs text-gray-400 py-2">لا مواعيد مسجّلة — أضف موعداً عند الحاجة.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 py-2">لا مواعيد مسجّلة — أضف موعداً عند الحاجة.</p>
       ) : (
         <div className="space-y-3">
           {visits.map((row) => (
             <div
               key={row.id}
-              className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-end rounded-lg border border-gray-100 bg-slate-50/80 p-2"
+              className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-end rounded-lg border border-gray-100 bg-slate-50/80 p-2 dark:border-slate-700 dark:bg-slate-900/50"
             >
               <div className="grid gap-1 min-w-[160px]">
-                <span className="text-[10px] font-medium text-gray-600">التاريخ</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">التاريخ</span>
                 <input
                   type="date"
                   value={row.date}
                   onChange={(e) => update(row.id, { date: e.target.value })}
-                  className="h-9 rounded-lg border border-gray-300 px-2 text-sm bg-white"
+                  className="h-9 rounded-lg border border-gray-300 px-2 text-sm bg-white dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
               <div className="grid gap-1 min-w-[120px] flex-1">
-                <span className="text-[10px] font-medium text-gray-600">اليوم</span>
-                <div className="h-9 flex items-center px-2 rounded-lg border border-dashed border-gray-200 bg-white text-sm text-gray-700">
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">اليوم</span>
+                <div className="h-9 flex items-center px-2 rounded-lg border border-dashed border-gray-200 bg-white text-sm text-gray-700 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-200">
                   {row.date ? weekdayArFromIso(row.date) : "—"}
                 </div>
               </div>
               <div className="grid gap-1 min-w-[130px]">
-                <span className="text-[10px] font-medium text-gray-600">الساعة</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">الساعة</span>
                 <input
                   type="time"
                   value={row.time ?? ""}
                   onChange={(e) => update(row.id, { time: e.target.value })}
-                  className="h-9 rounded-lg border border-gray-300 px-2 text-sm bg-white"
+                  className="h-9 rounded-lg border border-gray-300 px-2 text-sm bg-white dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                 />
               </div>
               <div className="grid gap-1 flex-1 min-w-[140px]">
-                <span className="text-[10px] font-medium text-gray-600">الدور / الفتحة</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">الدور / الفتحة</span>
                 <Input
                   className="h-9 text-sm"
                   placeholder="حسب عيادتك (اختياري)"
@@ -116,7 +116,7 @@ export function CarePlanFollowUpsSection({ data, setData, carePlanType }: Props)
                 />
               </div>
               <div className="grid gap-1 flex-1 min-w-[160px]">
-                <span className="text-[10px] font-medium text-gray-600">ملاحظة</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">ملاحظة</span>
                 <Input
                   className="h-9 text-sm"
                   placeholder="اختياري"

@@ -138,7 +138,7 @@ export default function MedicalCenterSettingsPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto pb-24 bg-slate-50/80 min-h-full">
       <Link
         href="/dashboard/medical-center"
-        className="text-sm text-blue-600 hover:underline mb-4 inline-block font-medium"
+        className="text-sm text-blue-600 mb-4 inline-block font-medium"
       >
         ← الرئيسية
       </Link>

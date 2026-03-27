@@ -16,6 +16,9 @@ import { Button } from "@/components/ui/button";
 import DoctorActions from "./doctor-actions";
 import UpcomingAppointments, { type ScheduleApt } from "./upcoming-appointments";
 import DoctorMedicalCenterInvitesCard from "@/components/medical-center/doctor-medical-center-invites-card";
+import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
+import { transactionSignedDelta } from "@/lib/patient-transaction-math";
+import { cn } from "@/lib/utils";
 
 export default async function DoctorDashboard() {
   const session = await auth();
@@ -178,16 +181,21 @@ export default async function DoctorDashboard() {
 
   /* ─────────────── Finance calculations ─────────────── */
   const clinicTxData = (clinicTx ?? []) as { type: string; amount: number }[];
-  const clinicPayments = clinicTxData.reduce((s, t) => (t.type === "PAYMENT" ? s + t.amount : s), 0);
+  const clinicPayments = clinicTxData.reduce(
+    (s, t) => (t.type === "PAYMENT" ? s + Math.abs(t.amount) : s),
+    0,
+  );
   const totalServices =
-    clinicTxData.reduce((s, t) => (t.type === "SERVICE" ? s + t.amount : s), 0) +
+    clinicTxData.reduce((s, t) => (t.type === "SERVICE" ? s + Math.abs(t.amount) : s), 0) +
     (platformTx ?? []).reduce(
-      (s: number, t: { type: string; amount: number }) => (t.type === "SERVICE" ? s + t.amount : s),
-      0
+      (s: number, t: { type: string; amount: number }) =>
+        t.type === "SERVICE" ? s + Math.abs(t.amount) : s,
+      0,
     );
   const platformPayments = (platformTx ?? []).reduce(
-    (s: number, t: { type: string; amount: number }) => (t.type === "PAYMENT" ? s + t.amount : s),
-    0
+    (s: number, t: { type: string; amount: number }) =>
+      t.type === "PAYMENT" ? s + Math.abs(t.amount) : s,
+    0,
   );
   const totalPaymentsAdded = clinicPayments + platformPayments;
   const debtAfterDeduction = Math.max(0, totalServices - totalPaymentsAdded);
@@ -402,7 +410,7 @@ export default async function DoctorDashboard() {
               <h2 className="font-heading font-bold text-slate-800 text-lg">طلبات الحجز</h2>
               <Link
                 href="/dashboard/doctor/appointments"
-                className="text-xs text-blue-600 hover:underline font-medium"
+                className="text-xs text-blue-600 font-medium"
               >
                 عرض الكل
               </Link>
@@ -448,59 +456,68 @@ export default async function DoctorDashboard() {
 
       {/* ── Financial summary ── */}
       {last5Tx.length > 0 && (
-        <Card className="overflow-hidden border-0 shadow-sm bg-white">
+        <Card className="overflow-hidden border-0 bg-white shadow-sm dark:border dark:border-slate-700/80 dark:bg-slate-900/50">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-2">
-                <IconReceipt className="h-4 w-4 text-slate-500" />
+                <IconReceipt className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 آخر 5 معاملات مالية
               </span>
-              <div className="flex items-center gap-4 text-xs font-normal text-slate-500">
-               
-                <Link href="/dashboard/doctor/reports" className="text-blue-600 hover:underline">
+              <div className="flex items-center gap-4 text-xs font-normal text-slate-500 dark:text-slate-400">
+                <Link href="/dashboard/doctor/reports" className="text-blue-600 dark:text-blue-400">
                   التقارير
                 </Link>
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 overflow-x-auto">
-            <table className="w-full text-xs min-w-[400px]">
+          <CardContent className="overflow-x-auto pt-0">
+            <table className="w-full min-w-[400px] text-xs">
               <thead>
-                <tr className="text-right border-b border-gray-100 text-gray-400">
-                  <th className="py-2 px-2 font-medium">التاريخ</th>
-                  <th className="py-2 px-2 font-medium">المريض</th>
-                  <th className="py-2 px-2 font-medium">المصدر</th>
-                  <th className="py-2 px-2 font-medium">النوع</th>
-                  <th className="py-2 px-2 font-medium">المبلغ</th>
+                <tr className="border-b border-gray-100 text-right text-gray-400 dark:border-slate-700 dark:text-slate-500">
+                  <th className="px-2 py-2 font-medium">التاريخ</th>
+                  <th className="px-2 py-2 font-medium">المريض</th>
+                  <th className="px-2 py-2 font-medium">المصدر</th>
+                  <th className="px-2 py-2 font-medium">النوع</th>
+                  <th className="px-2 py-2 font-medium">المبلغ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {last5Tx.map((row) => (
-                  <tr key={`${row.source}-${row.id}`} className="text-right hover:bg-slate-50/60">
-                    <td className="py-2 px-2 text-gray-500">
-                      {format(new Date(row.date), "d/M", { locale: ar })}
-                    </td>
-                    <td className="py-2 px-2 font-medium text-gray-800 truncate max-w-[80px]">
-                      {row.patientName}
-                    </td>
-                    <td className="py-2 px-2 text-gray-500">{row.source}</td>
-                    <td className="py-2 px-2">
-                      <Badge
-                        variant={row.type === "PAYMENT" ? "default" : "secondary"}
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        {row.type === "PAYMENT" ? "دفعة" : "دين"}
-                      </Badge>
-                    </td>
-                    <td
-                      className={`py-2 px-2 font-semibold ${
-                        row.type === "PAYMENT" ? "text-green-600" : "text-amber-600"
-                      }`}
+              <tbody className="divide-y divide-gray-50 dark:divide-slate-700/80">
+                {last5Tx.map((row) => {
+                  const signed = transactionSignedDelta({
+                    type: row.type,
+                    amount: row.amount,
+                  });
+                  return (
+                    <tr
+                      key={`${row.source}-${row.id}`}
+                      className="text-right transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/60"
                     >
-                      {row.type === "PAYMENT" ? "+" : "-"}₪{row.amount}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="px-2 py-2 text-gray-500 dark:text-slate-400">
+                        {format(new Date(row.date), "d/M", { locale: ar })}
+                      </td>
+                      <td className="max-w-[80px] truncate px-2 py-2 font-medium text-gray-800 dark:text-slate-200">
+                        {row.patientName}
+                      </td>
+                      <td className="px-2 py-2 text-gray-500 dark:text-slate-400">{row.source}</td>
+                      <td className="px-2 py-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "px-1.5 py-0 text-[10px] font-medium",
+                            row.type === "PAYMENT"
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-300",
+                          )}
+                        >
+                          {row.type === "PAYMENT" ? "دفعة" : "دين"}
+                        </Badge>
+                      </td>
+                      <td className={cn("px-2 py-2 font-semibold tabular-nums", amountSignedColorClass(signed))}>
+                        {formatSignedShekel(signed)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </CardContent>

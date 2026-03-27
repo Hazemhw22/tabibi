@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ClinicPatientPhoneLookupField } from "@/components/clinic-patient-phone-lookup";
 
 export default function NewPatientPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [existingUserId, setExistingUserId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", whatsapp: "", email: "", gender: "",
     dateOfBirth: "", address: "", bloodType: "",
@@ -29,7 +31,10 @@ export default function NewPatientPage() {
       const res = await fetch("/api/clinic/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          ...(existingUserId ? { existingUserId } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -66,10 +71,21 @@ export default function NewPatientPage() {
               <Input label="رقم الملف" placeholder="001" value={form.fileNumber} onChange={(e) => set("fileNumber", e.target.value)} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="رقم الهاتف" placeholder="0599xxxxxx (لإرسال رسائل SMS للدفعات والديون)" value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} dir="ltr" />
-              <Input label="البريد الإلكتروني" type="email" placeholder="example@email.com" value={form.email} onChange={(e) => set("email", e.target.value)} dir="ltr" />
-            </div>
+            <ClinicPatientPhoneLookupField
+              whatsapp={form.whatsapp}
+              onWhatsappChange={(v) => set("whatsapp", v)}
+              onSelectUser={(u) => {
+                setForm((p) => ({
+                  ...p,
+                  name: u.name?.trim() || p.name,
+                  email: u.email || "",
+                }));
+                setExistingUserId(u.id);
+              }}
+              existingUserId={existingUserId}
+              onClearExistingUser={() => setExistingUserId(null)}
+            />
+            <Input label="البريد الإلكتروني" type="email" placeholder="example@email.com" value={form.email} onChange={(e) => set("email", e.target.value)} dir="ltr" />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { ledgerBalance } from "@/lib/patient-transaction-math";
 import Link from "next/link";
 import IconArrowForward from "@/components/icon/icon-arrow-forward";
 import { Badge } from "@/components/ui/badge";
@@ -43,11 +44,7 @@ export default async function PatientDetailPage({
     const transactions = txData ?? [];
     const clinicAppointments = aptData ?? [];
 
-    const balance = transactions.reduce(
-      (sum: number, t: { type: string; amount: number }) =>
-        t.type === "PAYMENT" ? sum + t.amount : sum - t.amount,
-      0
-    );
+    const balance = ledgerBalance(transactions);
 
     const patientData = {
       id: clinicPatient.id,
@@ -151,11 +148,7 @@ export default async function PatientDetailPage({
     .eq("patientId", id)
     .order("date", { ascending: false });
   const platformTransactions = platformTxData ?? [];
-  const platformBalance = platformTransactions.reduce(
-    (sum: number, t: { type: string; amount: number }) =>
-      t.type === "PAYMENT" ? sum + t.amount : sum - t.amount,
-    0
-  );
+  const platformBalance = ledgerBalance(platformTransactions);
 
   const patientData = {
     id: user?.id ?? id,

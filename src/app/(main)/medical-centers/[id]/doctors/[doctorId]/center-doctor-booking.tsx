@@ -183,7 +183,7 @@ export default function CenterDoctorBooking({ centerId, doctor, isLoggedIn, isPa
     return (
       <div className="bg-amber-50 rounded-xl p-4 text-sm text-amber-800">
         لتتمكن من الحجز، استخدم حساب مريض أو{" "}
-        <Link href="/register/patient" className="text-blue-600 hover:underline font-medium">
+        <Link href="/register/patient" className="text-blue-600 font-medium">
           أنشئ حساب مريض
         </Link>
         .

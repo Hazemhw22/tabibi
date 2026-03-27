@@ -165,7 +165,7 @@ export default function CenterDoctorsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 mx-auto max-w-6xl">
-      <Link href="/dashboard/medical-center" className="text-sm text-blue-600 hover:underline mb-4 inline-block dark:text-blue-400">
+      <Link href="/dashboard/medical-center" className="text-sm text-blue-600 mb-4 inline-block dark:text-blue-400">
         ← الرئيسية
       </Link>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">

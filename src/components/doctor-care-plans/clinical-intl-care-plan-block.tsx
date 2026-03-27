@@ -264,9 +264,12 @@ function IntlSectionsForm({
   return (
     <div className="space-y-5">
       {layout.sections.map((sec) => (
-        <section key={sec.id} className="rounded-lg border border-white/60 bg-white/70 p-3 space-y-2 shadow-sm">
+        <section
+          key={sec.id}
+          className="rounded-lg border border-white/60 bg-white/70 p-3 space-y-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/70"
+        >
           <header>
-            <h4 className="text-sm font-semibold text-gray-900">{sec.titleAr}</h4>
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{sec.titleAr}</h4>
             {sec.titleEn && <p className="text-[11px] text-slate-500 mt-0.5 tracking-wide">{sec.titleEn}</p>}
             {sec.hint && <p className="text-[11px] text-gray-500 mt-1">{sec.hint}</p>}
           </header>
@@ -281,7 +284,7 @@ function IntlSectionsForm({
                 />
               ) : (
                 <div key={f.key}>
-                  <label className="text-xs font-medium text-gray-700 block mb-1">
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">
                     {f.labelAr}
                     {f.optional && <span className="text-slate-400 font-normal"> (اختياري)</span>}
                     {f.labelEn && <span className="text-slate-400 font-normal mr-1"> — {f.labelEn}</span>}
@@ -292,7 +295,7 @@ function IntlSectionsForm({
                       onChange={(e) => onChangeField(f.key, e.target.value)}
                       rows={f.rows ?? 3}
                       placeholder={f.placeholderAr}
-                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[72px]"
+                      className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[72px] dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                     />
                   ) : (
                     <Input
@@ -341,7 +344,7 @@ function OptionalButtonsField({
   };
 
   return (
-    <div className="rounded-lg border border-dashed border-purple-200/80 bg-purple-50/20 p-3 space-y-3">
+    <div className="rounded-lg border border-dashed border-purple-200/80 bg-purple-50/20 p-3 space-y-3 dark:border-purple-900/50 dark:bg-purple-950/20">
       {(field.labelAr || field.labelEn) && (
         <p className="text-xs font-medium text-gray-800">
           {field.labelAr}
@@ -380,7 +383,7 @@ function OptionalButtonsField({
             return (
               <li
                 key={row.id}
-                className="rounded-lg border border-gray-200 bg-white p-2 space-y-2 shadow-sm"
+                className="rounded-lg border border-gray-200 bg-white p-2 space-y-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/60"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-semibold text-gray-800">
@@ -406,7 +409,7 @@ function OptionalButtonsField({
                     onChange={(e) => updateRow(row.id, e.target.value)}
                     rows={blk.rows ?? 3}
                     placeholder={blk.placeholderAr}
-                    className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 min-h-[72px]"
+                    className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 min-h-[72px] dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                   />
                 ) : (
                   <Input

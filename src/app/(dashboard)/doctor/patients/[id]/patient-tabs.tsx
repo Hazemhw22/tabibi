@@ -16,6 +16,7 @@ import IconXCircle from "@/components/icon/icon-x-circle";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { transactionSignedDelta } from "@/lib/patient-transaction-math";
 
 interface Transaction {
   id: string; type: string; description: string;
@@ -85,15 +86,15 @@ export default function PatientTabs({ patient, transactions, appointments, balan
   const services = transactions.filter((t) => t.type === "SERVICE");
   const payments = transactions.filter((t) => t.type === "PAYMENT");
 
-  const totalServices = services.reduce((s, t) => s + t.amount, 0);
-  const totalPayments = payments.reduce((s, t) => s + t.amount, 0);
+  const totalServices = services.reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+  const totalPayments = payments.reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
 
   // Ledger (running balance)
   const ledger = [...transactions]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .reduce<(Transaction & { runningBalance: number })[]>((acc, t) => {
       const prev = acc.length > 0 ? acc[acc.length - 1].runningBalance : 0;
-      const delta = t.type === "PAYMENT" ? t.amount : -t.amount;
+      const delta = transactionSignedDelta(t);
       return [...acc, { ...t, runningBalance: prev + delta }];
     }, [])
     .reverse();
@@ -105,7 +106,12 @@ export default function PatientTabs({ patient, transactions, appointments, balan
       const res = await fetch(`/api/clinic/patients/${patient.id}/transactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "SERVICE", description: serviceDesc, amount: Number(serviceAmount), notes: serviceNotes }),
+        body: JSON.stringify({
+          type: "SERVICE",
+          description: serviceDesc,
+          amount: Math.abs(Number(serviceAmount)),
+          notes: serviceNotes,
+        }),
       });
       if (res.ok) {
         toast.success("تم إضافة الخدمة ✓");
@@ -297,7 +303,7 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                         </td>
                         <td className="px-4 py-3 font-medium text-gray-900">{s.description}</td>
                         <td className="px-4 py-3 font-bold text-red-600 whitespace-nowrap">
-                          -₪{s.amount.toFixed(0)}
+                          -₪{Math.abs(Number(s.amount)).toFixed(0)}
                         </td>
                         <td className="px-4 py-3 text-gray-400 text-xs">{s.notes || "-"}</td>
                         <td className="px-4 py-3">
@@ -350,8 +356,8 @@ export default function PatientTabs({ patient, transactions, appointments, balan
                     <tr className="text-right text-xs text-gray-500">
                       <th className="px-4 py-3 font-medium">التاريخ</th>
                       <th className="px-4 py-3 font-medium">البيان</th>
-                      <th className="px-4 py-3 font-medium text-red-500">مدين (−)</th>
-                      <th className="px-4 py-3 font-medium text-green-600">دائن (+)</th>
+                      <th className="px-4 py-3 font-medium text-red-500">ديون</th>
+                      <th className="px-4 py-3 font-medium text-green-600">دفعات</th>
                       <th className="px-4 py-3 font-medium">الرصيد</th>
                     </tr>
                   </thead>
