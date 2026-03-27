@@ -34,12 +34,27 @@ export async function GET() {
     const { data, error } = await q;
     if (error) {
       console.error(error);
-      return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "تعذر التحميل",
+          details: (error as { message?: string; details?: string; hint?: string; code?: string } | null) ?? null,
+        },
+        { status: 500 }
+      );
     }
     return NextResponse.json({ messages: data ?? [] });
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "خطأ في الخادم",
+        details:
+          e instanceof Error
+            ? { message: e.message, name: e.name }
+            : { message: String(e) },
+      },
+      { status: 500 }
+    );
   }
 }
 

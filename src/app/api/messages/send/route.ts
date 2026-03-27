@@ -61,7 +61,13 @@ export async function POST(req: Request) {
 
     if (insErr || !row?.id) {
       console.error(insErr);
-      return NextResponse.json({ error: "فشل تسجيل الرسالة" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "فشل تسجيل الرسالة",
+          details: (insErr as { message?: string; details?: string; hint?: string; code?: string } | null) ?? null,
+        },
+        { status: 500 }
+      );
     }
 
     const ok = await sendSms(data.to, data.body);
@@ -79,7 +85,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "بيانات غير صالحة", details: e.issues }, { status: 400 });
     }
     console.error(e);
-    return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "خطأ في الخادم",
+        details:
+          e instanceof Error
+            ? { message: e.message, name: e.name }
+            : { message: String(e) },
+      },
+      { status: 500 }
+    );
   }
 }
 
