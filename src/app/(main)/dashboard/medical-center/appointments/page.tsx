@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import IconCalendar from "@/components/icon/icon-calendar";
 import IconPlusCircle from "@/components/icon/icon-plus-circle";
@@ -8,12 +8,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import QuickBookingModal from "@/components/medical-center/quick-booking-modal";
-import { formatDateNumeric } from "@/lib/utils";
+import { formatDateNumeric, formatNumber } from "@/lib/utils";
+import {
+  DataTableShell,
+  DataTable,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableBody,
+  DataTableRow,
+  DataTableCell,
+  type TableViewMode,
+} from "@/components/ui/data-table-shell";
 
 export default function CenterAppointmentsPage() {
   const [list, setList] = useState<unknown[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<TableViewMode>("table");
 
   const load = useCallback(() => {
     fetch("/api/medical-center/appointments")
@@ -37,9 +49,20 @@ export default function CenterAppointmentsPage() {
     status: string;
     paymentStatus: string;
     fee?: number;
-    patient?: { name?: string; phone?: string };
+    patient?: { id?: string; name?: string; phone?: string };
     doctor?: { user?: { name?: string }; specialty?: { nameAr?: string } };
   };
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return list as A[];
+    return (list as A[]).filter((a) => {
+      const p = a.patient?.name ?? "";
+      const ph = a.patient?.phone ?? "";
+      const d = a.doctor?.user?.name ?? "";
+      return p.toLowerCase().includes(q) || ph.includes(q) || d.toLowerCase().includes(q);
+    });
+  }, [list, search]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
@@ -48,13 +71,16 @@ export default function CenterAppointmentsPage() {
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <IconCalendar className="h-6 w-6 text-blue-600" />
-          حجوزات المركز
-        </h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <IconCalendar className="h-6 w-6 text-blue-600" />
+            حجوزات المركز
+          </h1>
+        
+        </div>
         <Button
           type="button"
-          className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+          className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md shrink-0 self-start"
           onClick={() => setQuickOpen(true)}
         >
           <IconPlusCircle className="h-4 w-4" />
@@ -77,40 +103,63 @@ export default function CenterAppointmentsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-right p-2 w-14">تسلسل</th>
-                <th className="text-right p-2">التاريخ</th>
-                <th className="text-right p-2">المريض</th>
-                <th className="text-right p-2">الطبيب</th>
-                <th className="text-right p-2">الحالة</th>
-                <th className="text-right p-2">الدفع</th>
-                <th className="text-right p-2">السعر</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(list as A[]).map((a, i) => (
-                <tr key={a.id} className="border-b">
-                  <td className="p-2 text-center font-semibold tabular-nums text-gray-700">{i + 1}</td>
-                  <td className="p-2 whitespace-nowrap">
-                    {formatDateNumeric(a.appointmentDate)} {a.startTime}
-                  </td>
-                  <td className="p-2">{a.patient?.name}</td>
-                  <td className="p-2">
-                    {a.doctor?.user?.name} — {a.doctor?.specialty?.nameAr}
-                  </td>
-                  <td className="p-2">
-                    <Badge variant="secondary">{a.status}</Badge>
-                  </td>
-                  <td className="p-2">{a.paymentStatus}</td>
-                  <td className="p-2 whitespace-nowrap">₪{a.fee ?? "—"}</td>
-                </tr>
+        <DataTableShell
+          searchPlaceholder="ابحث بالمريض أو الطبيب أو الهاتف..."
+          searchQuery={search}
+          onSearchChange={setSearch}
+          summaryLabel="عدد الحجوزات"
+          summaryValue={formatNumber(filtered.length, { maximumFractionDigits: 0 })}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        >
+          {viewMode === "table" ? (
+            <DataTable>
+              <DataTableHead>
+                <DataTableHeaderCell className="w-14">#</DataTableHeaderCell>
+                <DataTableHeaderCell>التاريخ</DataTableHeaderCell>
+                <DataTableHeaderCell>المريض</DataTableHeaderCell>
+                <DataTableHeaderCell>الطبيب</DataTableHeaderCell>
+                <DataTableHeaderCell>الحالة</DataTableHeaderCell>
+                <DataTableHeaderCell>الدفع</DataTableHeaderCell>
+                <DataTableHeaderCell>السعر</DataTableHeaderCell>
+              </DataTableHead>
+              <DataTableBody>
+                {filtered.map((a, i) => (
+                  <DataTableRow key={a.id}>
+                    <DataTableCell className="text-center font-semibold tabular-nums">{i + 1}</DataTableCell>
+                    <DataTableCell className="whitespace-nowrap">{formatDateNumeric(a.appointmentDate)} {a.startTime}</DataTableCell>
+                    <DataTableCell>
+                      {a.patient?.id ? (
+                        <Link href={`/dashboard/medical-center/patients/${a.patient.id}`} className="text-blue-700 hover:underline">
+                          {a.patient?.name ?? "—"}
+                        </Link>
+                      ) : (
+                        a.patient?.name ?? "—"
+                      )}
+                    </DataTableCell>
+                    <DataTableCell>{a.doctor?.user?.name} — {a.doctor?.specialty?.nameAr}</DataTableCell>
+                    <DataTableCell><Badge variant="secondary">{a.status}</Badge></DataTableCell>
+                    <DataTableCell>{a.paymentStatus}</DataTableCell>
+                    <DataTableCell className="whitespace-nowrap">₪{a.fee ?? "—"}</DataTableCell>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </DataTable>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {filtered.map((a) => (
+                <Card key={a.id}>
+                  <CardContent className="p-4 space-y-2 text-sm">
+                    <p className="font-semibold">{a.patient?.name ?? "—"}</p>
+                    <p>{a.doctor?.user?.name} — {a.doctor?.specialty?.nameAr}</p>
+                    <p className="text-gray-500">{formatDateNumeric(a.appointmentDate)} {a.startTime}</p>
+                    <p>₪{a.fee ?? "—"} • {a.paymentStatus}</p>
+                  </CardContent>
+                </Card>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          )}
+        </DataTableShell>
       )}
     </div>
   );

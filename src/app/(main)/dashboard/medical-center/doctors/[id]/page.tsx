@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import IconHeart from "@/components/icon/icon-heart";
 import IconPlus from "@/components/icon/icon-plus";
 import IconTrash from "@/components/icon/icon-trash";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 import LoadingScreen from "@/components/ui/loading-screen";
 import { DAYS_AR } from "@/lib/utils";
+import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
 
 const DAY_OPTIONS = DAYS_AR.map((d, idx) => ({ value: String(idx), label: d }));
 
@@ -41,6 +43,8 @@ type Doc = {
 };
 
 export default function CenterDoctorDetailPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const [doctor, setDoctor] = useState<Doc | null>(null);
@@ -54,6 +58,13 @@ export default function CenterDoctorDetailPage() {
   const [slots, setSlots] = useState<SlotRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+    if (session?.user?.role !== CENTER_ROLE_ADMIN) {
+      router.replace("/dashboard/medical-center");
+    }
+  }, [session?.user?.role, sessionStatus, router]);
 
   useEffect(() => {
     fetch("/api/specialties")
@@ -164,6 +175,10 @@ export default function CenterDoctorDetailPage() {
       setSaving(false);
     }
   };
+
+  if (sessionStatus === "loading" || session?.user?.role !== CENTER_ROLE_ADMIN) {
+    return <LoadingScreen label="جاري التحميل..." />;
+  }
 
   if (loading) {
     return <LoadingScreen label="جاري التحميل..." />;

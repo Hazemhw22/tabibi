@@ -38,6 +38,8 @@ export default function Navbar() {
       case "CLINIC_ADMIN":
         return "/dashboard/admin";
       case "MEDICAL_CENTER_ADMIN":
+      case "MEDICAL_CENTER_RECEPTIONIST":
+      case "MEDICAL_CENTER_LAB_STAFF":
         return "/dashboard/medical-center";
       default:
         return "/dashboard/patient";
@@ -120,7 +122,11 @@ export default function Navbar() {
                             ? "مشرف"
                             : role === "MEDICAL_CENTER_ADMIN"
                               ? "مركز طبي"
-                              : "مريض"}
+                              : role === "MEDICAL_CENTER_RECEPTIONIST"
+                                ? "استقبال"
+                                : role === "MEDICAL_CENTER_LAB_STAFF"
+                                  ? "مختبر / أشعة"
+                                  : "مريض"}
                       </p>
                     </div>
                     <IconCaretDown className="h-4 w-4 text-gray-400" />

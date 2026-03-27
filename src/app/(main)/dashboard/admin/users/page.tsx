@@ -13,7 +13,9 @@ const ROLE_LABELS: Record<string, string> = {
   DOCTOR: "طبيب",
   PLATFORM_ADMIN: "مشرف منصة",
   CLINIC_ADMIN: "مشرف عيادة",
-  MEDICAL_CENTER_ADMIN: "مركز طبي",
+  MEDICAL_CENTER_ADMIN: "مدير مركز طبي",
+  MEDICAL_CENTER_RECEPTIONIST: "استقبال (مركز)",
+  MEDICAL_CENTER_LAB_STAFF: "مختبر/أشعة (مركز)",
 };
 
 export default async function AdminUsersPage() {

@@ -15,7 +15,9 @@ enum Role {
   DOCTOR
   CLINIC_ADMIN
   PLATFORM_ADMIN
-  MEDICAL_CENTER_ADMIN // مشرف مركز طبي
+  MEDICAL_CENTER_ADMIN // مدير المركز — إشراف كامل وحسابات وموظفون
+  MEDICAL_CENTER_RECEPTIONIST // استقبال — مواعيد، تسجيل مرضى، تحصيل
+  MEDICAL_CENTER_LAB_STAFF // مختبر/أشعة — رفع نتائج لملف المريض
 }
 
 enum AppointmentStatus {
@@ -78,9 +80,17 @@ model User {
   /// خطط علاج من أطباء المنصة (مريض مسجل User)
   platformPatientCarePlans PlatformPatientCarePlan[]
 
-  /// عند role = MEDICAL_CENTER_ADMIN: المركز الذي يديره المستخدم
+  /// عند أدوار موظفي المركز: معرف المركز
   medicalCenterId String?
   medicalCenter   MedicalCenter? @relation("MedicalCenterStaff", fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  /// بيانات الموظف داخل المركز (تُعبأ يدوياً)
+  staffType       String? // مثال: محاسب، نظافة، استقبال...
+  educationLevel  String? // مثال: دبلوم، بكالوريوس
+  salaryMonthly   Float?
+  attendanceNotes String? @db.Text
+
+  medicalCenterPatientDocsAsPatient MedicalCenterPatientDocument[] @relation("MedicalCenterDocPatient")
+  medicalCenterPatientDocsUploaded  MedicalCenterPatientDocument[] @relation("MedicalCenterDocUploader")
 }
 
 model Account {
@@ -158,6 +168,30 @@ model MedicalCenter {
   /// عيادات مرتبطة بهذا المركز (فرع المركز لكل طبيب)
   linkedClinics    Clinic[]
   doctorInvites    MedicalCenterDoctorInvite[]
+  patientDocuments MedicalCenterPatientDocument[]
+}
+
+/// نتيجة تحليل أو أشعة يُرفعها موظف المركز لمريض المنصة
+model MedicalCenterPatientDocument {
+  id               String   @id @default(cuid())
+  medicalCenterId  String
+  patientUserId    String
+  /// LAB | IMAGING
+  category         String
+  title            String
+  fileUrl          String
+  fileName         String?
+  mimeType         String?
+  uploadedByUserId String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  medicalCenter MedicalCenter @relation(fields: [medicalCenterId], references: [id], onDelete: Cascade)
+  patient       User          @relation("MedicalCenterDocPatient", fields: [patientUserId], references: [id], onDelete: Cascade)
+  uploadedBy    User?         @relation("MedicalCenterDocUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([medicalCenterId, patientUserId])
 }
 
 /// زيارة طوارئ بدون حجز مسبق

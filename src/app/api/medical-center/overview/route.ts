@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
+import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
+import { CENTER_ROLES_ALL_STAFF } from "@/lib/medical-center-roles";
 import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 /** إحصائيات سريعة للوحة المركز */
@@ -11,10 +12,9 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const centerId = await getMedicalCenterIdForUser(session.user.id);
-    if (!centerId) {
-      return NextResponse.json({ error: "ليس لديك صلاحية مركز طبي" }, { status: 403 });
-    }
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ALL_STAFF });
+    if (!gate.ok) return gate.response;
+    const centerId = gate.centerId;
 
     const { data: center } = await supabaseAdmin
       .from("MedicalCenter")
@@ -30,6 +30,7 @@ export async function GET() {
       const { count: ac } = await supabaseAdmin
         .from("Appointment")
         .select("id", { count: "exact", head: true })
+        .eq("medicalCenterId", centerId)
         .in("doctorId", ids)
         .in("status", ["DRAFT", "CONFIRMED", "COMPLETED"]);
       appointmentsCount = ac ?? 0;
@@ -37,6 +38,7 @@ export async function GET() {
       const { data: pRows } = await supabaseAdmin
         .from("Appointment")
         .select("patientId")
+        .eq("medicalCenterId", centerId)
         .in("doctorId", ids);
       patientsDistinct = new Set((pRows ?? []).map((r) => r.patientId)).size;
     }

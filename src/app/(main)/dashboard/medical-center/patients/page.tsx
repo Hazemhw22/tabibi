@@ -20,7 +20,7 @@ import {
 import { formatDateMedium } from "@/lib/utils";
 
 type Row = {
-  patient?: { name?: string; phone?: string; email?: string };
+  patient?: { id?: string; name?: string; phone?: string; email?: string };
   lastVisit?: string;
 };
 
@@ -103,7 +103,15 @@ export default function CenterPatientsPage() {
                       <DataTableCell className="text-center font-semibold tabular-nums text-gray-700 dark:text-gray-300">
                         {seq}
                       </DataTableCell>
-                      <DataTableCell className="font-medium text-gray-900 dark:text-white">{name}</DataTableCell>
+                      <DataTableCell className="font-medium text-gray-900 dark:text-white">
+                        {r.patient?.id ? (
+                          <Link href={`/dashboard/medical-center/patients/${r.patient.id}`} className="text-blue-700 hover:underline dark:text-blue-400">
+                            {name}
+                          </Link>
+                        ) : (
+                          name
+                        )}
+                      </DataTableCell>
                       <DataTableCell dir="ltr" className="text-left font-mono text-sm">
                         {phone || "—"}
                       </DataTableCell>
@@ -133,7 +141,15 @@ export default function CenterPatientsPage() {
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                       تسلسل: <span className="tabular-nums font-bold text-gray-800 dark:text-gray-200">{seq}</span>
                     </p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{r.patient?.name ?? "—"}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {r.patient?.id ? (
+                        <Link href={`/dashboard/medical-center/patients/${r.patient.id}`} className="text-blue-700 hover:underline dark:text-blue-400">
+                          {r.patient?.name ?? "—"}
+                        </Link>
+                      ) : (
+                        r.patient?.name ?? "—"
+                      )}
+                    </p>
                     {r.patient?.phone && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                         <IconPhone className="h-3.5 w-3.5 shrink-0" />

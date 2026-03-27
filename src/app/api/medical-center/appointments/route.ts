@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
+import { CENTER_ROLES_ADMIN_RECEPTION } from "@/lib/medical-center-roles";
 import { doctorIsLinkedToCenter, getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 import { findOrCreatePatientByPhone } from "@/lib/patient-account";
 import { notifyAppointmentBooked } from "@/lib/notifications";
@@ -35,7 +36,7 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ADMIN_RECEPTION });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
@@ -57,9 +58,10 @@ export async function GET() {
         doctorClinicFeeSnapshot,
         medicalCenterId,
         notes,
-        patient:User(name, phone, email),
+        patient:User(id, name, phone, email),
         doctor:Doctor(id, user:User(name), specialty:Specialty(nameAr))
       `)
+      .eq("medicalCenterId", centerId)
       .in("doctorId", ids)
       .order("appointmentDate", { ascending: false })
       .limit(300);
@@ -83,7 +85,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ADMIN_RECEPTION });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 

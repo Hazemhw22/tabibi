@@ -136,6 +136,7 @@ export default function CenterDoctorBooking({ centerId, doctor, isLoggedIn, isPa
           notes,
           fee: doctor.consultationFee,
           slotTurn: selectedSlotTurn,
+          viaMedicalCenter: true,
         }),
       });
       const data = await res.json();

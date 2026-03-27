@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useTransition, useState, useMemo, useEffect } from "react";
+import { useTransition, useState, useMemo, useEffect, useCallback } from "react";
 import IconPlus from "@/components/icon/icon-plus";
 import IconSearch from "@/components/icon/icon-search";
 import IconX from "@/components/icon/icon-x";
@@ -34,6 +34,7 @@ import { ClinicPatientPhoneLookupField } from "@/components/clinic-patient-phone
 import type { PatientListItem, SelectedPatient, AppointmentRow, TransactionRow } from "./page";
 import type { CarePlanType } from "@/lib/specialty-plan-registry";
 import { CarePlanPanel } from "@/components/doctor-care-plans/care-plan-panel";
+import { MedicalFilesCarePlanTable } from "@/components/doctor-care-plans/medical-files-care-plan-table";
 import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
 import { transactionSignedDelta } from "@/lib/patient-transaction-math";
 
@@ -116,6 +117,7 @@ type Props = {
   isDentist: boolean;
   carePlanType: CarePlanType;
   doctorDisplayName?: string;
+  centerDisplayName?: string;
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -131,6 +133,7 @@ export default function PatientsView({
   isDentist,
   carePlanType,
   doctorDisplayName = "",
+  centerDisplayName = "المركز الطبي",
 }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -183,6 +186,12 @@ export default function PatientsView({
   /* platform-specific */
   const [aptEndTime, setAptEndTime] = useState("09:30");
   const [aptFee,     setAptFee]     = useState(String(defaultFee || ""));
+  const [bookingChannel, setBookingChannel] = useState<"CENTER" | "CLINIC">("CLINIC");
+  const [doctorClinics, setDoctorClinics] = useState<{ id: string; name: string; medicalCenterId?: string | null }[]>([]);
+  const [selectedClinicId, setSelectedClinicId] = useState("");
+  const [centerClinicId, setCenterClinicId] = useState<string | null>(null);
+  const ownClinics = doctorClinics.filter((c) => !c.medicalCenterId);
+  const canChooseChannel = Boolean(centerClinicId) && ownClinics.length > 0;
 
   /* medical notes (inside الملفات الطبية) — clinic patients only */
   const [addingMedical, setAddingMedical] = useState(false);
@@ -195,6 +204,10 @@ export default function PatientsView({
   const [editMedicalDiagnosis, setEditMedicalDiagnosis] = useState("");
   const [editMedicalTreatment, setEditMedicalTreatment] = useState("");
   const [savingMedicalEdit, setSavingMedicalEdit] = useState(false);
+  const [hasCarePlanSummary, setHasCarePlanSummary] = useState(false);
+  const onCarePlanSummaryLoaded = useCallback((has: boolean) => {
+    setHasCarePlanSummary(has);
+  }, []);
 
   /* dental plan (dentist only, per-session state) */
   const [activeTooth, setActiveTooth] = useState<string | null>(null);
@@ -210,7 +223,25 @@ export default function PatientsView({
   const [otherModalPrice, setOtherModalPrice] = useState("");
 
   /* reset tab when patient changes */
-  useEffect(() => { setActiveTab("info"); }, [selectedId]);
+  useEffect(() => {
+    setActiveTab("info");
+    setHasCarePlanSummary(false);
+  }, [selectedId]);
+
+  useEffect(() => {
+    fetch("/api/doctor/profile")
+      .then((r) => r.json())
+      .then((j) => {
+        const clinics = (j?.doctor?.clinics ?? []) as { id: string; name: string; medicalCenterId?: string | null }[];
+        setDoctorClinics(clinics);
+        const centerClinic = clinics.find((c) => Boolean(c.medicalCenterId));
+        const ownClinic = clinics.find((c) => !c.medicalCenterId);
+        setCenterClinicId(centerClinic?.id ?? null);
+        setSelectedClinicId((ownClinic ?? clinics[0])?.id ?? "");
+        if (centerClinic?.id) setBookingChannel("CENTER");
+      })
+      .catch(() => {});
+  }, []);
 
   /* تحميل خطة الأسنان عند اختيار مريض عيادة */
   useEffect(() => {
@@ -498,6 +529,7 @@ export default function PatientsView({
     if (search) params.set("q", search);
     params.set("id", p.id);
     params.set("source", p.source);
+    params.set("owner", p.ownership);
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -505,7 +537,11 @@ export default function PatientsView({
     setSearch(v);
     const params = new URLSearchParams();
     if (v) params.set("q", v);
-    if (selectedId) params.set("id", selectedId);
+    if (selectedId && selectedPatient) {
+      params.set("id", selectedId);
+      params.set("source", selectedPatient.source);
+      params.set("owner", selectedPatient.ownership);
+    }
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   };
 
@@ -537,7 +573,7 @@ export default function PatientsView({
         setAddExistingUserId(null);
         setAddForm({ name:"",email:"",whatsapp:"",gender:"",dateOfBirth:"",address:"",bloodType:"",allergies:"",notes:"",fileNumber:"" });
         router.refresh();
-        openPatient({ id: data.patient.id, name: data.patient.name, source: "clinic", appointmentCount: 0 });
+        openPatient({ id: data.patient.id, name: data.patient.name, source: "clinic", ownership: "LOCAL", appointmentCount: 0 });
       } else { toast.error(data.error || "حدث خطأ"); }
     } catch { toast.error("خطأ في الاتصال"); }
     finally  { setAddLoading(false); }
@@ -604,9 +640,22 @@ export default function PatientsView({
         });
       } else {
         if (!aptDate || !aptTime || !aptEndTime) { toast.error("التاريخ ووقت البداية والنهاية مطلوبة"); setSavingApt(false); return; }
+        const viaMedicalCenter = canChooseChannel ? bookingChannel === "CENTER" : Boolean(centerClinicId);
+        const resolvedClinicId = viaMedicalCenter ? centerClinicId : selectedClinicId;
+        if (!resolvedClinicId) { toast.error("يرجى اختيار عيادة"); setSavingApt(false); return; }
         res = await fetch("/api/appointments", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ doctorId, patientId:selectedPatient.id, appointmentDate:aptDate, startTime:aptTime, endTime:aptEndTime, fee:Number(aptFee)||defaultFee, notes:aptNotes||undefined }),
+          body: JSON.stringify({
+            doctorId,
+            patientId:selectedPatient.id,
+            clinicId: resolvedClinicId,
+            appointmentDate:aptDate,
+            startTime:aptTime,
+            endTime:aptEndTime,
+            fee:Number(aptFee)||defaultFee,
+            notes:aptNotes||undefined,
+            viaMedicalCenter,
+          }),
         });
       }
       if (res.ok) {
@@ -799,10 +848,14 @@ export default function PatientsView({
               <p className="text-sm text-gray-400 dark:text-slate-500">{search ? "لا توجد نتائج" : "لا يوجد مرضى"}</p>
             </li>
           ) : filtered.map((p) => {
-            const active = selectedId === p.id;
+            const rowKey = `${p.id}:${p.source}:${p.ownership}`;
+            const active =
+              selectedId === p.id &&
+              selectedPatient?.source === p.source &&
+              selectedPatient?.ownership === p.ownership;
             const isClinic = p.source === "clinic";
             return (
-              <li key={p.id}>
+              <li key={rowKey}>
                 <button
                   type="button"
                   onClick={() => openPatient(p)}
@@ -831,17 +884,17 @@ export default function PatientsView({
                     <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400 dark:text-slate-500")}>
                       {isClinic
                         ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.whatsapp ?? "—")
-                        : `${p.appointmentCount} موعد · منصة`}
+                        : `${p.appointmentCount} موعد`}
                     </p>
                   </div>
                   <Badge
-                    variant={isClinic ? "secondary" : "default"}
+                    variant={p.ownership === "CENTER" ? "default" : "secondary"}
                     className={cn(
                       "text-[10px] shrink-0 px-1.5",
                       active && "border-white/30 bg-white/15 text-white"
                     )}
                   >
-                    {isClinic ? "عيادة" : "منصة"}
+                    {p.ownership === "CENTER" ? centerDisplayName : "عيادتي"}
                   </Badge>
                 </button>
               </li>
@@ -858,7 +911,7 @@ export default function PatientsView({
             <div
               className={cn(
                 "h-1 shrink-0",
-                selectedPatient.source === "clinic" ? "bg-emerald-500" : "bg-blue-500"
+                selectedPatient.ownership === "CENTER" ? "bg-blue-500" : "bg-emerald-500"
               )}
               aria-hidden
             />
@@ -871,8 +924,8 @@ export default function PatientsView({
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">{selectedPatient.name}</h2>
-                    <Badge variant={selectedPatient.source === "clinic" ? "secondary" : "default"} className="text-xs">
-                      {selectedPatient.source === "clinic" ? "عيادة" : "منصة"}
+                    <Badge variant={selectedPatient.ownership === "CENTER" ? "default" : "secondary"} className="text-xs">
+                      {selectedPatient.ownership === "CENTER" ? centerDisplayName : "عيادتي"}
                     </Badge>
                     {selectedPatient.source === "clinic" && (
                       <Button
@@ -934,7 +987,7 @@ export default function PatientsView({
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
                   <div className="mb-0.5 text-xs text-gray-400 dark:text-slate-500">نوع الملف</div>
                   <div className="truncate text-sm font-semibold text-gray-800 dark:text-slate-100">
-                    {selectedPatient.source === "clinic" ? "مريض عيادة" : "مريض منصة"}
+                    {selectedPatient.ownership === "CENTER" ? `مريض ${centerDisplayName}` : "مريض عيادتي"}
                   </div>
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
@@ -1029,13 +1082,35 @@ export default function PatientsView({
                           </div>
                         </>
                       ) : (
-                        <div className="grid grid-cols-3 gap-3">
-                          <input type="date" value={aptDate} onChange={(e) => setAptDate(e.target.value)}
-                            className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="التاريخ" />
-                          <input type="time" value={aptTime} onChange={(e) => setAptTime(e.target.value)}
-                            className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="بداية" />
-                          <input type="time" value={aptEndTime} onChange={(e) => setAptEndTime(e.target.value)}
-                            className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="نهاية" />
+                        <div className="space-y-3">
+                          {canChooseChannel && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <select value={bookingChannel} onChange={(e) => setBookingChannel(e.target.value as "CENTER" | "CLINIC")}
+                                className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <option value="CENTER">المركز الطبي (يظهر في حجوزات المركز)</option>
+                                <option value="CLINIC">عيادتي الخاصة (لا يظهر في المركز)</option>
+                              </select>
+                              <select
+                                value={bookingChannel === "CENTER" ? (centerClinicId ?? "") : selectedClinicId}
+                                onChange={(e) => setSelectedClinicId(e.target.value)}
+                                disabled={bookingChannel === "CENTER"}
+                                className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:bg-gray-100"
+                              >
+                                {(bookingChannel === "CENTER"
+                                  ? doctorClinics.filter((c) => c.id === centerClinicId)
+                                  : ownClinics
+                                ).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                              </select>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-3 gap-3">
+                            <input type="date" value={aptDate} onChange={(e) => setAptDate(e.target.value)}
+                              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="التاريخ" />
+                            <input type="time" value={aptTime} onChange={(e) => setAptTime(e.target.value)}
+                              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="بداية" />
+                            <input type="time" value={aptEndTime} onChange={(e) => setAptEndTime(e.target.value)}
+                              className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" placeholder="نهاية" />
+                          </div>
                         </div>
                       )}
                       <input
@@ -1317,8 +1392,24 @@ export default function PatientsView({
               {/* ── الملفات الطبية ────────────────────────────── */}
               {activeTab === "medical" && (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700">الملفات الطبية</h3>
-                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">الملفات الطبية</h3>
+
+                  <MedicalFilesCarePlanTable
+                    patientId={selectedPatient.id}
+                    patientSource={selectedPatient.source}
+                    carePlanType={carePlanType}
+                    patientName={selectedPatient.name}
+                    doctorDisplayName={doctorDisplayName}
+                    patientPrintDemographics={{
+                      fileNumber: selectedPatient.fileNumber,
+                      gender: selectedPatient.gender,
+                      dateOfBirth: selectedPatient.dateOfBirth,
+                      guardian: null,
+                    }}
+                    onPlanLoaded={onCarePlanSummaryLoaded}
+                  />
+
+                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50 dark:border-slate-700 dark:bg-slate-900/90 dark:divide-slate-700/80">
                     {/* ملاحظات طبية يضيفها الطبيب يدوياً (ClinicMedicalNote) — عيادة فقط */}
                     {selectedPatient.source === "clinic" && (
                       <div className="px-5 py-4 space-y-3">
@@ -1653,9 +1744,10 @@ export default function PatientsView({
                     )}
                     {!selectedPatient.allergies &&
                       !selectedPatient.notes &&
-                      !selectedPatient.appointments.some((a) => a.notes) && (
-                      <div className="py-12 text-center text-sm text-gray-400">
-                        <IconHeart className="mx-auto mb-3 h-10 w-10 text-gray-200" />
+                      !selectedPatient.appointments.some((a) => a.notes) &&
+                      !hasCarePlanSummary && (
+                      <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">
+                        <IconHeart className="mx-auto mb-3 h-10 w-10 text-gray-200 dark:text-slate-600" />
                         لا توجد ملفات طبية
                       </div>
                     )}

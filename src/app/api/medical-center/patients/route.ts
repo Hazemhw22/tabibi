@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
+import { CENTER_ROLES_ALL_STAFF } from "@/lib/medical-center-roles";
 import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 /** مرضى فريدون حجزوا عند أطباء المركز */
@@ -11,7 +12,7 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ALL_STAFF });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
@@ -23,6 +24,7 @@ export async function GET() {
     const { data: apps, error } = await supabaseAdmin
       .from("Appointment")
       .select("patientId, createdAt, patient:User(id, name, phone, email)")
+      .eq("medicalCenterId", centerId)
       .in("doctorId", ids)
       .order("createdAt", { ascending: false });
 

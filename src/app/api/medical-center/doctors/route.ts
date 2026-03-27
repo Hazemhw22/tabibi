@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
+import { CENTER_ROLES_ADMIN_ONLY, CENTER_ROLES_ADMIN_RECEPTION } from "@/lib/medical-center-roles";
 import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 import { getOrCreateMainClinicForCenterDoctor } from "@/lib/medical-center-clinic";
 import { z } from "zod";
@@ -55,7 +56,7 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ADMIN_RECEPTION });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
@@ -99,7 +100,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ADMIN_ONLY });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 

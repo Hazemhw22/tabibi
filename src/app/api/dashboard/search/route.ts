@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
+import { isMedicalCenterStaffRole } from "@/lib/medical-center-roles";
 import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 import type { DashboardSearchResult } from "@/lib/dashboard-search-types";
 
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
     const role = session.user.role;
     const results: DashboardSearchResult[] = [];
 
-    if (role === "MEDICAL_CENTER_ADMIN") {
+    if (isMedicalCenterStaffRole(role ?? "")) {
       const centerId = await getMedicalCenterIdForUser(session.user.id);
       if (!centerId) {
         return NextResponse.json({ results: [] });
@@ -68,6 +69,7 @@ export async function GET(req: Request) {
         const { data: apps } = await supabaseAdmin
           .from("Appointment")
           .select("id, patient:User(name, phone, email)")
+          .eq("medicalCenterId", centerId)
           .in("doctorId", doctorIds)
           .limit(80);
 

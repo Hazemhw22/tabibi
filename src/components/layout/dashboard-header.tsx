@@ -46,7 +46,11 @@ export default function DashboardHeader() {
           ? "مشرف عيادة"
           : role === "MEDICAL_CENTER_ADMIN"
             ? "مركز طبي"
-            : "";
+            : role === "MEDICAL_CENTER_RECEPTIONIST"
+              ? "استقبال"
+              : role === "MEDICAL_CENTER_LAB_STAFF"
+                ? "مختبر / أشعة"
+                : "";
 
   const settingsHref =
     role === "DOCTOR"
@@ -55,7 +59,9 @@ export default function DashboardHeader() {
         ? "/dashboard/admin/settings"
         : role === "MEDICAL_CENTER_ADMIN"
           ? "/dashboard/medical-center/settings"
-          : "/settings";
+          : role === "MEDICAL_CENTER_RECEPTIONIST" || role === "MEDICAL_CENTER_LAB_STAFF"
+            ? "/profile"
+            : "/settings";
 
   return (
     <header

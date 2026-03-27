@@ -24,6 +24,11 @@ const appointmentSchema = z.object({
   fee: z.number().positive(),
   /** رقم الدور 1..slotCapacity ضمن نفس الفترة */
   slotTurn: z.number().int().min(1).max(100).optional(),
+  /**
+   * true فقط عند الحجز من صفحة المركز أو صفحة طبيب داخل المركز.
+   * الحجز من صفحة الطبيب العامة لا يُسجّل كحجز مركز ولا يظهر في لوحة المركز.
+   */
+  viaMedicalCenter: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {
@@ -135,8 +140,9 @@ export async function POST(req: Request) {
 
     const fin = await getAppointmentFinanceSnapshot(data.doctorId);
     const isBookedByDoctor = session.user.role === "DOCTOR";
-    const isCenterDoctorBooking = Boolean(fin.medicalCenterId);
-    const finalFee = isCenterDoctorBooking
+    const viaCenter = data.viaMedicalCenter === true;
+    const isCenterChannelBooking = Boolean(fin.medicalCenterId) && viaCenter;
+    const finalFee = isCenterChannelBooking
       ? (fin.consultationFeeSnapshot ?? 0)
       : data.fee;
     const insertRow: Record<string, unknown> = {
@@ -156,7 +162,7 @@ export async function POST(req: Request) {
     if (resolvedSlotTurn !== null) {
       insertRow.slotTurn = resolvedSlotTurn;
     }
-    if (fin.medicalCenterId) {
+    if (isCenterChannelBooking && fin.medicalCenterId) {
       insertRow.medicalCenterId = fin.medicalCenterId;
       insertRow.doctorClinicFeeSnapshot = fin.doctorClinicFeeSnapshot ?? 0;
     }

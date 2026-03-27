@@ -13,7 +13,13 @@ export function DashboardThemeSync() {
   useEffect(() => {
     if (status !== "authenticated") return;
     const role = session?.user?.role;
-    if (role !== "DOCTOR" && role !== "MEDICAL_CENTER_ADMIN") return;
+    if (
+      role !== "DOCTOR" &&
+      role !== "MEDICAL_CENTER_ADMIN" &&
+      role !== "MEDICAL_CENTER_RECEPTIONIST" &&
+      role !== "MEDICAL_CENTER_LAB_STAFF"
+    )
+      return;
     try {
       const stored = window.localStorage.getItem("tabibi-theme");
       if (stored === "light" || stored === "dark") {

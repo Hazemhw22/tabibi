@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -115,6 +115,27 @@ export default function PatientTabs({
   const [aptEndTime, setAptEndTime] = useState("09:30");
   const [aptFee, setAptFee] = useState(String(defaultFee || ""));
   const [savingApt, setSavingApt] = useState(false);
+  const [bookingChannel, setBookingChannel] = useState<"CENTER" | "CLINIC">("CLINIC");
+  const [doctorClinics, setDoctorClinics] = useState<{ id: string; name: string; medicalCenterId?: string | null }[]>([]);
+  const [selectedClinicId, setSelectedClinicId] = useState("");
+  const [centerClinicId, setCenterClinicId] = useState<string | null>(null);
+  const ownClinics = doctorClinics.filter((c) => !c.medicalCenterId);
+  const canChooseChannel = Boolean(centerClinicId) && ownClinics.length > 0;
+
+  useEffect(() => {
+    fetch("/api/doctor/profile")
+      .then((r) => r.json())
+      .then((j) => {
+        const clinics = (j?.doctor?.clinics ?? []) as { id: string; name: string; medicalCenterId?: string | null }[];
+        setDoctorClinics(clinics);
+        const centerClinic = clinics.find((c) => Boolean(c.medicalCenterId));
+        const ownClinic = clinics.find((c) => !c.medicalCenterId);
+        setCenterClinicId(centerClinic?.id ?? null);
+        setSelectedClinicId((ownClinic ?? clinics[0])?.id ?? "");
+        if (centerClinic?.id) setBookingChannel("CENTER");
+      })
+      .catch(() => {});
+  }, []);
 
   const handleAddPayment = async () => {
     const amount = Number(paymentAmount);
@@ -229,8 +250,14 @@ export default function PatientTabs({
         setSavingApt(false);
       }
     } else {
-      if (!doctorId || !aptDate || !aptStartTime || !aptEndTime) {
+        if (!doctorId || !aptDate || !aptStartTime || !aptEndTime) {
         toast.error("التاريخ ووقت البداية والنهاية مطلوبة");
+        return;
+      }
+      const viaMedicalCenter = canChooseChannel ? bookingChannel === "CENTER" : Boolean(centerClinicId);
+      const resolvedClinicId = viaMedicalCenter ? centerClinicId : selectedClinicId;
+      if (!resolvedClinicId) {
+        toast.error("يرجى اختيار عيادة صالحة");
         return;
       }
       const fee = Number(aptFee);
@@ -246,11 +273,13 @@ export default function PatientTabs({
           body: JSON.stringify({
             doctorId,
             patientId: patient.id,
+            clinicId: resolvedClinicId,
             appointmentDate: aptDate,
             startTime: aptStartTime,
             endTime: aptEndTime,
             fee,
             notes: aptNotes.trim() || undefined,
+            viaMedicalCenter,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -392,6 +421,39 @@ export default function PatientTabs({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {canChooseChannel && (
+                      <div>
+                        <Label>قناة الحجز</Label>
+                        <select
+                          value={bookingChannel}
+                          onChange={(e) => setBookingChannel(e.target.value as "CENTER" | "CLINIC")}
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="CENTER">المركز الطبي (يظهر في حجوزات المركز)</option>
+                          <option value="CLINIC">عيادتي الخاصة (لا يظهر في المركز)</option>
+                        </select>
+                      </div>
+                    )}
+                    {canChooseChannel ? (
+                      <div>
+                        <Label>العيادة</Label>
+                        <select
+                          value={bookingChannel === "CENTER" ? (centerClinicId ?? "") : selectedClinicId}
+                          onChange={(e) => setSelectedClinicId(e.target.value)}
+                          disabled={bookingChannel === "CENTER"}
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:bg-gray-100"
+                        >
+                          {(bookingChannel === "CENTER"
+                            ? doctorClinics.filter((c) => c.id === centerClinicId)
+                            : ownClinics
+                          ).map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
                     <div>
                       <Label>التاريخ</Label>
                       <Input type="date" value={aptDate} onChange={(e) => setAptDate(e.target.value)} />

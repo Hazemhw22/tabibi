@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
+import { CENTER_ROLES_ADMIN_ONLY } from "@/lib/medical-center-roles";
 import { getLinkedDoctorIdsForCenter } from "@/lib/medical-center-doctors";
 
 export type FinanceRow = {
@@ -20,7 +21,7 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ADMIN_ONLY });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 
@@ -38,37 +39,54 @@ export async function GET() {
       }
       doctors = (doctorRows ?? []) as { id: string; user?: unknown }[];
     }
-    if (!doctorIds.length) {
-      return NextResponse.json({
-        stats: {
-          totalPatientFees: 0,
-          totalDoctorClinicFees: 0,
-          estimatedCenterNet: 0,
-        },
-        appointmentCount: 0,
-        rows: [] as FinanceRow[],
-      });
-    }
 
-    const { data: apps, error } = await supabaseAdmin
-      .from("Appointment")
-      .select("doctorId, fee, doctorClinicFeeSnapshot, status, medicalCenterId")
-      .in("doctorId", doctorIds)
+    const { data: emergencyRows, error: emErr } = await supabaseAdmin
+      .from("EmergencyVisit")
+      .select("amount, paymentStatus")
       .eq("medicalCenterId", centerId);
 
-    if (error) {
-      console.error(error);
+    if (emErr) {
+      console.error(emErr);
       return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
     }
 
-    const active = (apps ?? []).filter((a) => (a as { status?: string }).status !== "CANCELLED");
+    /** دفعات الطوارئ المسدّدة — إيراد مباشر للمركز */
+    let emergencyPaidTotal = 0;
+    let emergencyPaidCount = 0;
+    for (const ev of emergencyRows ?? []) {
+      const row = ev as { amount?: number; paymentStatus?: string };
+      if (row.paymentStatus === "PAID") {
+        emergencyPaidTotal += Number(row.amount ?? 0);
+        emergencyPaidCount += 1;
+      }
+    }
+
+    let apps: { doctorId: string; fee?: number; doctorClinicFeeSnapshot?: number | null; status?: string }[] =
+      [];
+    if (doctorIds.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("Appointment")
+        .select("doctorId, fee, doctorClinicFeeSnapshot, status, medicalCenterId")
+        .in("doctorId", doctorIds)
+        .eq("medicalCenterId", centerId);
+
+      if (error) {
+        console.error(error);
+        return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+      }
+      apps = (data ?? []) as typeof apps;
+    }
+
+    const active = apps.filter((a) => a.status !== "CANCELLED");
 
     let totalPatient = 0;
     let totalDoctor = 0;
     for (const a of active) {
-      totalPatient += Number((a as { fee?: number }).fee ?? 0);
-      totalDoctor += Number((a as { doctorClinicFeeSnapshot?: number | null }).doctorClinicFeeSnapshot ?? 0);
+      totalPatient += Number(a.fee ?? 0);
+      totalDoctor += Number(a.doctorClinicFeeSnapshot ?? 0);
     }
+
+    const totalPatientWithEmergency = totalPatient + emergencyPaidTotal;
 
     const agg = new Map<string, { patient: number; doctor: number; count: number }>();
     for (const id of doctorIds) {
@@ -100,11 +118,14 @@ export async function GET() {
 
     return NextResponse.json({
       stats: {
-        totalPatientFees: totalPatient,
+        totalPatientFees: totalPatientWithEmergency,
+        appointmentFeesTotal: totalPatient,
+        emergencyFeesPaid: emergencyPaidTotal,
         totalDoctorClinicFees: totalDoctor,
-        estimatedCenterNet: totalPatient - totalDoctor,
+        estimatedCenterNet: totalPatientWithEmergency - totalDoctor,
       },
       appointmentCount: active.length,
+      emergencyPaidCount,
       rows,
     });
   } catch (e) {

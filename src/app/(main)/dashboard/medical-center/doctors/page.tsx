@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import IconHeart from "@/components/icon/icon-heart";
 import IconClock from "@/components/icon/icon-clock";
@@ -21,6 +23,8 @@ import {
   type TableViewMode,
 } from "@/components/ui/data-table-shell";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
+import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
+import LoadingScreen from "@/components/ui/loading-screen";
 
 type Slot = { id: string; dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean };
 
@@ -100,6 +104,8 @@ function statusBadge(status: string) {
 }
 
 export default function CenterDoctorsPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const [doctors, setDoctors] = useState<Doc[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -108,6 +114,11 @@ export default function CenterDoctorsPage() {
   const [viewMode, setViewMode] = useState<TableViewMode>("table");
 
   useEffect(() => {
+    if (sessionStatus === "loading") return;
+    if (session?.user?.role !== CENTER_ROLE_ADMIN) {
+      router.replace("/dashboard/medical-center");
+      return;
+    }
     fetch("/api/medical-center/doctors")
       .then((r) => r.json())
       .then((j) => {
@@ -115,16 +126,17 @@ export default function CenterDoctorsPage() {
         else setDoctors(j.doctors ?? []);
       })
       .catch(() => setErr("تعذر التحميل"));
-  }, []);
+  }, [session?.user?.role, sessionStatus, router]);
 
   useEffect(() => {
+    if (session?.user?.role !== CENTER_ROLE_ADMIN) return;
     fetch("/api/medical-center/doctor-invites")
       .then((r) => r.json())
       .then((j) => {
         if (j.invites) setPendingInvites(j.invites);
       })
       .catch(() => {});
-  }, []);
+  }, [session?.user?.role]);
 
   const specialtyOptions = useMemo(() => {
     const set = new Set<string>();
@@ -162,6 +174,10 @@ export default function CenterDoctorsPage() {
     () => filtered.reduce((sum, d) => sum + (d.doctorClinicFee ?? 0), 0),
     [filtered]
   );
+
+  if (sessionStatus === "loading" || session?.user?.role !== CENTER_ROLE_ADMIN) {
+    return <LoadingScreen label="جاري التحميل..." />;
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 mx-auto max-w-6xl">

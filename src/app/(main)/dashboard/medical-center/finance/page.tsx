@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import IconCashBanknotes from "@/components/icon/icon-cash-banknotes";
 import IconTrendingUp from "@/components/icon/icon-trending-up";
@@ -18,6 +20,8 @@ import {
   DataTableRow,
   DataTableCell,
 } from "@/components/ui/data-table-shell";
+import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
+import LoadingScreen from "@/components/ui/loading-screen";
 
 type FinanceRow = {
   doctorId: string;
@@ -30,14 +34,19 @@ type FinanceRow = {
 
 type Stats = {
   totalPatientFees: number;
+  appointmentFeesTotal?: number;
+  emergencyFeesPaid?: number;
   totalDoctorClinicFees: number;
   estimatedCenterNet: number;
 };
 
 export default function MedicalCenterFinancePage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [rows, setRows] = useState<FinanceRow[]>([]);
   const [count, setCount] = useState(0);
+  const [emergencyPaidCount, setEmergencyPaidCount] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -45,6 +54,11 @@ export default function MedicalCenterFinancePage() {
   const [doctorFilter, setDoctorFilter] = useState("");
 
   useEffect(() => {
+    if (sessionStatus === "loading") return;
+    if (session?.user?.role !== CENTER_ROLE_ADMIN) {
+      router.replace("/dashboard/medical-center");
+      return;
+    }
     fetch("/api/medical-center/finance")
       .then((r) => r.json())
       .then((j) => {
@@ -52,12 +66,13 @@ export default function MedicalCenterFinancePage() {
         else {
           setStats(j.stats);
           setCount(j.appointmentCount ?? 0);
+          setEmergencyPaidCount(j.emergencyPaidCount ?? 0);
           setRows(Array.isArray(j.rows) ? j.rows : []);
         }
       })
       .catch(() => setErr("تعذر التحميل"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session?.user?.role, sessionStatus, router]);
 
   const fmt = (n: number) =>
     formatNumber(n, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -91,6 +106,10 @@ export default function MedicalCenterFinancePage() {
     ];
   }, [rows]);
 
+  if (sessionStatus === "loading" || session?.user?.role !== CENTER_ROLE_ADMIN) {
+    return <LoadingScreen label="جاري التحميل..." />;
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 mx-auto max-w-6xl">
       <Link
@@ -117,6 +136,20 @@ export default function MedicalCenterFinancePage() {
                 <p className="text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
                   ₪{fmt(stats.totalPatientFees)}
                 </p>
+                {(stats.appointmentFeesTotal != null || stats.emergencyFeesPaid != null) && (
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-2 leading-relaxed">
+                    {stats.appointmentFeesTotal != null && (
+                      <>حجوزات عبر المركز: ₪{fmt(stats.appointmentFeesTotal)}</>
+                    )}
+                    {stats.emergencyFeesPaid != null && stats.emergencyFeesPaid > 0 && (
+                      <>
+                        {stats.appointmentFeesTotal != null ? " · " : ""}
+                        طوارئ (مسدّد): ₪{fmt(stats.emergencyFeesPaid)}
+                        {emergencyPaidCount > 0 ? ` (${emergencyPaidCount})` : ""}
+                      </>
+                    )}
+                  </p>
+                )}
               </CardContent>
             </Card>
             <Card className="border-blue-200 dark:border-blue-900/50 dark:bg-gray-900/40">

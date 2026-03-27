@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useTransition, useState, useMemo, useEffect } from "react";
+import { useTransition, useState, useMemo, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import IconPlus from "@/components/icon/icon-plus";
 import IconSearch from "@/components/icon/icon-search";
 import IconX from "@/components/icon/icon-x";
@@ -26,6 +27,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ClinicPatientPhoneLookupField } from "@/components/clinic-patient-phone-lookup";
 import { transactionSignedDelta } from "@/lib/patient-transaction-math";
+import { MedicalFilesCarePlanTable } from "@/components/doctor-care-plans/medical-files-care-plan-table";
+import type { CarePlanType } from "@/lib/specialty-plan-registry";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 type PatientListItem = {
@@ -98,12 +101,15 @@ const APT_STATUS: Record<string, { label: string; color: string; icon: React.Ele
 };
 
 /* ─── Component ──────────────────────────────────────────────────── */
+const DEFAULT_CARE_PLAN: CarePlanType = "GENERIC";
+
 export default function PatientsView({
   initialPatients,
   initialQ = "",
   selectedPatient,
   selectedId,
 }: Props) {
+  const { data: session } = useSession();
   const router    = useRouter();
   const pathname  = usePathname();
   const [, startTransition] = useTransition();
@@ -146,9 +152,16 @@ export default function PatientsView({
   const [aptDuration, setAptDuration] = useState("30");
   const [aptNotes,    setAptNotes]    = useState("");
   const [savingApt,   setSavingApt]   = useState(false);
+  const [hasCarePlanSummary, setHasCarePlanSummary] = useState(false);
+  const onCarePlanSummaryLoaded = useCallback((has: boolean) => {
+    setHasCarePlanSummary(has);
+  }, []);
 
   /* reset tab on patient change */
-  useEffect(() => { setActiveTab("info"); }, [selectedId]);
+  useEffect(() => {
+    setActiveTab("info");
+    setHasCarePlanSummary(false);
+  }, [selectedId]);
 
   const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }));
 
@@ -737,6 +750,26 @@ export default function PatientsView({
               {activeTab === "medical" && (
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-700">الملفات الطبية</h3>
+
+                  <MedicalFilesCarePlanTable
+                    patientId={selectedPatient.id}
+                    patientSource="clinic"
+                    carePlanType={DEFAULT_CARE_PLAN}
+                    patientName={selectedPatient.name}
+                    doctorDisplayName={session?.user?.name ?? ""}
+                    patientPrintDemographics={{
+                      fileNumber: selectedPatient.fileNumber,
+                      gender: selectedPatient.gender,
+                      dateOfBirth: selectedPatient.dateOfBirth
+                        ? selectedPatient.dateOfBirth instanceof Date
+                          ? selectedPatient.dateOfBirth.toISOString()
+                          : String(selectedPatient.dateOfBirth)
+                        : null,
+                      guardian: null,
+                    }}
+                    onPlanLoaded={onCarePlanSummaryLoaded}
+                  />
+
                   <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50">
                     {selectedPatient.allergies && (
                       <div className="flex items-start gap-3 px-5 py-4">
@@ -756,7 +789,7 @@ export default function PatientsView({
                         </div>
                       </div>
                     )}
-                    {!selectedPatient.allergies && !selectedPatient.notes && (
+                    {!selectedPatient.allergies && !selectedPatient.notes && !hasCarePlanSummary && (
                       <div className="py-12 text-center text-sm text-gray-400">
                         <IconHeart className="mx-auto mb-3 h-10 w-10 text-gray-200" />
                         لا توجد ملفات طبية

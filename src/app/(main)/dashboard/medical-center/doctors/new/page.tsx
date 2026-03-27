@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import IconHeart from "@/components/icon/icon-heart";
 import IconPlus from "@/components/icon/icon-plus";
 import IconTrash from "@/components/icon/icon-trash";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 import LoadingScreen from "@/components/ui/loading-screen";
 import { DAYS_AR, cn } from "@/lib/utils";
+import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
 
 type Specialty = { id: string; nameAr: string };
 
@@ -33,6 +35,7 @@ function isPlausibleLookupEmail(s: string): boolean {
 }
 
 export default function NewCenterDoctorPage() {
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [name, setName] = useState("");
@@ -56,6 +59,13 @@ export default function NewCenterDoctorPage() {
   const [linkedDoctor, setLinkedDoctor] = useState<PlatformDoctorMatch | null>(null);
   const [platformMatches, setPlatformMatches] = useState<PlatformDoctorMatch[]>([]);
   const [lookupLoading, setLookupLoading] = useState(false);
+
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+    if (session?.user?.role !== CENTER_ROLE_ADMIN) {
+      router.replace("/dashboard/medical-center");
+    }
+  }, [session?.user?.role, sessionStatus, router]);
 
   useEffect(() => {
     fetch("/api/specialties")
@@ -214,6 +224,10 @@ export default function NewCenterDoctorPage() {
       setLoading(false);
     }
   };
+
+  if (sessionStatus === "loading" || session?.user?.role !== CENTER_ROLE_ADMIN) {
+    return <LoadingScreen label="جاري التحميل..." />;
+  }
 
   if (specsLoading) {
     return <LoadingScreen label="جاري التحميل..." />;

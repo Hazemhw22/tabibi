@@ -9,6 +9,7 @@ import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import IconBuilding from "@/components/icon/icon-building";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/lib/auth";
+import { isMedicalCenterStaffRole } from "@/lib/medical-center-roles";
 import FavoriteButton from "@/components/ui/favorite-button";
 import { getDoctorAvatar } from "@/lib/avatar";
 
@@ -100,7 +101,7 @@ export default async function HomePage() {
     const role = session.user.role ?? "PATIENT";
     if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") redirect("/dashboard/admin");
     if (role === "DOCTOR") redirect("/dashboard/doctor");
-    if (role === "MEDICAL_CENTER_ADMIN") redirect("/dashboard/medical-center");
+    if (isMedicalCenterStaffRole(role)) redirect("/dashboard/medical-center");
     redirect("/dashboard/patient");
   }
 

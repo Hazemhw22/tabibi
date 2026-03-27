@@ -202,6 +202,7 @@ export default function CenterPublicBooking({
           notes,
           fee: selectedDoctor.consultationFee,
           slotTurn: selectedSlotTurn,
+          viaMedicalCenter: true,
         }),
       });
       const data = await res.json();

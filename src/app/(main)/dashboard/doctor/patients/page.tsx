@@ -35,6 +35,7 @@ export type PatientListItem = {
   email?: string | null;
   fileNumber?: string | null;
   source: "clinic" | "platform";
+  ownership: "LOCAL" | "CENTER";
   appointmentCount: number;
 };
 
@@ -60,6 +61,7 @@ export type SelectedPatient = {
   allergies?: string | null;
   notes?: string | null;
   source: "clinic" | "platform";
+  ownership: "LOCAL" | "CENTER";
   appointments: AppointmentRow[];
   transactions: TransactionRow[];
   balance: number;
@@ -69,14 +71,14 @@ export type SelectedPatient = {
 export default async function DoctorPatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; id?: string; source?: string }>;
+  searchParams: Promise<{ q?: string; id?: string; source?: string; owner?: "LOCAL" | "CENTER" }>;
 }) {
   const session = await auth();
   if (!session || session.user.role !== "DOCTOR") redirect("/login");
 
   const { data: doctor } = await supabaseAdmin
     .from("Doctor")
-    .select("id, consultationFee, specialty:Specialty(nameAr)")
+    .select("id, consultationFee, specialty:Specialty(nameAr), medicalCenter:MedicalCenter(name, nameAr)")
     .eq("userId", session.user.id)
     .single();
   if (!doctor) redirect("/dashboard/doctor/setup");
@@ -87,7 +89,7 @@ export default async function DoctorPatientsPage({
   const isDentist = specialtyNameAr === "طب أسنان";
   const carePlanType: CarePlanType = resolveCarePlanType(specialtyNameAr);
 
-  const { q, id: selectedId, source: selectedSource } = await searchParams;
+  const { q, id: selectedId, source: selectedSource, owner: selectedOwner } = await searchParams;
 
   /* ── Clinic patients ─────────────────────────────────────────── */
   const { data: clinicRaw } = await supabaseAdmin
@@ -104,35 +106,41 @@ export default async function DoctorPatientsPage({
     email: p.email ?? null,
     fileNumber: p.fileNumber ?? null,
     source: "clinic",
+    ownership: "LOCAL",
     appointmentCount: 0,
   }));
 
   /* ── Platform patients (from Appointment table) ─────────────── */
   const { data: apts } = await supabaseAdmin
     .from("Appointment")
-    .select("patientId, patient:User(id, name, email, phone)")
+    .select("patientId, medicalCenterId, patient:User(id, name, email, phone)")
     .eq("doctorId", doctor.id);
 
-  const byPatient = new Map<string, { name?: string; email?: string; phone?: string; count: number }>();
+  const byPatient = new Map<string, { id: string; ownership: "LOCAL" | "CENTER"; name?: string; email?: string; phone?: string; count: number }>();
   (apts ?? []).forEach((a) => {
     const pid = a.patientId as string;
-    const cur = byPatient.get(pid) ?? {
+    const ownership: "LOCAL" | "CENTER" = a.medicalCenterId ? "CENTER" : "LOCAL";
+    const key = `${pid}:${ownership}`;
+    const cur = byPatient.get(key) ?? {
+      id: pid,
+      ownership,
       name: (a.patient as { name?: string } | null)?.name,
       email: (a.patient as { email?: string } | null)?.email,
       phone: (a.patient as { phone?: string } | null)?.phone,
       count: 0,
     };
     cur.count += 1;
-    byPatient.set(pid, cur);
+    byPatient.set(key, cur);
   });
 
-  const platformPatients: PatientListItem[] = Array.from(byPatient.entries()).map(([id, p]) => ({
-    id,
+  const platformPatients: PatientListItem[] = Array.from(byPatient.values()).map((p) => ({
+    id: p.id,
     name: p.name ?? "—",
     phone: p.phone ?? null,
     email: p.email ?? null,
     fileNumber: null,
     source: "platform",
+    ownership: p.ownership,
     appointmentCount: p.count,
   }));
 
@@ -196,6 +204,7 @@ export default async function DoctorPatientsPage({
           fileNumber: cp.fileNumber, gender: cp.gender, dateOfBirth: cp.dateOfBirth,
           address: cp.address, bloodType: cp.bloodType, allergies: cp.allergies,
           notes: cp.notes, source: "clinic", appointments, transactions, balance,
+          ownership: "LOCAL",
           medicalNotes,
         };
       }
@@ -204,12 +213,18 @@ export default async function DoctorPatientsPage({
     /* Try platform patient */
     if (!selectedPatient && selectedSource !== "clinic") {
       const [{ data: platformApts }, { data: userData }, { data: txData }] = await Promise.all([
-        supabaseAdmin
-          .from("Appointment")
-          .select("id, appointmentDate, startTime, endTime, status, fee, notes")
-          .eq("patientId", selectedId)
-          .eq("doctorId", doctor.id)
-          .order("appointmentDate", { ascending: false }),
+        (async () => {
+          let qA = supabaseAdmin
+            .from("Appointment")
+            .select("id, appointmentDate, startTime, endTime, status, fee, notes, medicalCenterId")
+            .eq("patientId", selectedId)
+            .eq("doctorId", doctor.id)
+            .order("appointmentDate", { ascending: false });
+          if (selectedOwner === "CENTER") qA = qA.not("medicalCenterId", "is", null);
+          else qA = qA.is("medicalCenterId", null);
+          const { data } = await qA;
+          return { data };
+        })(),
         supabaseAdmin.from("User").select("id, name, email, phone").eq("id", selectedId).single(),
         supabaseAdmin
           .from("PlatformPatientTransaction")
@@ -241,6 +256,7 @@ export default async function DoctorPatientsPage({
           fileNumber: null, gender: null, dateOfBirth: null, address: null,
           bloodType: null, allergies: null, notes: null,
           source: "platform", appointments, transactions, balance,
+          ownership: selectedOwner === "CENTER" ? "CENTER" : "LOCAL",
         };
       }
     }
@@ -258,6 +274,11 @@ export default async function DoctorPatientsPage({
         isDentist={isDentist}
         carePlanType={carePlanType}
         doctorDisplayName={session.user?.name ?? ""}
+        centerDisplayName={
+          ((doctor as { medicalCenter?: { nameAr?: string | null; name?: string | null } | null }).medicalCenter?.nameAr ??
+            (doctor as { medicalCenter?: { name?: string | null } | null }).medicalCenter?.name ??
+            "المركز الطبي")
+        }
       />
     </div>
   );

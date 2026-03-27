@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import IconBuilding from "@/components/icon/icon-building";
 import IconPlus from "@/components/icon/icon-plus";
@@ -18,6 +20,7 @@ import { DAYS_AR } from "@/lib/utils";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 import LoadingScreen from "@/components/ui/loading-screen";
+import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
 
 const DAY_OPTIONS = DAYS_AR.map((d, idx) => ({ value: String(idx), label: d }));
 const LOCATION_OPTIONS = [
@@ -31,6 +34,8 @@ const LOCATION_OPTIONS = [
 type HoursRow = { dayOfWeek: number; startTime: string; endTime: string };
 
 export default function MedicalCenterSettingsPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
@@ -46,6 +51,11 @@ export default function MedicalCenterSettingsPage() {
   const [hours, setHours] = useState<HoursRow[]>([{ dayOfWeek: 0, startTime: "08:00", endTime: "16:00" }]);
 
   useEffect(() => {
+    if (sessionStatus === "loading") return;
+    if (session?.user?.role !== CENTER_ROLE_ADMIN) {
+      router.replace("/dashboard/medical-center");
+      return;
+    }
     fetch("/api/medical-center/settings")
       .then((r) => r.json())
       .then((j) => {
@@ -76,7 +86,7 @@ export default function MedicalCenterSettingsPage() {
       })
       .catch(() => toast.error("تعذر التحميل"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [session?.user?.role, sessionStatus, router]);
 
   const addHourRow = () =>
     setHours((h) => [...h, { dayOfWeek: 1, startTime: "08:00", endTime: "16:00" }]);
@@ -129,6 +139,10 @@ export default function MedicalCenterSettingsPage() {
 
   const inputClass =
     "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-blue-500/30";
+
+  if (sessionStatus === "loading" || session?.user?.role !== CENTER_ROLE_ADMIN) {
+    return <LoadingScreen label="جاري التحميل..." />;
+  }
 
   if (loading) {
     return <LoadingScreen label="جاري التحميل..." />;

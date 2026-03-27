@@ -1,15 +1,28 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { MEDICAL_CENTER_STAFF_ROLES } from "@/lib/medical-center-roles";
 
-export async function getMedicalCenterIdForUser(userId: string): Promise<string | null> {
+export type MedicalCenterStaffContext = {
+  centerId: string;
+  role: string;
+};
+
+export async function getMedicalCenterStaffContext(userId: string): Promise<MedicalCenterStaffContext | null> {
   const { data } = await supabaseAdmin
     .from("User")
     .select("medicalCenterId, role")
     .eq("id", userId)
     .maybeSingle();
   const row = data as { medicalCenterId?: string | null; role?: string } | null;
-  if (!row || row.role !== "MEDICAL_CENTER_ADMIN" || !row.medicalCenterId) return null;
-  return row.medicalCenterId;
+  if (!row?.medicalCenterId || !row.role) return null;
+  if (!(MEDICAL_CENTER_STAFF_ROLES as readonly string[]).includes(row.role)) return null;
+  return { centerId: row.medicalCenterId, role: row.role };
+}
+
+/** معرف المركز لأي موظف مركز (مدير، استقبال، مختبر) */
+export async function getMedicalCenterIdForUser(userId: string): Promise<string | null> {
+  const ctx = await getMedicalCenterStaffContext(userId);
+  return ctx?.centerId ?? null;
 }
 
 /** استجابة موحّدة عندما المركز لم يُعتمد بعد */
@@ -46,21 +59,39 @@ export async function getMedicalCenterApprovalStatus(centerId: string): Promise<
   };
 }
 
-/** يُستخدم لعمليات التعديل (إضافة أطباء، حجوزات، إلخ) — لا للقراءة فقط مثل overview */
-export async function assertMedicalCenterApproved(userId: string): Promise<
-  | { ok: true; centerId: string }
-  | { ok: false; response: NextResponse }
-> {
-  const centerId = await getMedicalCenterIdForUser(userId);
-  if (!centerId) {
+export type ApprovedCenterGate =
+  | { ok: true; centerId: string; role: string }
+  | { ok: false; response: NextResponse };
+
+/**
+ * مركز معتمد + موظف مركز (مدير/استقبال/مختبر).
+ * يمكن تقييد الأدوار بـ roles (مثلاً مدير فقط للحسابات).
+ */
+export async function assertApprovedMedicalCenter(
+  userId: string,
+  options?: { roles?: readonly string[] }
+): Promise<ApprovedCenterGate> {
+  const ctx = await getMedicalCenterStaffContext(userId);
+  if (!ctx) {
     return {
       ok: false,
       response: NextResponse.json({ error: "ليس لديك صلاحية مركز طبي" }, { status: 403 }),
     };
   }
-  const { approvalStatus } = await getMedicalCenterApprovalStatus(centerId);
+  if (options?.roles && !options.roles.includes(ctx.role)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "ليس لديك صلاحية لهذه العملية" }, { status: 403 }),
+    };
+  }
+  const { approvalStatus } = await getMedicalCenterApprovalStatus(ctx.centerId);
   if (approvalStatus !== "APPROVED") {
     return { ok: false, response: medicalCenterPendingResponse() };
   }
-  return { ok: true, centerId };
+  return { ok: true, centerId: ctx.centerId, role: ctx.role };
+}
+
+/** توافق مع الكود القديم: أي موظف مركز معتمد */
+export async function assertMedicalCenterApproved(userId: string): Promise<ApprovedCenterGate> {
+  return assertApprovedMedicalCenter(userId);
 }

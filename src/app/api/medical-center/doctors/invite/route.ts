@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { assertMedicalCenterApproved } from "@/lib/medical-center-auth";
+import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
+import { CENTER_ROLES_ADMIN_ONLY } from "@/lib/medical-center-roles";
 import { z } from "zod";
 
 function normalizeTimeToHHMM(s: string): string {
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
-    const gate = await assertMedicalCenterApproved(session.user.id);
+    const gate = await assertApprovedMedicalCenter(session.user.id, { roles: CENTER_ROLES_ADMIN_ONLY });
     if (!gate.ok) return gate.response;
     const centerId = gate.centerId;
 

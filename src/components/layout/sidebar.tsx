@@ -76,14 +76,16 @@ const adminSections: NavSection[] = [
 
 type NavSection = { title: string; items: NavItem[] };
 
-const medicalCenterSections: NavSection[] = [
+const medicalCenterSectionsAdmin: NavSection[] = [
   {
     title: "الرئيسية",
     items: [
       { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
       { label: "الأطباء", href: "/dashboard/medical-center/doctors", icon: IconMenuUsers },
+      { label: "الموظفون", href: "/dashboard/medical-center/staff", icon: IconMenuUsers },
       { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
       { label: "الحجوزات", href: "/dashboard/medical-center/appointments", icon: IconCalendar },
+      { label: "التحاليل والأشعة", href: "/dashboard/medical-center/lab-results", icon: IconClipboardText },
       { label: "الحسابات", href: "/dashboard/medical-center/finance", icon: IconDollarSignCircle },
     ],
   },
@@ -96,6 +98,45 @@ const medicalCenterSections: NavSection[] = [
     items: [{ label: "إعدادات المركز", href: "/dashboard/medical-center/settings", icon: IconSettings }],
   },
 ];
+
+const medicalCenterSectionsReception: NavSection[] = [
+  {
+    title: "الرئيسية",
+    items: [
+      { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
+      { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
+      { label: "الحجوزات", href: "/dashboard/medical-center/appointments", icon: IconCalendar },
+    ],
+  },
+  {
+    title: "الخدمات",
+    items: [{ label: "الطوارئ", href: "/dashboard/medical-center/emergency", icon: IconFire }],
+  },
+];
+
+const medicalCenterSectionsLab: NavSection[] = [
+  {
+    title: "الرئيسية",
+    items: [
+      { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
+      { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
+      { label: "التحاليل والأشعة", href: "/dashboard/medical-center/lab-results", icon: IconClipboardText },
+    ],
+  },
+];
+
+function medicalCenterNavForRole(role: string | undefined): NavSection[] {
+  switch (role) {
+    case "MEDICAL_CENTER_ADMIN":
+      return medicalCenterSectionsAdmin;
+    case "MEDICAL_CENTER_RECEPTIONIST":
+      return medicalCenterSectionsReception;
+    case "MEDICAL_CENTER_LAB_STAFF":
+      return medicalCenterSectionsLab;
+    default:
+      return medicalCenterSectionsAdmin;
+  }
+}
 
 const patientSections: NavSection[] = [
   {
@@ -167,12 +208,18 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
   const profileImage = (() => {
     if (userRole === "DOCTOR") return getDoctorAvatar(userImage, userGender);
     if (userRole === "MEDICAL_CENTER_ADMIN") return centerImage || null;
+    if (userRole === "MEDICAL_CENTER_RECEPTIONIST" || userRole === "MEDICAL_CENTER_LAB_STAFF") {
+      return userImage || null;
+    }
     return getPatientAvatar(userImage, userGender);
   })();
-  const profileName = userRole === "MEDICAL_CENTER_ADMIN" ? (centerName || userName) : userName;
+  const profileName =
+    userRole === "MEDICAL_CENTER_ADMIN" ? (centerName || userName) : userName;
   const profileSubtitle =
     userRole === "DOCTOR" ? (doctorSpecialty ?? "طبيب") :
     userRole === "MEDICAL_CENTER_ADMIN" ? "مركز طبي" :
+    userRole === "MEDICAL_CENTER_RECEPTIONIST" ? "استقبال" :
+    userRole === "MEDICAL_CENTER_LAB_STAFF" ? "مختبر / أشعة" :
     userRole === "PLATFORM_ADMIN" || userRole === "CLINIC_ADMIN" ? "مشرف" :
     "مريض";
 
@@ -195,7 +242,15 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
               />
             ) : (
               <span className="text-xl">
-                {userRole === "DOCTOR" ? "👨‍⚕️" : userRole === "MEDICAL_CENTER_ADMIN" ? "🏥" : "👤"}
+                {userRole === "DOCTOR"
+                  ? "👨‍⚕️"
+                  : userRole === "MEDICAL_CENTER_ADMIN"
+                    ? "🏥"
+                    : userRole === "MEDICAL_CENTER_RECEPTIONIST"
+                      ? "📋"
+                      : userRole === "MEDICAL_CENTER_LAB_STAFF"
+                        ? "🔬"
+                        : "👤"}
               </span>
             )}
           </div>
@@ -262,7 +317,11 @@ export default function Sidebar() {
           gender: data?.doctor?.gender ?? null,
         }))
         .catch(() => setDoctorInfo({ status: null, specialty: null, image: null, gender: null }));
-    } else if (role === "MEDICAL_CENTER_ADMIN") {
+    } else if (
+      role === "MEDICAL_CENTER_ADMIN" ||
+      role === "MEDICAL_CENTER_RECEPTIONIST" ||
+      role === "MEDICAL_CENTER_LAB_STAFF"
+    ) {
       fetch("/api/medical-center/settings")
         .then((r) => r.json())
         .then((data) => setCenterInfo({
@@ -286,8 +345,10 @@ export default function Sidebar() {
       ? doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING"
         ? doctorSectionsLimited
         : doctorSectionsFull
-      : role === "MEDICAL_CENTER_ADMIN"
-        ? medicalCenterSections
+      : role === "MEDICAL_CENTER_ADMIN" ||
+          role === "MEDICAL_CENTER_RECEPTIONIST" ||
+          role === "MEDICAL_CENTER_LAB_STAFF"
+        ? medicalCenterNavForRole(role)
         : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
           ? adminSections
           : patientSections;
@@ -301,7 +362,11 @@ export default function Sidebar() {
           ? "مشرف عيادة"
           : role === "MEDICAL_CENTER_ADMIN"
             ? "مركز طبي"
-            : "مريض";
+            : role === "MEDICAL_CENTER_RECEPTIONIST"
+              ? "استقبال"
+              : role === "MEDICAL_CENTER_LAB_STAFF"
+                ? "مختبر / أشعة"
+                : "مريض";
 
   return (
     <>
@@ -320,7 +385,15 @@ export default function Sidebar() {
           isDark={effectiveDark}
           userRole={role}
           userName={session?.user?.name}
-          userImage={role === "DOCTOR" ? doctorInfo.image : role === "PATIENT" ? patientInfo.image : (session?.user?.image ?? null)}
+          userImage={
+            role === "DOCTOR"
+              ? doctorInfo.image
+              : role === "PATIENT"
+                ? patientInfo.image
+                : role === "MEDICAL_CENTER_ADMIN"
+                  ? (centerInfo.image ?? session?.user?.image ?? null)
+                  : session?.user?.image ?? null
+          }
           userGender={role === "DOCTOR" ? doctorInfo.gender : role === "PATIENT" ? patientInfo.gender : null}
           doctorSpecialty={doctorInfo.specialty}
           centerImage={centerInfo.image}
@@ -378,7 +451,15 @@ export default function Sidebar() {
           isDark={effectiveDark}
           userRole={role}
           userName={session?.user?.name}
-          userImage={role === "DOCTOR" ? doctorInfo.image : role === "PATIENT" ? patientInfo.image : (session?.user?.image ?? null)}
+          userImage={
+            role === "DOCTOR"
+              ? doctorInfo.image
+              : role === "PATIENT"
+                ? patientInfo.image
+                : role === "MEDICAL_CENTER_ADMIN"
+                  ? (centerInfo.image ?? session?.user?.image ?? null)
+                  : session?.user?.image ?? null
+          }
           userGender={role === "DOCTOR" ? doctorInfo.gender : role === "PATIENT" ? patientInfo.gender : null}
           doctorSpecialty={doctorInfo.specialty}
           centerImage={centerInfo.image}
