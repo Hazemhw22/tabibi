@@ -446,12 +446,21 @@ export default function PatientsView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items, chargeToBalance: true }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         const msg = data.detail ? `${data.error}: ${data.detail}` : (data.error || "فشل حفظ مخطط الأسنان");
         toast.error(msg);
       } else {
         toast.success("تم حفظ مخطط الأسنان لهذا المريض ✓");
+        if (data.dentalSmsNotifyAttempted === true) {
+          if (data.dentalSmsSent === true) {
+            toast.message("أُرسلت للمريض رسالة SMS/واتساب بالبنود والتكاليف الجديدة (إن وُجدت الإعدادات).");
+          } else {
+            toast.warning(
+              "لم تُرسل رسالة للمريض. تحقق من الرقم وإعدادات SMS/واتساب.",
+            );
+          }
+        }
         router.refresh();
         const res2 = await fetch(`/api/clinic/patients/${selectedPatient.id}/dental-plan`);
         const data2 = await res2.json().catch(() => ({ items: [] }));

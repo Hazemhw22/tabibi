@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { buildCarePlanNewServicesSmsMessage } from "@/lib/sms";
+import { sendToClinicPatientPhoneOrWhatsapp } from "@/lib/patient-contact-notify";
 
 const itemSchema = z.object({
   toothNumber: z.number().int().min(1).max(32),
@@ -89,7 +91,7 @@ export async function POST(
 
     const { data: clinicPatient } = await supabaseAdmin
       .from("ClinicPatient")
-      .select("id, doctorId")
+      .select("id, doctorId, phone, whatsapp, userId, name")
       .eq("id", id)
       .or(`doctorId.eq.${doctor.id},doctorId.eq.${session.user.id}`)
       .maybeSingle();
@@ -97,6 +99,15 @@ export async function POST(
     if (!clinicPatient) {
       return NextResponse.json({ error: "المريض غير موجود أو غير مصرح" }, { status: 404 });
     }
+
+    const patientRow = clinicPatient as {
+      id: string;
+      doctorId?: string;
+      phone?: string | null;
+      whatsapp?: string | null;
+      userId?: string | null;
+      name?: string | null;
+    };
 
     // جلب الخطة القديمة + المعاملات الموجودة لتجنب الخصم المزدوج
     const [{ data: oldPlan }, { data: existingTx }] = await Promise.all([
@@ -141,7 +152,7 @@ export async function POST(
     }
 
     if (items.length === 0) {
-      return NextResponse.json({ ok: true, items: [] });
+      return NextResponse.json({ ok: true, items: [], dentalSmsSent: null, dentalSmsNotifyAttempted: false });
     }
 
     const payload = items.map((item) => {
@@ -177,7 +188,10 @@ export async function POST(
       );
     }
 
-    // إضافة معاملات الخدمة للأسنان الجديدة فقط (لم تُخصم مسبقاً)
+    // إضافة معاملات الخدمة للأسنان الجديدة فقط (لم تُخصم مسبقاً) + إشعار SMS/واتساب للبنود الجديدة
+    let dentalSmsSent: boolean | null = null;
+    const newlyChargedLines: { description: string; amount: number }[] = [];
+
     if (chargeToBalance) {
       const problemLabels: Record<string, string> = {
         FILLING: "حشوة", RCT: "عصب", CROWN: "تاج", IMPLANT: "زرعة",
@@ -196,14 +210,19 @@ export async function POST(
         const chargeKeyNegative = `${desc}:${negativeAmount}`;
         const chargeKeyLegacyPositive = `${desc}:${price}`;
         if (alreadyChargedDescs.has(chargeKeyNegative) || alreadyChargedDescs.has(chargeKeyLegacyPositive)) continue;
-        await supabaseAdmin.from("ClinicTransaction").insert({
+        const { error: txErr } = await supabaseAdmin.from("ClinicTransaction").insert({
           clinicPatientId: id,
           type: "SERVICE",
           description: desc,
           amount: negativeAmount,
           createdBy: session.user.id,
         });
+        if (txErr) {
+          console.error("ClinicTransaction insert (dental):", txErr);
+          continue;
+        }
         alreadyChargedDescs.add(chargeKeyNegative);
+        newlyChargedLines.push({ description: desc, amount: price });
         await supabaseAdmin
           .from("DentalToothPlan")
           .update({ chargedToBalance: true })
@@ -212,7 +231,38 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({ ok: true, items: data ?? [] }, { status: 200 });
+    if (newlyChargedLines.length > 0) {
+      const msg = buildCarePlanNewServicesSmsMessage({
+        lines: newlyChargedLines,
+        doctorName: session.user.name ?? undefined,
+      });
+      let fallbackUserPhone: string | null = null;
+      const clinicPhone = String(patientRow.phone ?? "").trim();
+      if (!clinicPhone && patientRow.userId) {
+        const { data: linkedUser } = await supabaseAdmin
+          .from("User")
+          .select("phone")
+          .eq("id", patientRow.userId)
+          .maybeSingle();
+        fallbackUserPhone = (linkedUser as { phone?: string | null } | null)?.phone?.trim() ?? null;
+      }
+      dentalSmsSent = await sendToClinicPatientPhoneOrWhatsapp({
+        clinicPhone: patientRow.phone,
+        whatsapp: patientRow.whatsapp,
+        fallbackUserPhone,
+        message: msg,
+      });
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        items: data ?? [],
+        dentalSmsSent,
+        dentalSmsNotifyAttempted: newlyChargedLines.length > 0,
+      },
+      { status: 200 },
+    );
   } catch (err) {
     console.error("DentalToothPlan POST error:", err);
     if (err instanceof z.ZodError) {
