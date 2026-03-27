@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS "MessageLog" (
   CONSTRAINT "MessageLog_pkey" PRIMARY KEY ("id")
 );
 
+-- إن كان الجدول موجود مسبقاً بدون default لـ id، هذا يضيف توليد UUID تلقائي
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+ALTER TABLE "MessageLog" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()::text;
+
 CREATE INDEX IF NOT EXISTS "MessageLog_createdByUserId_createdAt_idx" ON "MessageLog" ("createdByUserId", "createdAt");
 CREATE INDEX IF NOT EXISTS "MessageLog_medicalCenterId_createdAt_idx" ON "MessageLog" ("medicalCenterId", "createdAt");
 CREATE INDEX IF NOT EXISTS "MessageLog_doctorId_createdAt_idx" ON "MessageLog" ("doctorId", "createdAt");

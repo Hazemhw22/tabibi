@@ -34,12 +34,41 @@ function toAstraPhoneFormat(phone: string | null | undefined): string | null {
 /**
  * إرسال SMS عبر Astra API.
  * .env.local: SMS_API_ID=xxx (مطلوب), SMS_SENDER=Tabibi (اختياري)
+ * Production (Vercel): يفضل استخدام SMS_PROXY_URL + SMS_PROXY_SECRET (VPS ثابت IP)
  */
 export async function sendSms(to: string, body: string): Promise<boolean> {
   const astraTo = toAstraPhoneFormat(to);
   if (!astraTo) {
     console.warn("[SMS] رقم غير صالح أو فارغ، تم تخطي الإرسال. الرقم المدخل:", JSON.stringify(to));
     return true;
+  }
+
+  const proxyUrl = process.env.SMS_PROXY_URL;
+  const proxySecret = process.env.SMS_PROXY_SECRET;
+  if (proxyUrl) {
+    if (!proxySecret) {
+      console.warn("[SMS] SMS_PROXY_URL مضبوط لكن SMS_PROXY_SECRET غير مضبوط.");
+      return false;
+    }
+    try {
+      const res = await fetch(`${proxyUrl.replace(/\/+$/, "")}/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${proxySecret}`,
+        },
+        body: JSON.stringify({ to: astraTo, msg: body }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.error("[SMS] Proxy خطأ:", res.status, j);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("[SMS] Proxy خطأ في الإرسال:", err);
+      return false;
+    }
   }
 
   const apiId = process.env.SMS_API_ID;

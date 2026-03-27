@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendSms } from "@/lib/sms";
 import { getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
+import { randomUUID } from "crypto";
 
 const schema = z.object({
   to: z.string().min(6),
@@ -41,6 +42,7 @@ export async function POST(req: Request) {
 
     // Insert pending log first
     const insertRow: Record<string, unknown> = {
+      id: randomUUID(),
       createdByUserId: session.user.id,
       createdByRole: role,
       medicalCenterId: centerId,
@@ -61,9 +63,15 @@ export async function POST(req: Request) {
 
     if (insErr || !row?.id) {
       console.error(insErr);
+      const msg = String((insErr as { message?: string } | null)?.message ?? "");
+      const likelyMissingTable =
+        msg.toLowerCase().includes("messagelog") &&
+        (msg.toLowerCase().includes("does not exist") || msg.toLowerCase().includes("relation"));
       return NextResponse.json(
         {
-          error: "فشل تسجيل الرسالة",
+          error: likelyMissingTable
+            ? "فشل تسجيل الرسالة (MessageLog غير موجود في قاعدة البيانات)"
+            : "فشل تسجيل الرسالة",
           details: (insErr as { message?: string; details?: string; hint?: string; code?: string } | null) ?? null,
         },
         { status: 500 }

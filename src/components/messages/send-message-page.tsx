@@ -119,7 +119,17 @@ export function SendMessagePage(props: { title: string; subtitle?: string }) {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(j.error || "فشل الإرسال");
+        const detailsMsg =
+          typeof j?.details?.message === "string"
+            ? j.details.message
+            : typeof j?.details?.details === "string"
+              ? j.details.details
+              : typeof j?.details?.hint === "string"
+                ? j.details.hint
+                : typeof j?.details?.code === "string"
+                  ? j.details.code
+                  : "";
+        toast.error(detailsMsg ? `${j.error || "فشل الإرسال"} — ${detailsMsg}` : (j.error || "فشل الإرسال"));
         return;
       }
       toast.success("تم الإرسال");
