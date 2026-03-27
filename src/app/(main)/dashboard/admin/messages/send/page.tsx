@@ -7,7 +7,11 @@ export default function AdminSendMessagePage() {
       <Link href="/dashboard/admin" className="text-sm text-blue-600 mb-4 inline-block">
         ← الرئيسية
       </Link>
-      <SendMessagePage title="إرسال رسالة (مشرف)" subtitle="إرسال يدوي مع قوالب ثابتة ومعاينة." />
+      <SendMessagePage
+        title="إرسال رسالة (مشرف)"
+        subtitle="إرسال يدوي مع قوالب ثابتة ومعاينة. يمكنك أيضاً الإرسال لكل العملاء."
+        allowAllUsers
+      />
     </div>
   );
 }

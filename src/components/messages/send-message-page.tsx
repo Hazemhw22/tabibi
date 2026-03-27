@@ -47,12 +47,12 @@ const DEFAULT_FIXED_TEMPLATES: FixedTemplate[] = [
   },
 ];
 
-type TargetType = "individual";
+type TargetType = "individual" | "all_users";
 type RecipientMode = "manual" | "pick";
 type Recipient = { id: string; name: string | null; phone: string | null };
 
-export function SendMessagePage(props: { title: string; subtitle?: string }) {
-  const { title, subtitle } = props;
+export function SendMessagePage(props: { title: string; subtitle?: string; allowAllUsers?: boolean }) {
+  const { title, subtitle, allowAllUsers } = props;
   const [targetType, setTargetType] = useState<TargetType>("individual");
   const [recipientMode, setRecipientMode] = useState<RecipientMode>("pick");
   const [to, setTo] = useState("");
@@ -110,13 +110,26 @@ export function SendMessagePage(props: { title: string; subtitle?: string }) {
       toast.error("نص الرسالة مطلوب");
       return;
     }
+
+    if (targetType === "all_users") {
+      const ok = window.confirm("سيتم إرسال نفس الرسالة لكل المستخدمين الذين لديهم رقم هاتف. هل تريد المتابعة؟");
+      if (!ok) return;
+    }
+
     setSending(true);
     try {
-      const res = await fetch("/api/messages/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: to.trim(), body: body.trim() }),
-      });
+      const res =
+        targetType === "all_users"
+          ? await fetch("/api/messages/send-bulk", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ body: body.trim() }),
+            })
+          : await fetch("/api/messages/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: to.trim(), body: body.trim() }),
+            });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         const detailsMsg =
@@ -132,7 +145,11 @@ export function SendMessagePage(props: { title: string; subtitle?: string }) {
         toast.error(detailsMsg ? `${j.error || "فشل الإرسال"} — ${detailsMsg}` : (j.error || "فشل الإرسال"));
         return;
       }
-      toast.success("تم الإرسال");
+      if (targetType === "all_users") {
+        toast.success(`تم الإرسال: ${j.sent ?? 0} / فشل: ${j.failed ?? 0} / مستلمين: ${j.total ?? 0}`);
+      } else {
+        toast.success("تم الإرسال");
+      }
       setTo("");
       setBody("");
       setSelectedTplId("other");
@@ -175,8 +192,30 @@ export function SendMessagePage(props: { title: string; subtitle?: string }) {
                 <IconUser className="h-6 w-6" />
                 <span className="font-semibold">رقم محدد</span>
               </button>
+
+              {allowAllUsers && (
+                <button
+                  type="button"
+                  onClick={() => setTargetType("all_users")}
+                  className={cn(
+                    "p-4 rounded-xl border-2 transition-all flex items-center gap-3",
+                    targetType === "all_users"
+                      ? "border-blue-600 bg-blue-50/60 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-700"
+                      : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+                  )}
+                >
+                  <IconUsersGroup className="h-6 w-6" />
+                  <span className="font-semibold">كل العملاء</span>
+                </button>
+              )}
             </div>
 
+            {targetType === "all_users" ? (
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-4 text-sm text-gray-700 dark:text-gray-200">
+                سيتم إرسال نفس الرسالة لكل المستخدمين المسجلين الذين لديهم رقم هاتف.
+              </div>
+            ) : (
+              <>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -296,6 +335,8 @@ export function SendMessagePage(props: { title: string; subtitle?: string }) {
                 </div>
               </div>
             )}
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -365,7 +406,7 @@ export function SendMessagePage(props: { title: string; subtitle?: string }) {
             <Button
               type="button"
               onClick={() => void send()}
-              disabled={sending || !body.trim() || !to.trim()}
+              disabled={sending || !body.trim() || (targetType === "individual" && !to.trim())}
               className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
             >
               {sending ? (
