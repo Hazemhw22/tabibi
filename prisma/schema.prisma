@@ -55,6 +55,12 @@ enum ClinicAppointmentStatus {
   NO_SHOW
 }
 
+enum MessageStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 // ============================================================
 // AUTH MODELS
 // ============================================================
@@ -91,6 +97,35 @@ model User {
 
   medicalCenterPatientDocsAsPatient MedicalCenterPatientDocument[] @relation("MedicalCenterDocPatient")
   medicalCenterPatientDocsUploaded  MedicalCenterPatientDocument[] @relation("MedicalCenterDocUploader")
+
+  sentMessages MessageLog[] @relation("MessageLogSender")
+}
+
+/// سجل رسائل SMS/WhatsApp داخل المنصة
+model MessageLog {
+  id              String        @id @default(cuid())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdByUserId String
+  createdByRole   Role
+  medicalCenterId String?
+  doctorId        String?
+
+  provider        String        @default("ASTRA")
+  channel         String        @default("SMS") // SMS | WHATSAPP
+  to              String
+  body            String        @db.Text
+  status          MessageStatus @default(PENDING)
+  providerResponse String?      @db.Text
+
+  createdBy       User          @relation("MessageLogSender", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  medicalCenter   MedicalCenter? @relation(fields: [medicalCenterId], references: [id], onDelete: SetNull)
+  doctor          Doctor?       @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+
+  @@index([createdByUserId, createdAt])
+  @@index([medicalCenterId, createdAt])
+  @@index([doctorId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Account {

@@ -20,6 +20,8 @@ import IconDollarSignCircle from "@/components/icon/icon-dollar-sign-circle";
 import IconMenuWidgets from "@/components/icon/menu/icon-menu-widgets";
 import IconBuilding from "@/components/icon/icon-building";
 import IconXCircle from "@/components/icon/icon-x-circle";
+import IconSend from "@/components/icon/icon-send";
+import IconArchive from "@/components/icon/icon-archive";
 import { getDoctorAvatar, getPatientAvatar } from "@/lib/avatar";
 
 interface NavItem {
@@ -36,6 +38,13 @@ const doctorSectionsFull: NavSection[] = [
       { label: "الرئيسية", href: "/dashboard/doctor", icon: IconMenuDashboard },
       { label: "المرضى", href: "/dashboard/doctor/patients", icon: IconUsersGroup },
       { label: "المواعيد", href: "/dashboard/doctor/appointments", icon: IconCalendar },
+    ],
+  },
+  {
+    title: "الرسائل",
+    items: [
+      { label: "إرسال", href: "/dashboard/doctor/messages/send", icon: IconSend },
+      { label: "سجل", href: "/dashboard/doctor/messages/history", icon: IconArchive },
     ],
   },
   {
@@ -65,6 +74,14 @@ const adminSections: NavSection[] = [
     ],
   },
   {
+    title: "الرسائل",
+    items: [
+      { label: "إرسال", href: "/dashboard/admin/messages/send", icon: IconSend },
+      { label: "السجل", href: "/dashboard/admin/messages/history", icon: IconArchive },
+      { label: "الإعدادات", href: "/dashboard/admin/messages/settings", icon: IconSettings },
+    ],
+  },
+  {
     title: "الإدارة",
     items: [{ label: "الاشتراكات", href: "/dashboard/admin/subscriptions", icon: IconBarChart }],
   },
@@ -90,6 +107,13 @@ const medicalCenterSectionsAdmin: NavSection[] = [
     ],
   },
   {
+    title: "الرسائل",
+    items: [
+      { label: "إرسال", href: "/dashboard/medical-center/messages/send", icon: IconSend },
+      { label: "السجل", href: "/dashboard/medical-center/messages/history", icon: IconArchive },
+    ],
+  },
+  {
     title: "الخدمات",
     items: [{ label: "الطوارئ", href: "/dashboard/medical-center/emergency", icon: IconFire }],
   },
@@ -109,6 +133,13 @@ const medicalCenterSectionsReception: NavSection[] = [
     ],
   },
   {
+    title: "الرسائل",
+    items: [
+      { label: "إرسال", href: "/dashboard/medical-center/messages/send", icon: IconSend },
+      { label: "السجل", href: "/dashboard/medical-center/messages/history", icon: IconArchive },
+    ],
+  },
+  {
     title: "الخدمات",
     items: [{ label: "الطوارئ", href: "/dashboard/medical-center/emergency", icon: IconFire }],
   },
@@ -121,6 +152,13 @@ const medicalCenterSectionsLab: NavSection[] = [
       { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
       { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
       { label: "التحاليل والأشعة", href: "/dashboard/medical-center/lab-results", icon: IconClipboardText },
+    ],
+  },
+  {
+    title: "الرسائل",
+    items: [
+      { label: "إرسال", href: "/dashboard/medical-center/messages/send", icon: IconSend },
+      { label: "السجل", href: "/dashboard/medical-center/messages/history", icon: IconArchive },
     ],
   },
 ];
