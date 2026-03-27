@@ -22,6 +22,10 @@ export type CarePlanType =
   | "ONCOLOGY"
   | "HEMATOLOGY"
   | "PULMONOLOGY"
+  /** زراعة الأسنان الفورية والجراحية */
+  | "DENTAL_IMPLANT_IMMEDIATE_SURGICAL"
+  /** زراعة الأسنان وتجميل الأسنان */
+  | "DENTAL_IMPLANT_COSMETIC"
   | "DENTAL"
   | "GENERIC";
 
@@ -58,6 +62,49 @@ const NORMALIZE = (s: string) =>
 
 /** يطابق جزئياً إن احتوى الاسم على أحد المفاتيح (الأكثر تحديداً أولاً) */
 const RULES: { type: CarePlanType; keys: string[] }[] = [
+  {
+    type: "DENTAL_IMPLANT_IMMEDIATE_SURGICAL",
+    keys: [
+      "زراعة الاسنان الفوريه والجراحيه",
+      "زراعة الاسنان الفورية والجراحية",
+      "زراعة الاسنان الفوريه",
+      "زراعة الاسنان الفورية",
+      "الزراعة الفورية",
+      "الزراعه الفوريه",
+      "زراعة فورية",
+      "زراعه فوريه",
+      "فورية وجراحية",
+      "فوريه وجراحيه",
+      "زراعة الاسنان الجراحية",
+      "زراعة الاسنان الجراحيه",
+      "زراعه جراحيه",
+      "زراعة جراحية",
+      "immediate implant",
+      "immediate dental",
+      "surgical implant",
+    ],
+  },
+  {
+    type: "DENTAL_IMPLANT_COSMETIC",
+    keys: [
+      "زراعة وتجميل الاسنان",
+      "زراعة وتجميل الأسنان",
+      "زراعه وتجميل الاسنان",
+      "زراعة وتجميل",
+      "زراعه وتجميل",
+      "تجميل الاسنان وزراعة",
+      "تجميل الأسنان وزراعة",
+      "تجميل وزراعة",
+      "زراعة الاسنان وتجميل",
+      "زراعة الأسنان وتجميل",
+      "تجميل الاسنان",
+      "تجميل الأسنان",
+      "طب تجميل الاسنان",
+      "cosmetic implant",
+      "esthetic implant",
+      "aesthetic dentistry",
+    ],
+  },
   { type: "DENTAL", keys: ["اسنان", "سنان", "dent"] },
   {
     type: "FETAL_IMAGING",
@@ -194,6 +241,23 @@ export const CARE_PLAN_LABELS: Record<CarePlanType, string> = {
   ONCOLOGY: "طب الأورام — علاج ومتابعة",
   HEMATOLOGY: "أمراض الدم",
   PULMONOLOGY: "الأمراض الصدرية والتنفس",
+  DENTAL_IMPLANT_IMMEDIATE_SURGICAL: "زراعة الأسنان الفورية والجراحية",
+  DENTAL_IMPLANT_COSMETIC: "زراعة الأسنان وتجميل الأسنان",
   DENTAL: "طب الأسنان",
   GENERIC: "خطة علاج عامة",
 };
+
+/** خطط تعتمد جدول البنود والتكاليف (مثل الأسنان العامة) */
+export function carePlanUsesItemsCostGrid(t: CarePlanType): boolean {
+  return (
+    t === "GENERIC" ||
+    t === "DENTAL" ||
+    t === "DENTAL_IMPLANT_IMMEDIATE_SURGICAL" ||
+    t === "DENTAL_IMPLANT_COSMETIC"
+  );
+}
+
+/** مخطط الأسنان التفاعلي (32 سنّاً) في صفحة المرضى */
+export function carePlanShowsDentalToothChart(t: CarePlanType): boolean {
+  return t === "DENTAL_IMPLANT_IMMEDIATE_SURGICAL" || t === "DENTAL_IMPLANT_COSMETIC";
+}

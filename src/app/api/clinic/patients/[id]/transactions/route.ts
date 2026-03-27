@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { sendSms, sendWhatsApp, buildTransactionSmsMessage } from "@/lib/sms";
+import { buildTransactionSmsMessage } from "@/lib/sms";
+import { sendToClinicPatientPhoneOrWhatsapp } from "@/lib/patient-contact-notify";
 import { sendTransactionEmail } from "@/lib/email";
 import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
@@ -94,13 +95,22 @@ export async function POST(
       doctorName: session.user.name ?? undefined,
       balanceAfter,
     });
-    let smsSent: boolean | null = null;
-    const patientWhatsapp = (patient as { whatsapp?: string | null }).whatsapp;
-    if (patientWhatsapp) {
-      smsSent = await sendWhatsApp(patientWhatsapp, msg);
-    } else if (patient.phone) {
-      smsSent = await sendSms(patient.phone, msg);
+    const clinicPhone = String(patient.phone ?? "").trim();
+    let fallbackUserPhone: string | null = null;
+    if (!clinicPhone && patient.userId) {
+      const { data: linkedUser } = await supabaseAdmin
+        .from("User")
+        .select("phone")
+        .eq("id", patient.userId)
+        .maybeSingle();
+      fallbackUserPhone = (linkedUser as { phone?: string | null } | null)?.phone?.trim() ?? null;
     }
+    const smsSent = await sendToClinicPatientPhoneOrWhatsapp({
+      clinicPhone: patient.phone,
+      whatsapp: (patient as { whatsapp?: string | null }).whatsapp,
+      fallbackUserPhone,
+      message: msg,
+    });
 
     /* ── Email ─────────────────────────────────────────────── */
     let email: string | null = patient.email ?? null;

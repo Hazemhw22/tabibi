@@ -99,6 +99,34 @@ export async function sendSms(to: string, body: string): Promise<boolean> {
   }
 }
 
+/** إشعار قصير عند حفظ خطة علاج لا تُنشئ بنود تكلفة تلقائياً (تصوير جنين، نساء، نماذج دولية…). */
+export function buildCarePlanSavedInfoSmsMessage(options: {
+  planLabel: string;
+  doctorName?: string;
+}): string {
+  const name = options.doctorName ? ` د. ${options.doctorName}` : "";
+  return `Tabibi: تم تحديث ${options.planLabel} لدى${name}. يمكنك مراجعة التفاصيل في حسابك أو التواصل مع العيادة.`.trim();
+}
+
+/** نص رسالة عند إضافة تكاليف خطة العلاج للمعاملات (بند أو أكثر) */
+export function buildCarePlanNewServicesSmsMessage(options: {
+  lines: { description: string; amount: number }[];
+  doctorName?: string;
+}): string {
+  const { lines, doctorName } = options;
+  const name = doctorName ? ` د. ${doctorName}` : "";
+  const total = lines.reduce((s, l) => s + Math.abs(Number(l.amount) || 0), 0);
+  const maxShow = 5;
+  const shown = lines.slice(0, maxShow);
+  const bullets = shown.map((l) => `• ${l.description}: ₪${Math.round(Math.abs(Number(l.amount) || 0))}`);
+  let msg = `Tabibi: تم تسجيل بنود خطة العلاج في ملفك لدى${name}:\n${bullets.join("\n")}`;
+  if (lines.length > maxShow) {
+    msg += `\n• (+${lines.length - maxShow} بند آخر)`;
+  }
+  msg += `\nالإجمالي المضاف: ₪${Math.round(total)}`;
+  return msg.trim();
+}
+
 /** بناء نص رسالة دفعة أو خدمة للمريض */
 export function buildTransactionSmsMessage(options: {
   type: "PAYMENT" | "SERVICE";
@@ -119,6 +147,15 @@ export function buildTransactionSmsMessage(options: {
     return msg.trim();
   }
   return `Tabibi: تم تسجيل خدمة (${description}) بقيمة ₪${amount} في ملفك لدى${name}.`.trim();
+}
+
+/** هل إعدادات Twilio WhatsApp مكتملة؟ إن لم تكن، لا نعطي أولوية للواتساب ونرسل SMS بدلًا منه. */
+export function isWhatsAppConfigured(): boolean {
+  return Boolean(
+    process.env.TWILIO_ACCOUNT_SID &&
+      process.env.TWILIO_AUTH_TOKEN &&
+      process.env.TWILIO_WHATSAPP_FROM
+  );
 }
 
 /**

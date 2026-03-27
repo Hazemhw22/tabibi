@@ -3,15 +3,30 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import type { CarePlanType } from "@/lib/specialty-plan-registry";
+import {
+  CARE_PLAN_LABELS,
+  type CarePlanType,
+  isStructuredIntlCarePlan,
+} from "@/lib/specialty-plan-registry";
+import type { CarePlanServiceLine } from "@/lib/care-plan-billing";
 import { extractCarePlanServiceLines, normalizeCarePlanCosts } from "@/lib/care-plan-billing";
 import { syncCarePlanFollowUpsToAppointments } from "@/lib/care-plan-appointment-sync";
+import { buildCarePlanNewServicesSmsMessage, buildCarePlanSavedInfoSmsMessage } from "@/lib/sms";
+import { sendToClinicPatientPhoneOrWhatsapp } from "@/lib/patient-contact-notify";
 
 const putSchema = z.object({
   planType: z.string().min(1),
   data: z.unknown().optional(),
   doctorNotes: z.string().nullable().optional(),
 });
+
+function shouldSendCarePlanInfoOnlySms(planType: string): boolean {
+  return (
+    planType === "FETAL_IMAGING" ||
+    planType === "OB_GYN" ||
+    isStructuredIntlCarePlan(planType as CarePlanType)
+  );
+}
 
 function mapSupabaseError(err: { message?: string; code?: string } | null) {
   const msg = err?.message ?? "";
@@ -120,7 +135,7 @@ export async function PUT(
 
     const { data: patient } = await supabaseAdmin
       .from("ClinicPatient")
-      .select("id, userId")
+      .select("id, userId, phone, whatsapp")
       .eq("id", clinicPatientId)
       .eq("doctorId", doctor.id)
       .maybeSingle();
@@ -217,6 +232,8 @@ export async function PUT(
       return NextResponse.json({ error: "فشل الحفظ" }, { status: 500 });
     }
 
+    let carePlanSmsSent: boolean | null = null;
+
     // تسجيل تكاليف الخطة كخدمات (بالسالب) مع منع التكرار.
     const serviceLines = extractCarePlanServiceLines(
       body.planType as CarePlanType,
@@ -236,19 +253,74 @@ export async function PUT(
         ),
       );
 
+      const newlyInserted: CarePlanServiceLine[] = [];
       for (const line of serviceLines) {
         const amount = -Math.abs(Number(line.amount || 0));
         const key = `${line.description}:${amount}`;
         if (existing.has(key)) continue;
-        await supabaseAdmin.from("ClinicTransaction").insert({
+        const { error: txInsErr } = await supabaseAdmin.from("ClinicTransaction").insert({
           clinicPatientId,
           type: "SERVICE",
           description: line.description,
           amount,
           createdBy: session.user.id,
         });
+        if (txInsErr) {
+          console.error("care-plan ClinicTransaction insert:", txInsErr);
+          continue;
+        }
         existing.add(key);
+        newlyInserted.push({ description: line.description, amount: Math.abs(Number(line.amount || 0)) });
       }
+
+      if (newlyInserted.length > 0) {
+        const msg = buildCarePlanNewServicesSmsMessage({
+          lines: newlyInserted,
+          doctorName: session.user.name ?? undefined,
+        });
+        let fallbackUserPhone: string | null = null;
+        const clinicPhone = String(patient.phone ?? "").trim();
+        if (!clinicPhone && patient.userId) {
+          const { data: linkedUser } = await supabaseAdmin
+            .from("User")
+            .select("phone")
+            .eq("id", patient.userId)
+            .maybeSingle();
+          fallbackUserPhone = (linkedUser as { phone?: string | null } | null)?.phone?.trim() ?? null;
+        }
+        carePlanSmsSent = await sendToClinicPatientPhoneOrWhatsapp({
+          clinicPhone: patient.phone,
+          whatsapp: (patient as { whatsapp?: string | null }).whatsapp,
+          fallbackUserPhone,
+          message: msg,
+        });
+      }
+    }
+
+    // خطط تصوير جنين / نساء / نماذج دولية: لا تُستخرج منها بنود تكاليف تلقائياً — نرسل على الأقل إشعار تحديث الخطة.
+    if (carePlanSmsSent === null && shouldSendCarePlanInfoOnlySms(body.planType)) {
+      const planLabel =
+        CARE_PLAN_LABELS[body.planType as CarePlanType] ?? "خطة العلاج";
+      const msg = buildCarePlanSavedInfoSmsMessage({
+        planLabel,
+        doctorName: session.user.name ?? undefined,
+      });
+      let fallbackUserPhone: string | null = null;
+      const clinicPhone = String(patient.phone ?? "").trim();
+      if (!clinicPhone && patient.userId) {
+        const { data: linkedUser } = await supabaseAdmin
+          .from("User")
+          .select("phone")
+          .eq("id", patient.userId)
+          .maybeSingle();
+        fallbackUserPhone = (linkedUser as { phone?: string | null } | null)?.phone?.trim() ?? null;
+      }
+      carePlanSmsSent = await sendToClinicPatientPhoneOrWhatsapp({
+        clinicPhone: patient.phone,
+        whatsapp: (patient as { whatsapp?: string | null }).whatsapp,
+        fallbackUserPhone,
+        message: msg,
+      });
     }
 
     const dataObj =
@@ -275,6 +347,7 @@ export async function PUT(
             ? saved.updatedAt
             : new Date(saved.updatedAt).toISOString(),
       },
+      carePlanSmsSent,
     });
   } catch (e) {
     if (e instanceof z.ZodError) {

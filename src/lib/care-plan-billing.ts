@@ -1,4 +1,4 @@
-import type { CarePlanType } from "@/lib/specialty-plan-registry";
+import { carePlanUsesItemsCostGrid, type CarePlanType } from "@/lib/specialty-plan-registry";
 
 export type CarePlanServiceLine = {
   description: string;
@@ -34,7 +34,14 @@ export function normalizeCarePlanCosts(
   if (planType === "ORTHOPEDICS") normalizeRows("injuries");
   if (planType === "UROLOGY_NEPHROLOGY") normalizeRows("issues");
   if (planType === "CARDIOLOGY") normalizeRows("cardiac");
-  if (planType === "GENERIC" || planType === "DENTAL") normalizeRows("items");
+  if (carePlanUsesItemsCostGrid(planType)) normalizeRows("items");
+
+  // احتياط: أي نوع يعرض تكلفة في الواجهة تحت هذه المفاتيح
+  normalizeRows("organs");
+  normalizeRows("injuries");
+  normalizeRows("issues");
+  normalizeRows("cardiac");
+  normalizeRows("items");
 
   return out;
 }
@@ -53,9 +60,9 @@ export function extractCarePlanServiceLines(
       const amount = safeNumber(r.cost);
       if (amount <= 0) continue;
       const problem = trimText(r.problem);
-      if (!problem) continue;
       const organ = trimText(r.organId) || "عضو";
-      out.push({ description: `${organ} - ${problem}`, amount });
+      const description = problem ? `${organ} - ${problem}` : organ;
+      out.push({ description, amount });
     }
   } else if (planType === "ORTHOPEDICS") {
     const rows = Array.isArray(data.injuries) ? data.injuries : [];
@@ -64,8 +71,7 @@ export function extractCarePlanServiceLines(
       const amount = safeNumber(r.cost);
       if (amount <= 0) continue;
       const label = trimText(r.injuryType);
-      if (!label) continue;
-      out.push({ description: label, amount });
+      out.push({ description: label || "خدمة عظام", amount });
     }
   } else if (planType === "UROLOGY_NEPHROLOGY") {
     const rows = Array.isArray(data.issues) ? data.issues : [];
@@ -74,8 +80,7 @@ export function extractCarePlanServiceLines(
       const amount = safeNumber(r.cost);
       if (amount <= 0) continue;
       const label = trimText(r.problem);
-      if (!label) continue;
-      out.push({ description: label, amount });
+      out.push({ description: label || "خدمة مسالك", amount });
     }
   } else if (planType === "CARDIOLOGY") {
     const rows = Array.isArray(data.cardiac) ? data.cardiac : [];
@@ -84,11 +89,11 @@ export function extractCarePlanServiceLines(
       const amount = safeNumber(r.cost);
       if (amount <= 0) continue;
       const problem = trimText(r.problem);
-      if (!problem) continue;
       const zone = trimText(r.zoneId) || "منطقة";
-      out.push({ description: `${zone} - ${problem}`, amount });
+      const description = problem ? `${zone} - ${problem}` : `${zone} - خدمة`;
+      out.push({ description, amount });
     }
-  } else if (planType === "GENERIC" || planType === "DENTAL") {
+  } else if (carePlanUsesItemsCostGrid(planType)) {
     const rows = Array.isArray(data.items) ? data.items : [];
     for (const row of rows) {
       const r = row as { label?: string; detail?: string; cost?: number };
@@ -96,8 +101,22 @@ export function extractCarePlanServiceLines(
       if (amount <= 0) continue;
       const label = trimText(r.label);
       const detail = trimText(r.detail);
-      const description = label && detail ? `${label} - ${detail}` : label || detail;
-      if (!description) continue;
+      const description =
+        label && detail ? `${label} - ${detail}` : label || detail || "بند من خطة العلاج";
+      out.push({ description, amount });
+    }
+  }
+
+  // أي نوع خطة يخزن بنود `items` + تكلفة (مثلاً احتياط التخصص العام على أنواع غير مذكورة صراحة).
+  if (out.length === 0 && Array.isArray(data.items)) {
+    for (const row of data.items) {
+      const r = row as { label?: string; detail?: string; cost?: number };
+      const amount = safeNumber(r.cost);
+      if (amount <= 0) continue;
+      const label = trimText(r.label);
+      const detail = trimText(r.detail);
+      const description =
+        label && detail ? `${label} - ${detail}` : label || detail || "بند من خطة العلاج";
       out.push({ description, amount });
     }
   }

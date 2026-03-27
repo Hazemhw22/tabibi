@@ -115,6 +115,8 @@ type Props = {
   doctorId: string;
   defaultFee: number;
   isDentist: boolean;
+  /** طبيب أسنان أو تخصص زراعة (يعرض مخطط الـ32 سنّاً) */
+  showDentalToothChart: boolean;
   carePlanType: CarePlanType;
   doctorDisplayName?: string;
   centerDisplayName?: string;
@@ -131,6 +133,7 @@ export default function PatientsView({
   doctorId,
   defaultFee,
   isDentist,
+  showDentalToothChart,
   carePlanType,
   doctorDisplayName = "",
   centerDisplayName = "المركز الطبي",
@@ -245,7 +248,7 @@ export default function PatientsView({
 
   /* تحميل خطة الأسنان عند اختيار مريض عيادة */
   useEffect(() => {
-    if (!selectedPatient || selectedPatient.source !== "clinic" || !isDentist) {
+    if (!selectedPatient || selectedPatient.source !== "clinic" || !showDentalToothChart) {
       setToothProblems({});
       setToothNotes({});
       setToothPrices({});
@@ -279,19 +282,23 @@ export default function PatientsView({
       setToothDone(done);
     })();
     return () => { cancelled = true; };
-  }, [selectedPatient?.id, selectedPatient?.source, isDentist]);
+  }, [selectedPatient?.id, selectedPatient?.source, showDentalToothChart]);
 
   const tabs = useMemo(() => {
     const t = [...BASE_TABS];
     /* خطة العلاج حسب التخصص — مريض عيادة أو مريض منصة */
-    if (!isDentist) {
+    if (!showDentalToothChart) {
       t.push({ id: "careplan", label: "خطة العلاج", icon: IconClipboardText });
+    }
+    if (showDentalToothChart && !isDentist) {
+      t.push({ id: "careplan", label: "خطة العلاج", icon: IconClipboardText });
+      t.push({ id: "dental", label: "مخطط الأسنان", icon: IconDocument });
     }
     if (isDentist) {
       t.push({ id: "dental", label: "خطة علاج الأسنان", icon: IconDocument });
     }
     return t;
-  }, [isDentist]);
+  }, [isDentist, showDentalToothChart]);
 
   const handleToothClick = (id: string) => {
     setSelectedTeeth((prev) =>
@@ -1755,7 +1762,7 @@ export default function PatientsView({
                 </div>
               )}
 
-              {/* ── خطة العلاج حسب التخصص (عيادة + منصة، غير أطباء الأسنان) ─ */}
+              {/* ── خطة العلاج حسب التخصص (عيادة + منصة؛ أطباء الأسنان العامون يستخدمون تبويب مخطط الأسنان فقط) ─ */}
               {activeTab === "careplan" && !isDentist && (
                 <div className="space-y-4">
                   <CarePlanPanel
@@ -1775,7 +1782,7 @@ export default function PatientsView({
               )}
 
               {/* ── خطة علاج الأسنان (أطباء الأسنان فقط) ───────── */}
-              {activeTab === "dental" && isDentist && (
+              {activeTab === "dental" && showDentalToothChart && (
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <IconHeart className="h-4 w-4 text-blue-600" />

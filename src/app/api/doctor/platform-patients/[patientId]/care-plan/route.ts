@@ -3,15 +3,29 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import type { CarePlanType } from "@/lib/specialty-plan-registry";
+import {
+  CARE_PLAN_LABELS,
+  type CarePlanType,
+  isStructuredIntlCarePlan,
+} from "@/lib/specialty-plan-registry";
+import type { CarePlanServiceLine } from "@/lib/care-plan-billing";
 import { extractCarePlanServiceLines, normalizeCarePlanCosts } from "@/lib/care-plan-billing";
 import { syncCarePlanFollowUpsToAppointments } from "@/lib/care-plan-appointment-sync";
+import { buildCarePlanNewServicesSmsMessage, buildCarePlanSavedInfoSmsMessage, sendSms } from "@/lib/sms";
 
 const putSchema = z.object({
   planType: z.string().min(1),
   data: z.unknown().optional(),
   doctorNotes: z.string().nullable().optional(),
 });
+
+function shouldSendCarePlanInfoOnlySms(planType: string): boolean {
+  return (
+    planType === "FETAL_IMAGING" ||
+    planType === "OB_GYN" ||
+    isStructuredIntlCarePlan(planType as CarePlanType)
+  );
+}
 
 function mapSupabaseError(err: { message?: string; code?: string } | null) {
   const msg = err?.message ?? "";
@@ -197,6 +211,8 @@ export async function PUT(
       return NextResponse.json({ error: "فشل الحفظ" }, { status: 500 });
     }
 
+    let carePlanSmsSent: boolean | null = null;
+
     // تسجيل تكاليف الخطة كخدمة (بالسالب) في معاملات مرضى المنصة بدون تكرار.
     const serviceLines = extractCarePlanServiceLines(
       body.planType as CarePlanType,
@@ -217,11 +233,12 @@ export async function PUT(
         ),
       );
 
+      const newlyInserted: CarePlanServiceLine[] = [];
       for (const line of serviceLines) {
         const amount = -Math.abs(Number(line.amount || 0));
         const key = `${line.description}:${amount}`;
         if (existing.has(key)) continue;
-        await supabaseAdmin.from("PlatformPatientTransaction").insert({
+        const { error: txInsErr } = await supabaseAdmin.from("PlatformPatientTransaction").insert({
           doctorId: doctor.id,
           patientId: patientUserId,
           type: "SERVICE",
@@ -229,7 +246,46 @@ export async function PUT(
           amount,
           notes: "تمت إضافته تلقائياً من خطة العلاج",
         });
+        if (txInsErr) {
+          console.error("platform care-plan PlatformPatientTransaction insert:", txInsErr);
+          continue;
+        }
         existing.add(key);
+        newlyInserted.push({ description: line.description, amount: Math.abs(Number(line.amount || 0)) });
+      }
+
+      if (newlyInserted.length > 0) {
+        const { data: userRow } = await supabaseAdmin
+          .from("User")
+          .select("phone")
+          .eq("id", patientUserId)
+          .maybeSingle();
+        const phone = (userRow as { phone?: string | null } | null)?.phone?.trim();
+        if (phone) {
+          const msg = buildCarePlanNewServicesSmsMessage({
+            lines: newlyInserted,
+            doctorName: session.user.name ?? undefined,
+          });
+          carePlanSmsSent = await sendSms(phone, msg);
+        }
+      }
+    }
+
+    if (carePlanSmsSent === null && shouldSendCarePlanInfoOnlySms(body.planType)) {
+      const planLabel =
+        CARE_PLAN_LABELS[body.planType as CarePlanType] ?? "خطة العلاج";
+      const msg = buildCarePlanSavedInfoSmsMessage({
+        planLabel,
+        doctorName: session.user.name ?? undefined,
+      });
+      const { data: userRow } = await supabaseAdmin
+        .from("User")
+        .select("phone")
+        .eq("id", patientUserId)
+        .maybeSingle();
+      const phone = (userRow as { phone?: string | null } | null)?.phone?.trim();
+      if (phone) {
+        carePlanSmsSent = await sendSms(phone, msg);
       }
     }
 
@@ -255,6 +311,7 @@ export async function PUT(
             ? saved.updatedAt
             : new Date(saved.updatedAt).toISOString(),
       },
+      carePlanSmsSent,
     });
   } catch (e) {
     if (e instanceof z.ZodError) {

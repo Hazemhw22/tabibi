@@ -1,7 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { resolveCarePlanType, type CarePlanType } from "@/lib/specialty-plan-registry";
+import {
+  carePlanShowsDentalToothChart,
+  resolveCarePlanType,
+  type CarePlanType,
+} from "@/lib/specialty-plan-registry";
 import { ledgerBalance } from "@/lib/patient-transaction-math";
 import PatientsView from "./patients-view";
 
@@ -88,6 +92,7 @@ export default async function DoctorPatientsPage({
   ).trim();
   const isDentist = specialtyNameAr === "طب أسنان";
   const carePlanType: CarePlanType = resolveCarePlanType(specialtyNameAr);
+  const showDentalToothChart = isDentist || carePlanShowsDentalToothChart(carePlanType);
 
   const { q, id: selectedId, source: selectedSource, owner: selectedOwner } = await searchParams;
 
@@ -272,6 +277,7 @@ export default async function DoctorPatientsPage({
         doctorId={doctor.id}
         defaultFee={(doctor as { consultationFee?: number }).consultationFee ?? 0}
         isDentist={isDentist}
+        showDentalToothChart={showDentalToothChart}
         carePlanType={carePlanType}
         doctorDisplayName={session.user?.name ?? ""}
         centerDisplayName={

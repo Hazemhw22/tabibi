@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CarePlanType } from "@/lib/specialty-plan-registry";
-import { CARE_PLAN_LABELS, isStructuredIntlCarePlan } from "@/lib/specialty-plan-registry";
+import { CARE_PLAN_LABELS, carePlanUsesItemsCostGrid, isStructuredIntlCarePlan } from "@/lib/specialty-plan-registry";
 import { PregnancyWeekSvg } from "./pregnancy-week-svg";
 import {
   PediatricsBodySvg,
@@ -161,6 +161,13 @@ export function CarePlanPanel({
         return;
       }
       toast.success("تم حفظ خطة العلاج");
+      if (typeof j.carePlanSmsSent === "boolean") {
+        if (j.carePlanSmsSent) {
+          toast.message("أُرسلت رسالة تنبيه للمريض (SMS/واتساب إن وُجدت الإعدادات).");
+        } else {
+          toast.warning("تعذر إرسال رسالة للمريض — تحقق من رقم الهاتف وإعدادات SMS.");
+        }
+      }
       if (j.plan?.data) setData((j.plan.data as Record<string, unknown>) ?? {});
     } catch {
       toast.error("خطأ في الاتصال");
@@ -260,7 +267,7 @@ export function CarePlanPanel({
           printBridge={printBridge}
         />
       )}
-      {(carePlanType === "GENERIC" || carePlanType === "DENTAL") && (
+      {carePlanUsesItemsCostGrid(carePlanType) && (
         <GenericBlock data={data} setData={setData} />
       )}
       {/* احتياط: أي نوع غير معروف يعرض الخطة العامة */}
@@ -287,6 +294,8 @@ export function CarePlanPanel({
         "PULMONOLOGY",
         "GENERIC",
         "DENTAL",
+        "DENTAL_IMPLANT_IMMEDIATE_SURGICAL",
+        "DENTAL_IMPLANT_COSMETIC",
       ].includes(carePlanType) && <GenericBlock data={data} setData={setData} />}
 
       <CarePlanFollowUpsSection data={data} setData={setData} carePlanType={carePlanType} />
