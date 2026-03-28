@@ -22,6 +22,7 @@ import IconBuilding from "@/components/icon/icon-building";
 import IconXCircle from "@/components/icon/icon-x-circle";
 import IconSend from "@/components/icon/icon-send";
 import IconArchive from "@/components/icon/icon-archive";
+import IconShoppingBag from "@/components/icon/icon-shopping-bag";
 import { getDoctorAvatar, getPatientAvatar } from "@/lib/avatar";
 import { DOCTOR_STAFF_ROLE_LABELS, isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import NotificationBell from "@/components/notifications/notification-bell";
@@ -55,7 +56,8 @@ const doctorSectionsFull: NavSection[] = [
     items: [
       { label: "التقارير", href: "/dashboard/doctor/reports", icon: IconBarChart },
       { label: "العيادات والمواعيد", href: "/dashboard/doctor/clinics", icon: IconClipboardText },
-      { label: "الموظفون", href: "/dashboard/doctor/staff", icon: IconMenuUsers },
+      { label: "موظفين العيادة", href: "/dashboard/doctor/staff", icon: IconMenuUsers },
+      { label: "مزوّدون المستلزمات", href: "/dashboard/doctor/suppliers", icon: IconShoppingBag },
       { label: "مصروفات العيادة", href: "/dashboard/doctor/expenses", icon: IconDollarSignCircle },
     ],
   },
@@ -69,7 +71,7 @@ const doctorSectionsLimited: NavSection[] = [
   { title: "الرئيسية", items: [{ label: "الرئيسية", href: "/dashboard/doctor", icon: IconMenuDashboard }] },
 ];
 
-/** موظفو الطبيب: مواعيد + مرضى فقط */
+/** موظفين الطبيب: مواعيد + مرضى فقط */
 const doctorSectionsStaff: NavSection[] = [
   {
     title: "الرئيسية",

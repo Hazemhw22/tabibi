@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import IconMenuUsers from "@/components/icon/menu/icon-menu-users";
 import IconLoader from "@/components/icon/icon-loader";
+import IconPencil from "@/components/icon/icon-pencil";
 import IconPlus from "@/components/icon/icon-plus";
 import IconPrinter from "@/components/icon/icon-printer";
+import IconTrash from "@/components/icon/icon-trash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +59,7 @@ function buildStaffPdfHtml(rows: StaffRow[]): string {
     </tr>`,
     )
     .join("");
-  return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>موظفو العيادة</title>
+  return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>موظفين العيادة</title>
 <style>
   body{font-family:system-ui,Tahoma,sans-serif;padding:20px;font-size:13px;}
   h1{font-size:18px;margin:0 0 8px;}
@@ -66,7 +68,7 @@ function buildStaffPdfHtml(rows: StaffRow[]): string {
   th,td{border:1px solid #ccc;padding:8px;text-align:right;}
   th{background:#f3f4f6;font-weight:600;}
 </style></head><body>
-<h1>موظفو العيادة</h1>
+<h1>موظفين العيادة</h1>
 <p class="meta">تاريخ الطباعة: ${new Date().toLocaleString("ar")} — العدد: ${rows.length}</p>
 <table>
 <thead><tr><th>#</th><th>الاسم</th><th>البريد</th><th>الهاتف</th><th>الدور</th><th>راتب شهري</th><th>تاريخ الإضافة</th></tr></thead>
@@ -90,6 +92,7 @@ export default function DoctorStaffPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editRow, setEditRow] = useState<StaffRow | null>(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -108,6 +111,45 @@ export default function DoctorStaffPage() {
       staffKind: "RECEPTION",
       salaryMonthly: "",
     });
+
+  const staffKindFromRow = (u: StaffRow): "RECEPTION" | "ASSISTANT" =>
+    u.doctorStaffRole === "ASSISTANT" || u.role === "DOCTOR_ASSISTANT" ? "ASSISTANT" : "RECEPTION";
+
+  const openAdd = () => {
+    setEditRow(null);
+    resetForm();
+    setAddOpen(true);
+  };
+
+  const openEdit = (u: StaffRow) => {
+    setEditRow(u);
+    setForm({
+      email: u.email ?? "",
+      password: "",
+      name: u.name ?? "",
+      phone: u.phone ?? "",
+      staffKind: staffKindFromRow(u),
+      salaryMonthly:
+        u.salaryMonthly != null && Number.isFinite(u.salaryMonthly) ? String(u.salaryMonthly) : "",
+    });
+    setAddOpen(true);
+  };
+
+  const removeStaff = async (u: StaffRow) => {
+    if (!confirm(`إلغاء ربط الموظف «${u.name ?? u.email}» بالعيادة؟ لن يعد بإمكانه الدخول كموظف.`)) return;
+    try {
+      const res = await fetch(`/api/doctor/staff/${u.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "فشلت العملية");
+        return;
+      }
+      toast.success(data.message || "تم");
+      load();
+    } catch {
+      toast.error("حدث خطأ");
+    }
+  };
 
   useEffect(() => {
     if (status === "loading") return;
@@ -155,6 +197,31 @@ export default function DoctorStaffPage() {
     setSubmitting(true);
     try {
       const salaryMonthly = form.salaryMonthly.trim() ? Number(form.salaryMonthly) : undefined;
+      if (editRow) {
+        const body: Record<string, unknown> = {
+          name: form.name.trim(),
+          phone: form.phone.trim() || null,
+          staffKind: form.staffKind,
+          salaryMonthly: Number.isFinite(salaryMonthly as number) ? salaryMonthly : null,
+        };
+        if (form.password.trim().length >= 6) body.password = form.password;
+        const res = await fetch(`/api/doctor/staff/${editRow.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "فشل التحديث");
+          return;
+        }
+        toast.success(data.message || "تم التحديث");
+        setEditRow(null);
+        resetForm();
+        setAddOpen(false);
+        load();
+        return;
+      }
       const res = await fetch("/api/doctor/staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -200,22 +267,21 @@ export default function DoctorStaffPage() {
         ← الرئيسية
       </Link>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="border-b border-gray-100 bg-gray-50/80">
+      <Card className="border border-gray-200 shadow-sm dark:border-slate-700 dark:bg-slate-900/35">
+        <CardHeader className="border-b border-gray-100 bg-gray-50/80 dark:border-slate-700 dark:bg-slate-800/45">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <IconMenuUsers className="h-5 w-5 text-blue-600" />
-                موظفو العيادة
+                موظفين العيادة
               </CardTitle>
-              
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button type="button" variant="outline" className="gap-1.5" onClick={printPdf} disabled={!list.length}>
                 <IconPrinter className="h-4 w-4" />
                 PDF / طباعة
               </Button>
-              <Button type="button" className="gap-1.5" onClick={() => { resetForm(); setAddOpen(true); }}>
+              <Button type="button" className="gap-1.5" onClick={openAdd}>
                 <IconPlus className="h-4 w-4" />
                 إضافة موظف
               </Button>
@@ -228,13 +294,13 @@ export default function DoctorStaffPage() {
               <IconLoader className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : list.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-400">
+            <p className="rounded-xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-900/25 dark:text-slate-500">
               لا يوجد موظفون بعد — اضغط «إضافة موظف».
             </p>
           ) : (
-            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700 sm:mx-0">
-              <table className="min-w-[720px] w-full text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
+            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-900/40 sm:mx-0">
+              <table className="min-w-[820px] w-full text-sm">
+                <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-300">
                   <tr>
                     <th className="px-3 py-3 w-10">#</th>
                     <th className="px-3 py-3">الاسم</th>
@@ -243,11 +309,12 @@ export default function DoctorStaffPage() {
                     <th className="px-3 py-3">الدور</th>
                     <th className="px-3 py-3 whitespace-nowrap">الراتب (₪)</th>
                     <th className="px-3 py-3 whitespace-nowrap">تاريخ الإضافة</th>
+                    <th className="px-3 py-3 w-[88px] whitespace-nowrap">إجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700/80">
                   {list.map((u, i) => (
-                    <tr key={u.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40">
+                    <tr key={u.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/35">
                       <td className="px-3 py-3 text-gray-400 tabular-nums">{i + 1}</td>
                       <td className="px-3 py-3 font-medium text-gray-900 dark:text-slate-100">{u.name ?? "—"}</td>
                       <td className="px-3 py-3 text-gray-600" dir="ltr">
@@ -264,8 +331,32 @@ export default function DoctorStaffPage() {
                       <td className="px-3 py-3 tabular-nums">
                         {u.salaryMonthly != null && u.salaryMonthly > 0 ? `₪${u.salaryMonthly}` : "—"}
                       </td>
-                      <td className="px-3 py-3 text-gray-600 whitespace-nowrap">
+                      <td className="px-3 py-3 text-gray-600 whitespace-nowrap dark:text-slate-400">
                         {u.createdAt ? format(new Date(u.createdAt), "dd/MM/yyyy") : "—"}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                            onClick={() => openEdit(u)}
+                            aria-label="تعديل"
+                          >
+                            <IconPencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => removeStaff(u)}
+                            aria-label="إلغاء الربط"
+                          >
+                            <IconTrash className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -276,12 +367,20 @@ export default function DoctorStaffPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(o) => {
+          setAddOpen(o);
+          if (!o) setEditRow(null);
+        }}
+      >
         <DialogContent className={cn("max-h-[90vh] overflow-y-auto sm:max-w-lg")} dir="rtl">
           <DialogHeader>
-            <DialogTitle>إضافة موظف</DialogTitle>
+            <DialogTitle>{editRow ? "تعديل موظف" : "إضافة موظف"}</DialogTitle>
             <DialogDescription>
-              يُنشأ حساب دخول جديد للموظف. يمكنه بعدها تسجيل الدخول بالبريد وكلمة المرور التي تحددها.
+              {editRow
+                ? "تحديث الاسم والهاتف والدور والراتب المرجعي. اترك كلمة المرور فارغة إن لم ترد تغييرها."
+                : "يُنشأ حساب دخول جديد للموظف. يمكنه بعدها تسجيل الدخول بالبريد وكلمة المرور التي تحددها."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
@@ -302,18 +401,20 @@ export default function DoctorStaffPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  required
-                  className="mt-1"
+                  required={!editRow}
+                  readOnly={!!editRow}
+                  className={cn("mt-1", editRow && "bg-gray-50 dark:bg-slate-800/80")}
                 />
               </div>
               <div className="sm:col-span-2">
-                <Label>كلمة المرور</Label>
+                <Label>{editRow ? "كلمة مرور جديدة (اختياري)" : "كلمة المرور"}</Label>
                 <Input
                   type="password"
                   value={form.password}
                   onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                  required
-                  minLength={6}
+                  required={!editRow}
+                  minLength={editRow ? 0 : 6}
+                  placeholder={editRow ? "اتركه فارغاً للإبقاء على الحالية" : undefined}
                   className="mt-1"
                 />
               </div>
@@ -351,12 +452,19 @@ export default function DoctorStaffPage() {
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAddOpen(false);
+                  setEditRow(null);
+                }}
+              >
                 إلغاء
               </Button>
               <Button type="submit" disabled={submitting} className="gap-2">
                 {submitting ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
-                إنشاء الحساب
+                {editRow ? "حفظ التعديلات" : "إنشاء الحساب"}
               </Button>
             </DialogFooter>
           </form>

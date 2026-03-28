@@ -46,15 +46,32 @@ function LoginDoctorForm() {
         password: data.password,
         redirect: false,
       });
+
       if (result?.error) {
-        toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      } else {
-        toast.success("تم تسجيل الدخول بنجاح!");
-        router.push(callbackUrl);
-        router.refresh();
+        if (result.error === "CredentialsSignin") {
+          toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        } else {
+          console.error("[login/doctor] signIn:", result.error, result);
+          toast.error("تعذر تسجيل الدخول. تحقق من إعدادات الخادم أو حاول لاحقاً.");
+        }
+        return;
       }
-    } catch {
-      toast.error("حدث خطأ، يرجى المحاولة مجدداً");
+      if (result && !result.ok) {
+        toast.error("تعذر تسجيل الدخول. تحقق من الاتصال أو إعدادات الخادم (AUTH_TRUST_HOST / AUTH_SECRET).");
+        return;
+      }
+
+      toast.success("تم تسجيل الدخول بنجاح!");
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (e) {
+      console.error("[login/doctor]", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(
+        msg.includes("fetch") || msg.includes("Network")
+          ? "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً."
+          : "حدث خطأ، يرجى المحاولة مجدداً",
+      );
     } finally {
       setLoading(false);
     }

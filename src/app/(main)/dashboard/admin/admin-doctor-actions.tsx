@@ -54,7 +54,11 @@ export default function AdminDoctorActions({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const j = await res.json().catch(() => ({}));
+      const ct = res.headers.get("content-type") ?? "";
+      const j: { error?: string } =
+        ct.includes("application/json")
+          ? await res.json().catch(() => ({}))
+          : {};
       if (res.ok) {
         if (payload.canAddExtraClinics) toast.success("تم تفعيل إضافة العيادات الإضافية");
         else if (payload.status === "APPROVED")
@@ -63,7 +67,14 @@ export default function AdminDoctorActions({
         else toast.success("تم تحديث الاشتراك");
         router.refresh();
       } else {
-        toast.error(j.error ?? "حدث خطأ");
+        toast.error(
+          j.error ??
+            (res.status >= 500
+              ? "خطأ في الخادم"
+              : !ct.includes("application/json")
+                ? "استجابة غير متوقعة من الخادم"
+                : "حدث خطأ"),
+        );
       }
     } catch {
       toast.error("حدث خطأ في الاتصال");

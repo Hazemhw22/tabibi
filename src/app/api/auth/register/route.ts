@@ -94,32 +94,73 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "فشل إنشاء المستخدم" }, { status: 500 });
     }
 
-    await supabaseAdmin.from("User").upsert({
+    const { error: userUpsertErr } = await supabaseAdmin.from("User").upsert({
       id: userId,
       email,
       name: data.name,
       phone: phone ?? "",
       role: data.role,
     });
+    if (userUpsertErr) {
+      console.error("[register] User upsert:", userUpsertErr);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return NextResponse.json({ error: "فشل حفظ بيانات الحساب" }, { status: 500 });
+    }
 
     if (data.role === "DOCTOR") {
-      const specialtyId = data.specialtyId ?? (await supabaseAdmin.from("Specialty").select("id").limit(1).single()).data?.id;
+      const requested = data.specialtyId?.trim() || null;
+      let specialtyId: string | null = null;
+      if (requested) {
+        const { data: specOk } = await supabaseAdmin.from("Specialty").select("id").eq("id", requested).maybeSingle();
+        if (!specOk?.id) {
+          await supabaseAdmin.from("User").delete().eq("id", userId);
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+          return NextResponse.json(
+            { error: "التخصص المختار غير موجود — حدّث الصفحة واختر تخصصاً من القائمة." },
+            { status: 400 },
+          );
+        }
+        specialtyId = specOk.id;
+      } else {
+        const { data: firstSpec } = await supabaseAdmin.from("Specialty").select("id").limit(1).maybeSingle();
+        specialtyId = firstSpec?.id ?? null;
+      }
+      if (!specialtyId) {
+        await supabaseAdmin.from("User").delete().eq("id", userId);
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        return NextResponse.json(
+          { error: "لا يوجد تخصص في النظام — أضف تخصصات من لوحة الإدارة ثم أعد المحاولة." },
+          { status: 500 },
+        );
+      }
+
       const whatsappRaw = (data.whatsapp ?? "").trim().replace(/\D/g, "").slice(-9)
         ? (data.whatsapp ?? "").trim()
         : (data.phone ?? "").trim();
       const whatsappDigits = whatsappRaw.replace(/\D/g, "").slice(-9);
       const whatsappValue = whatsappDigits ? `972${whatsappDigits}` : null;
-      if (specialtyId) {
-        await supabaseAdmin.from("Doctor").insert({
-          userId,
-          specialtyId,
-          whatsapp: whatsappValue,
-          status: "PENDING",
-          experienceYears: 0,
-          consultationFee: 0,
-          rating: 0,
-          totalReviews: 0,
-        });
+
+      const { error: doctorInsertErr } = await supabaseAdmin.from("Doctor").insert({
+        userId,
+        specialtyId,
+        whatsapp: whatsappValue,
+        status: "PENDING",
+        experienceYears: 0,
+        consultationFee: 0,
+        rating: 0,
+        totalReviews: 0,
+      });
+      if (doctorInsertErr) {
+        console.error("[register] Doctor insert failed:", doctorInsertErr.code, doctorInsertErr.message, doctorInsertErr.details);
+        await supabaseAdmin.from("User").delete().eq("id", userId);
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        return NextResponse.json(
+          {
+            error:
+              "تعذر إنشاء ملف الطبيب. تحقق من اتصال قاعدة البيانات أو أن جدول Doctor متوافق مع المخطط. إن استمرت المشكلة، راجع سجلات الخادم.",
+          },
+          { status: 500 },
+        );
       }
     }
 

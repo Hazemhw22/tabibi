@@ -12,6 +12,8 @@ const loginSchema = z.object({
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
+  /** مطلوب في Auth.js v5 عند الاعتماد على Host من الطلب؛ بدونه قد يفشل تسجيل الدخول (Credentials) ويُرمى UntrustedHost. */
+  trustHost: true,
   pages: {
     signIn: "/login",
     error: "/login",
@@ -56,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             .from("User")
             .select("id, email, name, image, role, phone, employerDoctorId, doctorStaffRole")
             .eq("id", data.user.id)
-            .single();
+            .maybeSingle();
 
           const meta = data.user.user_metadata as {
             name?: string;
@@ -143,15 +145,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         u.role = token.role as string;
         /* مزامنة الدور من قاعدة البيانات (بعد ترقية مشرف يدوياً أو إصلاح بيانات) */
         if (u.id) {
-          const { data: freshUser } = await supabaseAdmin
-            .from("User")
-            .select("role, employerDoctorId, doctorStaffRole")
-            .eq("id", u.id)
-            .maybeSingle();
-          if (freshUser) {
-            if (freshUser.role) u.role = freshUser.role;
-            u.employerDoctorId = freshUser.employerDoctorId ?? null;
-            u.doctorStaffRole = freshUser.doctorStaffRole ?? null;
+          try {
+            const { data: freshUser } = await supabaseAdmin
+              .from("User")
+              .select("role, employerDoctorId, doctorStaffRole")
+              .eq("id", u.id)
+              .maybeSingle();
+            if (freshUser) {
+              if (freshUser.role) u.role = freshUser.role;
+              u.employerDoctorId = freshUser.employerDoctorId ?? null;
+              u.doctorStaffRole = freshUser.doctorStaffRole ?? null;
+            }
+          } catch (e) {
+            console.error("[auth/session] User refresh failed:", e);
           }
         }
         u.name = (token.name as string) ?? session.user?.name ?? "";
@@ -162,23 +168,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         u.doctorStaffRole = (token.doctorStaffRole as string | null) ?? null;
         /* JWT قديم: إعادة جلب doctorId بعد إنشاء سجل Doctor لاحقاً */
         if (u.role === "DOCTOR" && u.id && !u.doctorId) {
-          const { data: doc } = await supabaseAdmin
-            .from("Doctor")
-            .select("id")
-            .eq("userId", u.id)
-            .maybeSingle();
-          if (doc?.id) u.doctorId = doc.id;
+          try {
+            const { data: doc } = await supabaseAdmin
+              .from("Doctor")
+              .select("id")
+              .eq("userId", u.id)
+              .maybeSingle();
+            if (doc?.id) u.doctorId = doc.id;
+          } catch (e) {
+            console.error("[auth/session] Doctor lookup failed:", e);
+          }
         } else if (
           (u.role === "DOCTOR_RECEPTION" || u.role === "DOCTOR_ASSISTANT") &&
           u.id &&
           !u.doctorId
         ) {
-          const { data: row } = await supabaseAdmin
-            .from("User")
-            .select("employerDoctorId")
-            .eq("id", u.id)
-            .maybeSingle();
-          if (row?.employerDoctorId) u.doctorId = row.employerDoctorId;
+          try {
+            const { data: row } = await supabaseAdmin
+              .from("User")
+              .select("employerDoctorId")
+              .eq("id", u.id)
+              .maybeSingle();
+            if (row?.employerDoctorId) u.doctorId = row.employerDoctorId;
+          } catch (e) {
+            console.error("[auth/session] employerDoctorId lookup failed:", e);
+          }
         }
       }
       return session;

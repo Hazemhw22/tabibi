@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import IconDollarSignCircle from "@/components/icon/icon-dollar-sign-circle";
 import IconLoader from "@/components/icon/icon-loader";
+import IconPencil from "@/components/icon/icon-pencil";
 import IconPlus from "@/components/icon/icon-plus";
 import IconPrinter from "@/components/icon/icon-printer";
+import IconTrash from "@/components/icon/icon-trash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +35,9 @@ type LedgerRow = {
   amount: number;
   occurredAt: string;
   notes?: string | null;
+  supplierId?: string | null;
+  staffUserId?: string | null;
+  supplier?: { id: string; name?: string; companyName?: string | null } | null;
 };
 
 type StaffOpt = {
@@ -41,6 +46,19 @@ type StaffOpt = {
   email?: string | null;
   salaryMonthly?: number | null;
 };
+
+type SupplierOpt = {
+  id: string;
+  name: string;
+  companyName?: string | null;
+};
+
+/** في قائمة شركة التزويد: اسم الشركة أولاً، ثم اسم جهة الاتصال إن لم يوجد اسم شركة */
+function supplierCompanyLabel(s: SupplierOpt): string {
+  const co = (s.companyName ?? "").trim();
+  if (co) return co;
+  return (s.name ?? "").trim() || s.id;
+}
 
 /** PostgREST قد يعيد salary_monthly؛ القيم قد تكون رقماً أو نصاً */
 function normalizeStaffRow(row: Record<string, unknown>): StaffOpt {
@@ -85,6 +103,7 @@ function buildExpensesPdfHtml(rows: LedgerRow[], totalOut: number): string {
       <td>${format(new Date(row.occurredAt), "dd/MM/yyyy")}</td>
       <td>${escapeHtml(KIND_LABEL[row.kind] ?? row.kind)}</td>
       <td>${escapeHtml(row.title)}</td>
+      <td>${row.supplier ? escapeHtml(supplierCompanyLabel(row.supplier as SupplierOpt)) : "—"}</td>
       <td dir="ltr">−₪${Number(row.amount).toLocaleString("ar-EG")}</td>
       <td>${row.notes ? escapeHtml(row.notes) : "—"}</td>
     </tr>`,
@@ -104,7 +123,7 @@ function buildExpensesPdfHtml(rows: LedgerRow[], totalOut: number): string {
 <p class="meta">تاريخ الطباعة: ${new Date().toLocaleString("ar")} — عدد السجلات: ${rows.length}</p>
 <p class="total">إجمالي المصروفات: ₪${totalOut.toLocaleString("ar-EG")}</p>
 <table>
-<thead><tr><th>#</th><th>التاريخ</th><th>النوع</th><th>الوصف</th><th>المبلغ</th><th>ملاحظات</th></tr></thead>
+<thead><tr><th>#</th><th>التاريخ</th><th>النوع</th><th>الوصف</th><th>المزوّد</th><th>المبلغ</th><th>ملاحظات</th></tr></thead>
 <tbody>${body}</tbody>
 </table>
 </body></html>`;
@@ -116,9 +135,11 @@ export default function DoctorClinicExpensesPage() {
   const [entries, setEntries] = useState<LedgerRow[]>([]);
   const [totalOut, setTotalOut] = useState(0);
   const [staffList, setStaffList] = useState<StaffOpt[]>([]);
+  const [supplierList, setSupplierList] = useState<SupplierOpt[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editEntryId, setEditEntryId] = useState<string | null>(null);
   const [form, setForm] = useState({
     kind: "CLINIC_PURCHASE" as "CLINIC_PURCHASE" | "SALARY_PAYMENT",
     title: "",
@@ -126,6 +147,7 @@ export default function DoctorClinicExpensesPage() {
     occurredAt: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     staffUserId: "",
+    supplierId: "",
   });
 
   const resetForm = () =>
@@ -136,7 +158,46 @@ export default function DoctorClinicExpensesPage() {
       occurredAt: format(new Date(), "yyyy-MM-dd"),
       notes: "",
       staffUserId: "",
+      supplierId: "",
     });
+
+  const openNew = () => {
+    setEditEntryId(null);
+    resetForm();
+    setAddOpen(true);
+  };
+
+  const openEdit = (row: LedgerRow) => {
+    setEditEntryId(row.id);
+    const d = new Date(row.occurredAt);
+    const dateStr = Number.isFinite(d.getTime()) ? format(d, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+    setForm({
+      kind: row.kind as "CLINIC_PURCHASE" | "SALARY_PAYMENT",
+      title: row.title ?? "",
+      amount: String(row.amount ?? ""),
+      occurredAt: dateStr,
+      notes: row.notes ?? "",
+      staffUserId: row.staffUserId ?? "",
+      supplierId: row.supplierId ?? row.supplier?.id ?? "",
+    });
+    setAddOpen(true);
+  };
+
+  const removeEntry = async (row: LedgerRow) => {
+    if (!confirm("حذف هذا السجل من المصروفات؟")) return;
+    try {
+      const res = await fetch(`/api/doctor/clinic-ledger/${row.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "فشل الحذف");
+        return;
+      }
+      toast.success(data.message || "تم الحذف");
+      load();
+    } catch {
+      toast.error("حدث خطأ");
+    }
+  };
 
   const selectedStaff = useMemo(
     () => staffList.find((x) => x.id === form.staffUserId) ?? null,
@@ -183,14 +244,16 @@ export default function DoctorClinicExpensesPage() {
     Promise.all([
       fetch("/api/doctor/clinic-ledger").then((r) => r.json()),
       fetch("/api/doctor/staff").then((r) => r.json()),
+      fetch("/api/doctor/suppliers").then((r) => r.json()),
     ])
-      .then(([ledger, staffRes]) => {
+      .then(([ledger, staffRes, supRes]) => {
         if (ledger.error) toast.error(ledger.error);
         else {
           setEntries(ledger.entries ?? []);
           setTotalOut(Number(ledger.totalOut ?? 0));
         }
         if (!staffRes.error) setStaffList(staffRes.staff ?? []);
+        if (!supRes.error) setSupplierList(supRes.suppliers ?? []);
       })
       .catch(() => toast.error("تعذر التحميل"))
       .finally(() => setLoading(false));
@@ -221,27 +284,34 @@ export default function DoctorClinicExpensesPage() {
       toast.error("اختر الموظف لدفعة الراتب");
       return;
     }
+    const notesOut = form.notes.trim();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/doctor/clinic-ledger", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: form.kind,
-          title: form.title.trim(),
-          amount,
-          occurredAt: form.occurredAt ? new Date(form.occurredAt).toISOString() : undefined,
-          notes: form.notes.trim() || undefined,
-          staffUserId: form.kind === "SALARY_PAYMENT" ? form.staffUserId : undefined,
-        }),
-      });
+      const payload = {
+        kind: form.kind,
+        title: form.title.trim(),
+        amount,
+        occurredAt: form.occurredAt ? new Date(form.occurredAt).toISOString() : undefined,
+        notes: editEntryId ? notesOut || null : notesOut || undefined,
+        staffUserId: form.kind === "SALARY_PAYMENT" ? form.staffUserId || null : null,
+        supplierId: form.kind === "CLINIC_PURCHASE" && form.supplierId ? form.supplierId : null,
+      };
+      const res = await fetch(
+        editEntryId ? `/api/doctor/clinic-ledger/${editEntryId}` : "/api/doctor/clinic-ledger",
+        {
+          method: editEntryId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "فشل الحفظ");
         return;
       }
-      toast.success(data.message || "تم التسجيل");
+      toast.success(data.message || (editEntryId ? "تم التحديث" : "تم التسجيل"));
       resetForm();
+      setEditEntryId(null);
       setAddOpen(false);
       load();
     } catch {
@@ -268,8 +338,8 @@ export default function DoctorClinicExpensesPage() {
         ← الرئيسية
       </Link>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="border-b border-gray-100 bg-gray-50/80">
+      <Card className="border border-gray-200 shadow-sm dark:border-slate-700 dark:bg-slate-900/35">
+        <CardHeader className="border-b border-gray-100 bg-gray-50/80 dark:border-slate-700 dark:bg-slate-800/45">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -297,7 +367,7 @@ export default function DoctorClinicExpensesPage() {
                   <IconPrinter className="h-4 w-4" />
                   PDF / طباعة
                 </Button>
-                <Button type="button" className="gap-1.5" onClick={() => { resetForm(); setAddOpen(true); }}>
+                <Button type="button" className="gap-1.5" onClick={openNew}>
                   <IconPlus className="h-4 w-4" />
                   تسجيل مصروف
                 </Button>
@@ -311,25 +381,27 @@ export default function DoctorClinicExpensesPage() {
               <IconLoader className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : entries.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-400">
+            <p className="rounded-xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-900/25 dark:text-slate-500">
               لا توجد مصروفات مسجّلة — اضغط «تسجيل مصروف».
             </p>
           ) : (
-            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700 sm:mx-0">
-              <table className="min-w-[800px] w-full text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
+            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-900/40 sm:mx-0">
+              <table className="min-w-[980px] w-full text-sm">
+                <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-300">
                   <tr>
                     <th className="px-3 py-3 w-10">#</th>
                     <th className="px-3 py-3 whitespace-nowrap">التاريخ</th>
                     <th className="px-3 py-3 whitespace-nowrap">النوع</th>
                     <th className="px-3 py-3 min-w-[160px]">الوصف</th>
+                    <th className="px-3 py-3 min-w-[120px] whitespace-nowrap">المزوّد</th>
                     <th className="px-3 py-3 whitespace-nowrap">المبلغ</th>
                     <th className="px-3 py-3 min-w-[120px]">ملاحظات</th>
+                    <th className="px-3 py-3 w-[88px] whitespace-nowrap">إجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700/80">
                   {entries.map((row, i) => (
-                    <tr key={row.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40">
+                    <tr key={row.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/35">
                       <td className="px-3 py-3 text-gray-400 tabular-nums">{i + 1}</td>
                       <td className="px-3 py-3 whitespace-nowrap text-gray-700 dark:text-slate-300">
                         {format(new Date(row.occurredAt), "dd/MM/yyyy")}
@@ -340,10 +412,46 @@ export default function DoctorClinicExpensesPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3 font-medium text-gray-900 dark:text-slate-100">{row.title}</td>
+                      <td className="px-3 py-3 text-gray-700 text-xs">
+                        {row.supplier?.id ? (
+                          <Link
+                            href={`/dashboard/doctor/suppliers/${row.supplier.id}`}
+                            className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            {supplierCompanyLabel(row.supplier as SupplierOpt)}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="px-3 py-3 font-bold tabular-nums text-red-600 dark:text-red-400 whitespace-nowrap">
                         −₪{Number(row.amount).toLocaleString("ar-EG")}
                       </td>
-                      <td className="px-3 py-3 text-gray-600 text-xs max-w-[220px]">{row.notes ?? "—"}</td>
+                      <td className="px-3 py-3 text-gray-600 text-xs max-w-[220px] dark:text-slate-400">{row.notes ?? "—"}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                            onClick={() => openEdit(row)}
+                            aria-label="تعديل"
+                          >
+                            <IconPencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={() => removeEntry(row)}
+                            aria-label="حذف"
+                          >
+                            <IconTrash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -353,10 +461,16 @@ export default function DoctorClinicExpensesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(o) => {
+          setAddOpen(o);
+          if (!o) setEditEntryId(null);
+        }}
+      >
         <DialogContent className={cn("max-h-[90vh] overflow-y-auto sm:max-w-xl")} dir="rtl">
           <DialogHeader>
-            <DialogTitle>تسجيل مصروف</DialogTitle>
+            <DialogTitle>{editEntryId ? "تعديل مصروف" : "تسجيل مصروف"}</DialogTitle>
             <DialogDescription>
               شراء للعيادة أو دفعة راتب — يُحفظ كمصروف (خروج) من حسابك.
             </DialogDescription>
@@ -372,7 +486,7 @@ export default function DoctorClinicExpensesPage() {
                     setForm((p) =>
                       kind === "CLINIC_PURCHASE"
                         ? { ...p, kind, staffUserId: "" }
-                        : { ...p, kind },
+                        : { ...p, kind, supplierId: "" },
                     );
                   }}
                   className="mt-1 flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-900"
@@ -381,6 +495,40 @@ export default function DoctorClinicExpensesPage() {
                   <option value="SALARY_PAYMENT">دفعة راتب موظف</option>
                 </select>
               </div>
+              {form.kind === "CLINIC_PURCHASE" && (
+                <div className="sm:col-span-2">
+                  <Label>شركة التزويد</Label>
+                  {supplierList.length > 0 ? (
+                    <select
+                      value={form.supplierId}
+                      onChange={(e) => setForm((p) => ({ ...p, supplierId: e.target.value }))}
+                      className="mt-1 flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-900"
+                    >
+                      <option value="">— بدون —</option>
+                      {supplierList.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {supplierCompanyLabel(s)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:border-slate-600 dark:bg-slate-900/40">
+                      لا توجد شركات مسجّلة بعد — أضفها من{" "}
+                      <Link href="/dashboard/doctor/suppliers" className="font-medium text-blue-600 dark:text-blue-400">
+                        مزوّدون المستلزمات
+                      </Link>
+                      .
+                    </p>
+                  )}
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    يُحفظ المزوّد مع السجل ويظهر في جدول المصروفات وفي{" "}
+                    <Link href="/dashboard/doctor/suppliers" className="font-medium text-blue-600 dark:text-blue-400">
+                      حساب المزوّد
+                    </Link>
+                    . في القائمة يُعرض اسم الشركة إن وُجد، وإلا اسم جهة الاتصال.
+                  </p>
+                </div>
+              )}
               {form.kind === "SALARY_PAYMENT" && (
                 <div className="sm:col-span-2">
                   <Label>الموظف</Label>
@@ -413,7 +561,7 @@ export default function DoctorClinicExpensesPage() {
                         </div>
                       ) : (
                         <p className="text-amber-800 dark:text-amber-200/90">
-                          لا يوجد راتب مرجعي لهذا الموظف — أدخل المبلغ يدوياً أو حدّث بياناته من «الموظفون».
+                          لا يوجد راتب مرجعي لهذا الموظف — أدخل المبلغ يدوياً أو حدّث بياناته من «موظفين العيادة».
                         </p>
                       )}
                     </div>
@@ -465,12 +613,19 @@ export default function DoctorClinicExpensesPage() {
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAddOpen(false);
+                  setEditEntryId(null);
+                }}
+              >
                 إلغاء
               </Button>
               <Button type="submit" disabled={submitting} className="gap-2">
                 {submitting ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
-                حفظ
+                {editEntryId ? "حفظ التعديلات" : "حفظ"}
               </Button>
             </DialogFooter>
           </form>

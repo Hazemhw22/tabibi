@@ -128,10 +128,32 @@ model DoctorClinicLedger {
   notes       String?
   /// عند kind = SALARY_PAYMENT
   staffUserId String?
+  /// عند kind = CLINIC_PURCHASE — المزوّد المرتبط بالشراء
+  supplierId  String?
 
-  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  doctor   Doctor                  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  supplier DoctorClinicSupplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   @@index([doctorId, occurredAt])
+  @@index([supplierId])
+}
+
+/// مزوّدو مستلزمات ومعدات العيادة — جهات اتصال يديرها الطبيب
+model DoctorClinicSupplier {
+  id          String   @id @default(cuid())
+  doctorId    String
+  name        String
+  companyName String?
+  phone       String?
+  email       String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  doctor        Doctor               @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  ledgerEntries DoctorClinicLedger[]
+
+  @@index([doctorId])
 }
 
 /// سجل رسائل SMS/WhatsApp داخل المنصة
@@ -331,7 +353,8 @@ model Doctor {
   medicalCenterInvites     MedicalCenterDoctorInvite[]
   messageLogs              MessageLog[]                @relation("DoctorMessageLogs")
   employedStaff            User[]                      @relation("DoctorEmployedStaff")
-  clinicLedger           DoctorClinicLedger[]
+  clinicLedger             DoctorClinicLedger[]
+  clinicSuppliers          DoctorClinicSupplier[]
 }
 
 /// طلب من مركز طبي لربط طبيب مسجّل مسبقاً — يظهر للطبيب للموافقة أو الرفض

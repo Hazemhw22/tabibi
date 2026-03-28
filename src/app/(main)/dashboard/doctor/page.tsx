@@ -26,6 +26,8 @@ import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display"
 import { transactionSignedDelta } from "@/lib/patient-transaction-math";
 import { cn } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function DoctorDashboard() {
   const session = await auth();
   if (!session) redirect("/login");

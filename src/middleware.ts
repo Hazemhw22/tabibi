@@ -40,12 +40,14 @@ export async function middleware(request: NextRequest) {
     .eq("ip", ip)
     .gte("attemptedAt", windowStart);
 
-  if (countError || (count ?? 0) >= MAX_ATTEMPTS) {
-    if ((count ?? 0) >= MAX_ATTEMPTS) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("error", "rate_limited");
-      return NextResponse.redirect(loginUrl, 302);
-    }
+  // عند تجاوز الحد: لا تعِد التوجيه إلى صفحة HTML (/login).
+  // NextAuth يتوقع استجابة JSON من POST /api/auth/callback/credentials؛
+  // إعادة التوجيه تعيد HTML فيتعطل clientside عند res.json() → SyntaxError: Unexpected token '<'.
+  if ((count ?? 0) >= MAX_ATTEMPTS) {
+    return NextResponse.next();
+  }
+
+  if (countError) {
     return NextResponse.next();
   }
 

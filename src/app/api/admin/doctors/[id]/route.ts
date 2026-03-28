@@ -47,7 +47,11 @@ export async function PATCH(
         updates.subscriptionPeriod = subscriptionPeriod;
         updates.subscriptionEndDate = endDate.toISOString();
       } else {
-        const { data: existing } = await supabaseAdmin.from("Doctor").select("subscriptionEndDate").eq("id", id).single();
+        const { data: existing } = await supabaseAdmin
+          .from("Doctor")
+          .select("subscriptionEndDate")
+          .eq("id", id)
+          .maybeSingle();
         const base = existing?.subscriptionEndDate ? new Date(existing.subscriptionEndDate) : new Date();
         if (base < new Date()) base.setTime(Date.now());
         base.setMonth(base.getMonth() + plan.months);
@@ -96,10 +100,13 @@ export async function PATCH(
       .update(updates)
       .eq("id", id)
       .select("id, userId, status, subscriptionPeriod, subscriptionEndDate, canAddExtraClinics, medicalCenterId")
-      .single();
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!doctor) {
+      return NextResponse.json({ error: "لم يُعثر على الطبيب أو لم يُحدَّث أي صف" }, { status: 404 });
     }
 
     const uid = doctor?.userId as string | undefined;

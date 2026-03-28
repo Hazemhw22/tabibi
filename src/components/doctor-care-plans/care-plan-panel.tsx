@@ -28,6 +28,7 @@ import {
   type PediatricOrganId,
 } from "./pediatrics-body-svg";
 import { CardiologyHeartSvg, CARDIO_ZONES, type CardiologyZoneId } from "./cardiology-heart-svg";
+import { OrthopedicsSkeletonSvg } from "./orthopedics-skeleton-svg";
 import { FetalImagingCarePlanBlock } from "./fetal-imaging-care-plan-block";
 import { ClinicalIntlCarePlanBlock } from "./clinical-intl-care-plan-block";
 import { CarePlanFollowUpsSection } from "./care-plan-follow-ups-section";
@@ -577,7 +578,10 @@ function OrthopedicsBlock({
 }) {
   const injuries = (data.injuries as OrthoRow[]) || [];
   return (
-    <div className="rounded-xl border border-amber-100 bg-amber-50/30 p-4 space-y-3 dark:border-amber-900/40 dark:bg-amber-950/25">
+    <div className="rounded-xl border border-amber-100 bg-amber-50/30 p-4 space-y-4 dark:border-amber-900/40 dark:bg-amber-950/25">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <OrthopedicsSkeletonSvg className="shrink-0 lg:max-w-[200px]" />
+        <div className="min-w-0 flex-1 space-y-3">
       <div className="flex justify-between items-center">
         <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">الإصابات ومدة العلاج والتكلفة</span>
         <Button
@@ -664,6 +668,8 @@ function OrthopedicsBlock({
         </div>
       ))}
       {injuries.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500">لا إصابات مسجّلة.</p>}
+        </div>
+      </div>
     </div>
   );
 }

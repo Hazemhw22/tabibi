@@ -12,7 +12,18 @@ const postSchema = z.object({
   occurredAt: z.string().optional(),
   notes: z.string().optional(),
   staffUserId: z.string().optional(),
+  supplierId: z.string().optional(),
 });
+
+async function assertOwnSupplier(doctorId: string, supplierId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("DoctorClinicSupplier")
+    .select("id")
+    .eq("id", supplierId)
+    .eq("doctorId", doctorId)
+    .maybeSingle();
+  return Boolean(data?.id);
+}
 
 /** مصروفات العيادة ودفعات رواتب — سلبي على حساب الطبيب (تُخزَّن كمبالغ موجبة). */
 export async function GET() {
@@ -31,7 +42,16 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from("DoctorClinicLedger")
-      .select("*")
+      .select(
+        `
+        *,
+        DoctorClinicSupplier (
+          id,
+          name,
+          companyName
+        )
+      `,
+      )
       .eq("doctorId", doctorId)
       .order("occurredAt", { ascending: false })
       .limit(500);
@@ -41,8 +61,17 @@ export async function GET() {
       return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
     }
 
-    const rows = data ?? [];
-    const totalOut = rows.reduce((s: number, r: { amount?: number }) => s + (r.amount ?? 0), 0);
+    const raw = data ?? [];
+    type RowOut = Record<string, unknown> & {
+      amount?: number;
+      supplier: { id: string; name?: string; companyName?: string | null } | null;
+    };
+    const rows: RowOut[] = raw.map((r: Record<string, unknown>) => {
+      const sup = r.DoctorClinicSupplier as { id: string; name?: string; companyName?: string | null } | null | undefined;
+      const { DoctorClinicSupplier: _drop, ...rest } = r;
+      return { ...rest, supplier: sup ?? null } as RowOut;
+    });
+    const totalOut = rows.reduce((s, r) => s + (r.amount ?? 0), 0);
 
     return NextResponse.json({ entries: rows, totalOut });
   } catch (e) {
@@ -68,6 +97,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = postSchema.parse(body);
 
+    if (data.kind === "CLINIC_PURCHASE" && data.supplierId) {
+      if (!(await assertOwnSupplier(doctorId, data.supplierId))) {
+        return NextResponse.json({ error: "المزوّد غير مرتبط بعيادتك" }, { status: 400 });
+      }
+    }
+    if (data.kind === "SALARY_PAYMENT" && data.supplierId) {
+      return NextResponse.json({ error: "دفعة الراتب لا ترتبط بمزوّد" }, { status: 400 });
+    }
+
     if (data.kind === "SALARY_PAYMENT" && data.staffUserId) {
       const { data: staff } = await supabaseAdmin
         .from("User")
@@ -92,6 +130,8 @@ export async function POST(req: Request) {
         occurredAt,
         notes: data.notes?.trim() || null,
         staffUserId: data.kind === "SALARY_PAYMENT" ? data.staffUserId ?? null : null,
+        supplierId:
+          data.kind === "CLINIC_PURCHASE" && data.supplierId ? data.supplierId : null,
       })
       .select("id")
       .single();
