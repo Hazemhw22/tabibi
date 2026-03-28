@@ -141,7 +141,7 @@ export function serializeCarePlanSectionsForPrint(
       sections.push({
         titleAr: CARE_PLAN_LABELS[carePlanType],
         titleEn: "Dental implant plan",
-        bodyHtml: `<p class="muted">تفاصيل الأسنان والتكاليف تُسجَّل في مخطط الأسنان والمعاملات في ملف العيادة.</p>`,
+        bodyHtml: `<p class="muted">تفاصيل كل سنّ (الرقم والإجراء) تظهر في الجدول في الاسفل.</p>`,
       });
       break;
     }
@@ -150,10 +150,13 @@ export function serializeCarePlanSectionsForPrint(
       const items = (data.items as { label: string; detail: string; cost: number }[]) || [];
       const rows = items
         .filter((r) => r.label?.trim() || r.detail?.trim())
-        .map(
-          (r) =>
-            `<tr><td class="l">${escapeHtml(r.label || "—")}</td><td>${escapeHtml(r.detail || "—")}${r.cost ? ` — <span dir="ltr">${r.cost} ₪</span>` : ""}</td></tr>`,
-        )
+        .map((r) => {
+          const detail = escapeHtml(r.detail || "—");
+          if (carePlanType === "DENTAL") {
+            return `<tr><td class="l">${escapeHtml(r.label || "—")}</td><td>${detail}</td></tr>`;
+          }
+          return `<tr><td class="l">${escapeHtml(r.label || "—")}</td><td>${detail}${r.cost ? ` — <span dir="ltr">${r.cost} ₪</span>` : ""}</td></tr>`;
+        })
         .join("");
       const titleEn = carePlanType === "GENERIC" ? "General plan" : "Dental plan";
       sections.push({

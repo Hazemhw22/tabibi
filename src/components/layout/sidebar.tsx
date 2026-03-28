@@ -24,6 +24,8 @@ import IconSend from "@/components/icon/icon-send";
 import IconArchive from "@/components/icon/icon-archive";
 import { getDoctorAvatar, getPatientAvatar } from "@/lib/avatar";
 import { DOCTOR_STAFF_ROLE_LABELS, isDoctorStaffRole } from "@/lib/doctor-team-roles";
+import NotificationBell from "@/components/notifications/notification-bell";
+import { DashboardUserMenu } from "@/components/layout/dashboard-user-menu";
 
 interface NavItem {
   label: string;
@@ -211,6 +213,8 @@ interface SidebarContentProps {
   pathname: string;
   onLinkClick: () => void;
   isDark: boolean;
+  /** شريط ضيق بالأيقونات فقط بين lg وxl (آيباد أفقي)، والعرض الكامل من xl فما فوق */
+  desktopRail?: boolean;
   userRole?: string;
   userName?: string | null;
   userImage?: string | null;
@@ -220,7 +224,21 @@ interface SidebarContentProps {
   centerName?: string | null;
 }
 
-function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, userRole, userName, userImage, userGender, doctorSpecialty, centerImage, centerName }: SidebarContentProps) {
+function SidebarContent({
+  sections,
+  roleLabel,
+  pathname,
+  onLinkClick,
+  isDark,
+  desktopRail = false,
+  userRole,
+  userName,
+  userImage,
+  userGender,
+  doctorSpecialty,
+  centerImage,
+  centerName,
+}: SidebarContentProps) {
   const linkClass = (item: NavItem, isActive: boolean) => {
     const Icon = item.icon;
     return (
@@ -228,8 +246,10 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
         key={item.href}
         href={item.href}
         onClick={onLinkClick}
+        title={desktopRail ? item.label : undefined}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+          "flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
+          desktopRail ? "justify-center px-2 py-2.5 xl:justify-start xl:px-3" : "px-3 py-2.5",
           isActive
             ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
             : isDark
@@ -238,9 +258,14 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
         )}
       >
         <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : isDark ? "text-gray-400" : "text-gray-500")} />
-        <span>{item.label}</span>
+        <span className={cn(desktopRail && "hidden xl:inline")}>{item.label}</span>
         {item.badge && (
-          <span className="mr-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          <span
+            className={cn(
+              "flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white",
+              desktopRail ? "hidden xl:mr-auto xl:flex" : "mr-auto"
+            )}
+          >
             {item.badge}
           </span>
         )}
@@ -280,10 +305,15 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
   return (
     <div className="flex flex-col h-full">
       {/* Header: Profile card for all roles */}
-      <div className={cn("px-4 pt-5 pb-4 border-b", isDark ? "border-gray-800" : "border-gray-200")}>
-    
+      <div
+        className={cn(
+          "border-b pt-5 pb-4",
+          desktopRail ? "px-2 pt-4 xl:px-4" : "px-4",
+          isDark ? "border-gray-800" : "border-gray-200"
+        )}
+      >
         {/* Avatar + name */}
-        <div className="flex items-center gap-3">
+        <div className={cn("flex items-center gap-3", desktopRail && "flex-col xl:flex-row")}>
           <div className="shrink-0 h-12 w-12 rounded-xl overflow-hidden border-2 border-blue-500/40 bg-blue-900 flex items-center justify-center">
             {profileImage ? (
               <Image
@@ -308,23 +338,29 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
               </span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
+          <div
+            className={cn(
+              "min-w-0",
+              desktopRail ? "hidden text-center xl:block xl:flex-1 xl:text-right" : "flex-1"
+            )}
+          >
             <p className={cn("text-sm font-bold truncate leading-tight", isDark ? "text-white" : "text-gray-900")}>
               {userRole === "DOCTOR" ? `د. ${profileName}` : profileName}
             </p>
-            <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-blue-400" : "text-blue-600")}>
+            <p className={cn("mt-0.5 truncate text-xs", isDark ? "text-blue-400" : "text-blue-600")}>
               {profileSubtitle}
             </p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-6">
+      <nav className={cn("flex-1 space-y-6 overflow-y-auto py-4", desktopRail ? "px-1.5 xl:px-3" : "px-3")}>
         {sections.map((section) => (
           <div key={section.title}>
             <p
               className={cn(
                 "mb-2 px-3 text-[10px] font-bold uppercase tracking-wider",
+                desktopRail && "hidden xl:block",
                 isDark ? "text-gray-500" : "text-gray-400"
               )}
             >
@@ -339,7 +375,13 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
 
       
 
-      <div className={cn("shrink-0 border-t px-5 py-3 text-center", isDark ? "border-gray-800" : "border-gray-200")}>
+      <div
+        className={cn(
+          "shrink-0 border-t px-5 py-3 text-center",
+          desktopRail && "hidden xl:block",
+          isDark ? "border-gray-800" : "border-gray-200"
+        )}
+      >
         <p className={cn("text-[11px]", isDark ? "text-gray-300" : "text-gray-400")}>
           © {new Date().getFullYear()} طبيبي. جميع الحقوق محفوظة.
         </p>
@@ -431,11 +473,12 @@ export default function Sidebar() {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col w-60 min-h-screen shrink-0 border-l transition-colors duration-300",
+          "hidden min-h-screen shrink-0 flex-col border-l transition-[width] duration-300 ease-out lg:flex lg:w-[4.5rem] xl:w-60",
           effectiveDark ? "bg-gray-900 border-gray-800" : "bg-slate-100 border-slate-200 shadow-sm"
         )}
       >
         <SidebarContent
+          desktopRail
           sections={sections}
           roleLabel={roleLabel}
           pathname={pathname}
@@ -459,33 +502,37 @@ export default function Sidebar() {
         />
       </aside>
 
-      {/* Mobile Top Bar */}
+      {/* Mobile Top Bar: شعار + إشعارات + حساب + فتح السايدبار في صف واحد */}
       <div
         className={cn(
-          "lg:hidden fixed top-0 right-0 left-0 z-40 border-b px-4 h-14 flex items-center justify-between transition-colors duration-300",
-          effectiveDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200 shadow-sm"
+          "lg:hidden fixed right-0 left-0 top-0 z-40 flex h-14 items-center justify-between gap-2 border-b px-2 pt-[env(safe-area-inset-top)] transition-colors duration-300",
+          effectiveDark ? "border-gray-800 bg-gray-900" : "border-gray-200 bg-white shadow-sm"
         )}
       >
-        <div className={cn("flex items-center gap-2 font-bold text-sm min-w-0")}>
+        <div className="flex min-w-0 flex-1 items-center">
           <Image
             src="/88e178c9-facc-41a2-8f98-9252ccce19ee.png"
             alt="Tabibi"
             width={200}
             height={50}
-            className="h-16 w-auto max-w-[200px] brightness-125"
+            className="h-8 w-auto max-w-[min(160px,42vw)] brightness-125"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className={cn(
-            "p-1.5 rounded-lg transition-colors",
-            effectiveDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:bg-gray-100"
-          )}
-          aria-label={mobileOpen ? "إغلاق القائمة" : "فتح القائمة"}
-        >
-          {mobileOpen ? <IconXCircle className="h-6 w-6" /> : <IconMenuWidgets className="h-6 w-6" />}
-        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <NotificationBell theme={effectiveDark ? "dark" : "light"} />
+          <DashboardUserMenu isDark={effectiveDark} compact />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className={cn(
+              "rounded-lg p-1.5 transition-colors",
+              effectiveDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:bg-gray-100"
+            )}
+            aria-label={mobileOpen ? "إغلاق القائمة" : "فتح القائمة"}
+          >
+            {mobileOpen ? <IconXCircle className="h-6 w-6" /> : <IconMenuWidgets className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Backdrop */}

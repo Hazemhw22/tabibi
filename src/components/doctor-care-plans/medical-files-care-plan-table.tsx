@@ -15,6 +15,12 @@ import {
 } from "@/lib/care-plan-print-html";
 import { getFollowUpVisitsFromPlanData } from "@/lib/care-plan-follow-ups";
 import { serializeCarePlanSectionsForPrint } from "@/lib/care-plan-print-serialize";
+import {
+  buildDentalToothPlanPrintSection,
+  carePlanUsesDentalToothTableData,
+  formatDentalProblemLabelAr,
+  type DentalToothPlanItem,
+} from "@/lib/dental-tooth-plan-display";
 
 function doctorDisplayNameAr(name: string | undefined): string {
   const n = (name ?? "").trim();
@@ -26,6 +32,11 @@ function doctorDisplayNameAr(name: string | undefined): string {
 function carePlanApiUrl(patientId: string, source: "clinic" | "platform") {
   if (source === "clinic") return `/api/clinic/patients/${patientId}/care-plan`;
   return `/api/doctor/platform-patients/${patientId}/care-plan`;
+}
+
+function dentalPlanApiUrl(patientId: string, source: "clinic" | "platform") {
+  if (source === "clinic") return `/api/clinic/patients/${patientId}/dental-plan`;
+  return `/api/doctor/platform-patients/${patientId}/dental-plan`;
 }
 
 type Props = {
@@ -63,6 +74,8 @@ export function MedicalFilesCarePlanTable({
     doctorNotes: string | null;
     updatedAt: string;
   } | null>(null);
+  const [dentalItems, setDentalItems] = useState<DentalToothPlanItem[]>([]);
+  const [dentalLoading, setDentalLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,6 +121,36 @@ export function MedicalFilesCarePlanTable({
   const label = CARE_PLAN_LABELS[carePlanType] ?? "خطة العلاج";
   const effectiveType = (plan?.planType as CarePlanType) ?? carePlanType;
 
+  const loadDental = useCallback(async () => {
+    if (!carePlanUsesDentalToothTableData(effectiveType)) {
+      setDentalItems([]);
+      return;
+    }
+    setDentalLoading(true);
+    try {
+      const res = await fetch(dentalPlanApiUrl(patientId, patientSource));
+      const j = await res.json().catch(() => ({}));
+      const raw = Array.isArray(j.items) ? j.items : [];
+      const rows: DentalToothPlanItem[] = raw
+        .map((it: Record<string, unknown>) => ({
+          toothNumber: Number(it.toothNumber),
+          problemType: String(it.problemType ?? ""),
+          note: typeof it.note === "string" ? it.note : null,
+          isDone: typeof it.isDone === "boolean" ? it.isDone : null,
+        }))
+        .filter((it: DentalToothPlanItem) => Number.isFinite(it.toothNumber) && it.problemType.trim());
+      setDentalItems(rows);
+    } catch {
+      setDentalItems([]);
+    } finally {
+      setDentalLoading(false);
+    }
+  }, [patientId, patientSource, effectiveType]);
+
+  useEffect(() => {
+    void loadDental();
+  }, [loadDental]);
+
   const printPatient: CarePlanLetterheadPatient = useMemo(
     () => ({
       name: patientName || "—",
@@ -127,6 +170,8 @@ export function MedicalFilesCarePlanTable({
     const title = CARE_PLAN_LABELS[effectiveType] ?? label;
     const data = plan.data;
     const sections = serializeCarePlanSectionsForPrint(effectiveType, data);
+    const dentalSection = buildDentalToothPlanPrintSection(dentalItems);
+    if (dentalSection) sections.push(dentalSection);
     const html = buildCarePlanLetterheadHtml({
       origin: window.location.origin,
       documentTitleAr: title,
@@ -248,6 +293,63 @@ export function MedicalFilesCarePlanTable({
           </tbody>
         </table>
       </div>
+
+      {carePlanUsesDentalToothTableData(effectiveType) && (
+        <div
+          className={cn(
+            "border-t px-3 py-3 sm:px-5",
+            "border-slate-100 bg-white/60 dark:border-slate-700/80 dark:bg-slate-900/40",
+          )}
+        >
+          <h5 className="mb-2 text-xs font-semibold text-slate-800 dark:text-slate-100">
+            خطة العلاج — الأسنان (رقم السن والإجراء)
+          </h5>
+          <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">عرض سريري بدون تكلفة</p>
+          {dentalLoading ? (
+            <div className="flex justify-center py-6 text-slate-400">
+              <IconLoader className="h-6 w-6 animate-spin" />
+            </div>
+          ) : dentalItems.length === 0 ? (
+            <p className="py-2 text-center text-xs text-slate-400 dark:text-slate-500">
+              لا توجد بيانات أسنان مسجّلة في مخطط العلاج بعد.
+            </p>
+          ) : (
+            <div className="table-scroll-mobile -mx-0 w-full min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[520px] text-right text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[11px] font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    <th className="px-2 py-2">رقم السن</th>
+                    <th className="px-2 py-2">الإجراء المختار</th>
+                    <th className="min-w-[120px] px-2 py-2">ملاحظة</th>
+                    <th className="px-2 py-2 text-center">تم</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/80">
+                  {dentalItems
+                    .slice()
+                    .sort((a, b) => a.toothNumber - b.toothNumber)
+                    .map((it) => (
+                      <tr key={it.toothNumber} className="text-slate-800 dark:text-slate-200">
+                        <td className="px-2 py-2 font-mono tabular-nums" dir="ltr">
+                          {it.toothNumber}
+                        </td>
+                        <td className="px-2 py-2 font-medium">
+                          {formatDentalProblemLabelAr(it.problemType, it.note)}
+                        </td>
+                        <td className="max-w-[200px] px-2 py-2 text-slate-600 dark:text-slate-300">
+                          {(it.note ?? "").trim() || "—"}
+                        </td>
+                        <td className="px-2 py-2 text-center tabular-nums">
+                          {it.isDone ? "نعم" : "لا"}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -106,7 +106,7 @@ export function DataTableShell({
         </div>
       </div>
 
-      <div className="overflow-x-auto p-4 pt-0 sm:p-5 sm:pt-0">{children}</div>
+      <div className="touch-pan-x overflow-x-auto p-4 pt-0 sm:p-5 sm:pt-0">{children}</div>
     </div>
   );
 }
@@ -120,7 +120,7 @@ export function DataTable({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700", className)}>
+    <div className={cn("touch-pan-x overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700", className)}>
       <table className="w-full min-w-[640px] table-auto text-right">{children}</table>
     </div>
   );

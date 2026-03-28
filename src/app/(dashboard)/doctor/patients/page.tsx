@@ -61,7 +61,7 @@ export default async function PatientsPage({
   }
 
   return (
-    <div className="p-4 overflow-hidden" style={{ height: "calc(100vh - 56px)" }}>
+    <div className="box-border flex h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))] min-h-0 flex-col overflow-hidden p-3 sm:h-[calc(100dvh-6rem-env(safe-area-inset-bottom,0px))] sm:p-4">
       <PatientsView
         initialPatients={patientsWithBalance}
         initialQ={q ?? ""}

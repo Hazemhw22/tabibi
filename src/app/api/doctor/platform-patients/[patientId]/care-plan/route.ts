@@ -3,6 +3,9 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSessionDoctorRecordId } from "@/lib/doctor-api-scope";
+import { doctorHasCareAccessToPlatformPatient } from "@/lib/doctor-platform-patient-care-access";
+import { isDoctorOrStaffRole } from "@/lib/doctor-team-roles";
 import {
   CARE_PLAN_LABELS,
   type CarePlanType,
@@ -50,37 +53,32 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session || session.user.role !== "DOCTOR") {
+    if (!session || !isDoctorOrStaffRole(session.user.role)) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
     const { patientId: patientUserId } = await params;
 
-    const { data: doctor, error: docErr } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("userId", session.user.id)
-      .single();
-
-    if (docErr || !doctor) {
+    const doctorId = getSessionDoctorRecordId(session);
+    if (!doctorId) {
       return NextResponse.json({ plan: null }, { status: 200 });
     }
 
-    const { data: apts } = await supabaseAdmin
-      .from("Appointment")
-      .select("id")
-      .eq("doctorId", doctor.id)
-      .eq("patientId", patientUserId)
-      .limit(1);
-
-    if (!apts?.length) {
-      return NextResponse.json({ error: "المريض غير مرتبط بحجوزاتك" }, { status: 404 });
+    const allowed = await doctorHasCareAccessToPlatformPatient(doctorId, patientUserId);
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "لا يوجد ربط بعد بينك وبين هذا المريض (موعد، أو معاملة منصة، أو ملف عيادة مربوط بحسابه).",
+        },
+        { status: 404 },
+      );
     }
 
     const { data: plan, error: planErr } = await supabaseAdmin
       .from("PlatformPatientCarePlan")
       .select("id, planType, data, doctorNotes, updatedAt")
-      .eq("doctorId", doctor.id)
+      .eq("doctorId", doctorId)
       .eq("patientUserId", patientUserId)
       .maybeSingle();
 
@@ -115,32 +113,27 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session || session.user.role !== "DOCTOR") {
+    if (!session || !isDoctorOrStaffRole(session.user.role)) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
     const { patientId: patientUserId } = await params;
     const body = putSchema.parse(await req.json());
 
-    const { data: doctor, error: docErr } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("userId", session.user.id)
-      .single();
-
-    if (docErr || !doctor) {
+    const doctorId = getSessionDoctorRecordId(session);
+    if (!doctorId) {
       return NextResponse.json({ error: "الطبيب غير موجود" }, { status: 404 });
     }
 
-    const { data: aptsPut } = await supabaseAdmin
-      .from("Appointment")
-      .select("id")
-      .eq("doctorId", doctor.id)
-      .eq("patientId", patientUserId)
-      .limit(1);
-
-    if (!aptsPut?.length) {
-      return NextResponse.json({ error: "المريض غير مرتبط بحجوزاتك" }, { status: 404 });
+    const allowed = await doctorHasCareAccessToPlatformPatient(doctorId, patientUserId);
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "لا يوجد ربط بعد بينك وبين هذا المريض (موعد، أو معاملة منصة، أو ملف عيادة مربوط بحسابه).",
+        },
+        { status: 404 },
+      );
     }
 
     const rawDataJson =
@@ -154,7 +147,7 @@ export async function PUT(
     const { data: existing } = await supabaseAdmin
       .from("PlatformPatientCarePlan")
       .select("id")
-      .eq("doctorId", doctor.id)
+      .eq("doctorId", doctorId)
       .eq("patientUserId", patientUserId)
       .maybeSingle();
 
@@ -189,7 +182,7 @@ export async function PUT(
         .from("PlatformPatientCarePlan")
         .insert({
           id: randomUUID(),
-          doctorId: doctor.id,
+          doctorId,
           patientUserId,
           planType: body.planType,
           data: normalizedData,
@@ -222,7 +215,7 @@ export async function PUT(
       const { data: existingTx } = await supabaseAdmin
         .from("PlatformPatientTransaction")
         .select("description, amount")
-        .eq("doctorId", doctor.id)
+        .eq("doctorId", doctorId)
         .eq("patientId", patientUserId)
         .eq("type", "SERVICE");
 
@@ -239,7 +232,7 @@ export async function PUT(
         const key = `${line.description}:${amount}`;
         if (existing.has(key)) continue;
         const { error: txInsErr } = await supabaseAdmin.from("PlatformPatientTransaction").insert({
-          doctorId: doctor.id,
+          doctorId: doctorId,
           patientId: patientUserId,
           type: "SERVICE",
           description: line.description,
@@ -295,7 +288,7 @@ export async function PUT(
         : {};
     await syncCarePlanFollowUpsToAppointments({
       patientUserId,
-      doctorId: doctor.id,
+      doctorId: doctorId,
       planData: dataObj,
       planType: saved.planType,
     });

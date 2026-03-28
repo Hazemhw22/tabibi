@@ -84,9 +84,14 @@ export function DentalToothChartBlock({
   const [otherModalName, setOtherModalName] = useState("");
   const [otherModalPrice, setOtherModalPrice] = useState("");
 
+  const dentalPlanUrl =
+    patientSource === "clinic"
+      ? `/api/clinic/patients/${clinicPatientId}/dental-plan`
+      : `/api/doctor/platform-patients/${clinicPatientId}/dental-plan`;
+
   const loadFromServer = useCallback(async () => {
-    if (patientSource !== "clinic" || !clinicPatientId) return;
-    const res = await fetch(`/api/clinic/patients/${clinicPatientId}/dental-plan`);
+    if (!clinicPatientId) return;
+    const res = await fetch(dentalPlanUrl);
     const data = await res.json().catch(() => ({ items: [] }));
     const items = data.items ?? [];
     const problems: Record<string, string | null> = {};
@@ -107,7 +112,7 @@ export function DentalToothChartBlock({
     setToothPrices(prices);
     setToothCharged(charged);
     setToothDone(done);
-  }, [clinicPatientId, patientSource]);
+  }, [clinicPatientId, dentalPlanUrl]);
 
   useEffect(() => {
     void loadFromServer();
@@ -242,7 +247,7 @@ export function DentalToothChartBlock({
   };
 
   const saveDentalPlan = async () => {
-    if (patientSource !== "clinic") return;
+    if (!clinicPatientId) return;
     setDentalSaving(true);
     try {
       const items = Object.entries(toothProblems)
@@ -260,7 +265,7 @@ export function DentalToothChartBlock({
         })
         .filter((item): item is NonNullable<typeof item> => item != null);
 
-      const res = await fetch(`/api/clinic/patients/${clinicPatientId}/dental-plan`, {
+      const res = await fetch(dentalPlanUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items, chargeToBalance: true }),
@@ -279,7 +284,7 @@ export function DentalToothChartBlock({
           }
         }
         router.refresh();
-        const res2 = await fetch(`/api/clinic/patients/${clinicPatientId}/dental-plan`);
+        const res2 = await fetch(dentalPlanUrl);
         const data2 = await res2.json().catch(() => ({ items: [] }));
         const items2 = data2.items ?? [];
         const charged: Record<string, boolean> = {};
@@ -295,14 +300,6 @@ export function DentalToothChartBlock({
       setDentalSaving(false);
     }
   };
-
-  if (patientSource !== "clinic") {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-        مخطط الأسنان التفاعلي وحفظه على الملف متاحان لمريض العيادة فقط. عند ربط المريض بملف عيادة يمكن استخدام المخطط هناك.
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

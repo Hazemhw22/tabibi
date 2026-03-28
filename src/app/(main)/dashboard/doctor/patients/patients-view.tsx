@@ -24,6 +24,7 @@ import IconHeart from "@/components/icon/icon-heart";
 import IconReceipt from "@/components/icon/icon-receipt";
 import IconPrinter from "@/components/icon/icon-printer";
 import IconClipboardText from "@/components/icon/icon-clipboard-text";
+import IconCaretDown from "@/components/icon/icon-caret-down";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +102,8 @@ export default function PatientsView({
   /* ── State ─────────────────────────────────────────────────────── */
   const [search,    setSearch]    = useState(initialQ);
   const [activeTab, setActiveTab] = useState("info");
+  /** الجوال: البحث والقائمة تظهر بعد الضغط على شريط عدد المرضى */
+  const [mobilePatientPickerOpen, setMobilePatientPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!isStaff) return;
@@ -306,6 +309,7 @@ export default function PatientsView({
 
   /* ── Navigation helpers ────────────────────────────────────────── */
   const openPatient = (p: PatientListItem) => {
+    setMobilePatientPickerOpen(false);
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     params.set("id", p.id);
@@ -571,123 +575,187 @@ export default function PatientsView({
      RENDER
   ════════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex h-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 lg:flex-row lg:rounded-2xl lg:h-full">
 
       {/* ══ COLUMN 1 (RIGHT) — Patient List ══════════════════════ */}
-      <div className="flex w-60 shrink-0 flex-col border-l border-gray-200 dark:border-slate-700">
+      <div className="order-1 flex w-full shrink-0 flex-col border-b border-gray-200 dark:border-slate-700 lg:order-none lg:h-full lg:max-h-none lg:w-60 lg:border-b-0 lg:border-l">
+        {(() => {
+          const openAddPatientModal = () => {
+            setAddExistingUserId(null);
+            setAddForm({
+              name: "",
+              email: "",
+              whatsapp: "",
+              gender: "",
+              dateOfBirth: "",
+              address: "",
+              bloodType: "",
+              allergies: "",
+              notes: "",
+              fileNumber: "",
+            });
+            setAddOpen(true);
+          };
 
-        {/* Top bar */}
-        <div className="shrink-0 space-y-2 border-b border-gray-100 p-3 dark:border-slate-700">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 dark:text-slate-500">{filtered.length} مريض</span>
-            <button
-              type="button"
-              onClick={() => {
-                setAddExistingUserId(null);
-                setAddForm({
-                  name: "",
-                  email: "",
-                  whatsapp: "",
-                  gender: "",
-                  dateOfBirth: "",
-                  address: "",
-                  bloodType: "",
-                  allergies: "",
-                  notes: "",
-                  fileNumber: "",
-                });
-                setAddOpen(true);
-              }}
-              className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
-            >
-              <IconPlus className="h-3.5 w-3.5" /> إضافة
-            </button>
-          </div>
-          <div className="relative">
-            <IconSearch className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="بحث عن مريض..."
-              className="h-9 w-full rounded-lg border border-gray-200 bg-white pr-8 pl-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            />
-            {search && (
-              <button type="button" onClick={() => handleSearch("")}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">
-                <IconX className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* List */}
-        <ul className="flex-1 overflow-y-auto space-y-1.5 px-2 py-2">
-          {filtered.length === 0 ? (
-            <li className="flex h-full flex-col items-center justify-center px-4 py-12 text-center">
-              <IconUsers className="mb-2 h-10 w-10 text-gray-200 dark:text-slate-600" />
-              <p className="text-sm text-gray-400 dark:text-slate-500">{search ? "لا توجد نتائج" : "لا يوجد مرضى"}</p>
-            </li>
-          ) : filtered.map((p) => {
-            const rowKey = `${p.id}:${p.source}:${p.ownership}`;
-            const active =
-              selectedId === p.id &&
-              selectedPatient?.source === p.source &&
-              selectedPatient?.ownership === p.ownership;
-            const isClinic = p.source === "clinic";
-            return (
-              <li key={rowKey}>
+          const searchField = (
+            <div className="relative">
+              <IconSearch className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="بحث عن مريض..."
+                className="h-9 w-full rounded-lg border border-gray-200 bg-white py-2 pr-8 pl-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+              {search && (
                 <button
                   type="button"
-                  onClick={() => openPatient(p)}
-                  className={cn(
-                    "relative flex w-full items-center gap-3 rounded-xl border border-gray-200/95 py-2.5 pe-3 ps-3 text-right shadow-sm transition-colors dark:border-slate-600",
-                    active
-                      ? isClinic
-                        ? "border-s-[3px] border-s-emerald-200 dark:border-s-emerald-600"
-                        : "border-s-[3px] border-s-blue-200 dark:border-s-blue-500"
-                      : isClinic
-                        ? "border-s-[3px] border-s-emerald-500"
-                        : "border-s-[3px] border-s-blue-500",
-                    active ? "border-gray-200/30 bg-blue-600" : "bg-white hover:bg-gray-50/90 dark:bg-slate-800/80 dark:hover:bg-slate-800"
-                  )}
+                  onClick={() => handleSearch("")}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
                 >
-                  <div className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                    active ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300"
-                  )}>
-                    <IconUser className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={cn("truncate text-sm font-medium", active ? "text-white" : "text-gray-900 dark:text-slate-100")}>
-                      {p.name}
-                    </p>
-                    <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400 dark:text-slate-500")}>
-                      {isClinic
-                        ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.whatsapp ?? "—")
-                        : `${p.appointmentCount} موعد`}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={p.ownership === "CENTER" ? "default" : "secondary"}
-                    className={cn(
-                      "text-[10px] shrink-0 px-1.5",
-                      active && "border-white/30 bg-white/15 text-white"
-                    )}
-                  >
-                    {p.ownership === "CENTER" ? centerDisplayName : "عيادتي"}
-                  </Badge>
+                  <IconX className="h-3.5 w-3.5" />
                 </button>
+              )}
+            </div>
+          );
+
+          const renderPatientListItems = () =>
+            filtered.length === 0 ? (
+              <li className="flex flex-col items-center justify-center px-4 py-10 text-center">
+                <IconUsers className="mb-2 h-10 w-10 text-gray-200 dark:text-slate-600" />
+                <p className="text-sm text-gray-400 dark:text-slate-500">{search ? "لا توجد نتائج" : "لا يوجد مرضى"}</p>
               </li>
+            ) : (
+              filtered.map((p) => {
+                const rowKey = `${p.id}:${p.source}:${p.ownership}`;
+                const active =
+                  selectedId === p.id &&
+                  selectedPatient?.source === p.source &&
+                  selectedPatient?.ownership === p.ownership;
+                const isClinic = p.source === "clinic";
+                return (
+                  <li key={rowKey}>
+                    <button
+                      type="button"
+                      onClick={() => openPatient(p)}
+                      className={cn(
+                        "relative flex w-full items-center gap-3 rounded-xl border border-gray-200/95 py-2.5 pe-3 ps-3 text-right shadow-sm transition-colors dark:border-slate-600",
+                        active
+                          ? isClinic
+                            ? "border-s-[3px] border-s-emerald-200 dark:border-s-emerald-600"
+                            : "border-s-[3px] border-s-blue-200 dark:border-s-blue-500"
+                          : isClinic
+                            ? "border-s-[3px] border-s-emerald-500"
+                            : "border-s-[3px] border-s-blue-500",
+                        active ? "border-gray-200/30 bg-blue-600" : "bg-white hover:bg-gray-50/90 dark:bg-slate-800/80 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                          active ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300"
+                        )}
+                      >
+                        <IconUser className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("truncate text-sm font-medium", active ? "text-white" : "text-gray-900 dark:text-slate-100")}>
+                          {p.name}
+                        </p>
+                        <p className={cn("truncate text-xs", active ? "text-blue-100" : "text-gray-400 dark:text-slate-500")}>
+                          {isClinic
+                            ? (p.fileNumber ? `ملف #${p.fileNumber}` : p.whatsapp ?? "—")
+                            : `${p.appointmentCount} موعد`}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={p.ownership === "CENTER" ? "default" : "secondary"}
+                        className={cn("shrink-0 px-1.5 text-[10px]", active && "border-white/30 bg-white/15 text-white")}
+                      >
+                        {p.ownership === "CENTER" ? centerDisplayName : "عيادتي"}
+                      </Badge>
+                    </button>
+                  </li>
+                );
+              })
             );
-          })}
-        </ul>
+
+          return (
+            <>
+              {/* الجوال: شريط بعدد المرضى + إضافة؛ الضغط يفتح البحث والقائمة */}
+              <div className="shrink-0 lg:hidden">
+                <div className="flex items-center gap-2 border-b border-gray-100 p-3 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setMobilePatientPickerOpen((o) => !o)}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-right text-sm font-medium text-gray-800 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-100"
+                    aria-expanded={mobilePatientPickerOpen}
+                  >
+                    <span className="min-w-0 truncate">
+                      <span className="text-gray-600 dark:text-slate-300">{filtered.length} مريض</span>
+                      {selectedPatient && (
+                        <span className="mr-1 text-xs font-normal text-gray-500 dark:text-slate-400">
+                          {" "}
+                          — {selectedPatient.name}
+                        </span>
+                      )}
+                    </span>
+                    <IconCaretDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-gray-500 transition-transform dark:text-slate-400",
+                        mobilePatientPickerOpen && "rotate-180"
+                      )}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openAddPatientModal}
+                    className="flex shrink-0 items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    <IconPlus className="h-3.5 w-3.5" /> إضافة
+                  </button>
+                </div>
+                {mobilePatientPickerOpen && (
+                  <div className="flex max-h-[min(52vh,420px)] flex-col border-b border-gray-100 dark:border-slate-700">
+                    <div className="shrink-0 space-y-2 p-3 pt-2">{searchField}</div>
+                    <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-2 pb-3">{renderPatientListItems()}</ul>
+                  </div>
+                )}
+              </div>
+
+              {/* سطح المكتب والتابلت (lg+): القائمة والبحث دائماً */}
+              <div className="hidden min-h-0 flex-1 flex-col lg:flex">
+                <div className="shrink-0 space-y-2 border-b border-gray-100 p-3 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400 dark:text-slate-500">{filtered.length} مريض</span>
+                    <button
+                      type="button"
+                      onClick={openAddPatientModal}
+                      className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+                    >
+                      <IconPlus className="h-3.5 w-3.5" /> إضافة
+                    </button>
+                  </div>
+                  {searchField}
+                </div>
+                <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-2 py-2">{renderPatientListItems()}</ul>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {/* ══ COLUMN 2 (CENTER) — Patient Details ══════════════════ */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-gray-50/40 dark:bg-slate-950/50">
+      <div className="order-3 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-gray-50/40 dark:bg-slate-950/50 lg:order-none">
         {selectedPatient ? (
           <>
+            {/* على الجوال: رأس المريض وبطاقات الملخص تظهر فقط في تبويب «البيانات»؛ على الشاشات الكبيرة تبقى مرئية دائماً */}
+            <div
+              className={cn(
+                "shrink-0 border-b border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900/90",
+                activeTab !== "info" && "hidden lg:block"
+              )}
+            >
             {/* شريط لوني أعلى التفاصيل (نفس منطق القائمة) */}
             <div
               className={cn(
@@ -697,15 +765,15 @@ export default function PatientsView({
               aria-hidden
             />
             {/* Header */}
-            <div className="shrink-0 space-y-4 border-b border-gray-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900/90">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 text-xl font-bold text-blue-600 dark:from-blue-900/60 dark:to-indigo-900/60 dark:text-blue-300">
+            <div className="space-y-3 px-3 py-3 sm:space-y-4 sm:px-6 sm:py-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 text-lg font-bold text-blue-600 dark:from-blue-900/60 dark:to-indigo-900/60 dark:text-blue-300 sm:h-14 sm:w-14 sm:text-xl">
                   {selectedPatient.name.charAt(0)}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">{selectedPatient.name}</h2>
-                    <Badge variant={selectedPatient.ownership === "CENTER" ? "default" : "secondary"} className="text-xs">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate text-base font-bold text-gray-900 dark:text-slate-100 sm:text-lg">{selectedPatient.name}</h2>
+                    <Badge variant={selectedPatient.ownership === "CENTER" ? "default" : "secondary"} className="shrink-0 text-xs">
                       {selectedPatient.ownership === "CENTER" ? centerDisplayName : "عيادتي"}
                     </Badge>
                     {selectedPatient.source === "clinic" && !isStaff && (
@@ -713,17 +781,18 @@ export default function PatientsView({
                         size="sm"
                         variant="outline"
                         onClick={openEdit}
-                        className="gap-1"
+                        className="hidden gap-1 lg:inline-flex"
                       >
                         <IconPencil className="h-3.5 w-3.5" /> تعديل
                       </Button>
                     )}
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-slate-400">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-slate-400 sm:text-sm">
                     {age != null && <span>العمر: {age} سنة</span>}
                     {selectedPatient.whatsapp && (
-                      <span className="flex items-center gap-1" dir="ltr">
-                        <IconPhone className="h-3.5 w-3.5 text-gray-400" />{selectedPatient.whatsapp}
+                      <span className="flex min-w-0 items-center gap-1" dir="ltr">
+                        <IconPhone className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        <span className="truncate">{selectedPatient.whatsapp}</span>
                       </span>
                     )}
                     {selectedPatient.allergies && (
@@ -736,7 +805,7 @@ export default function PatientsView({
               </div>
 
               {/* 4 info cards */}
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
                   <div className="mb-0.5 text-xs text-gray-400 dark:text-slate-500">آخر زيارة</div>
                   <div className="text-sm font-semibold text-gray-800 dark:text-slate-100">
@@ -779,9 +848,10 @@ export default function PatientsView({
                 </div>
               </div>
             </div>
+            </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">
 
               {/* ── البيانات ──────────────────────────────────── */}
               {activeTab === "info" && (
@@ -1588,30 +1658,32 @@ export default function PatientsView({
         )}
       </div>
 
-      {/* ══ COLUMN 3 (LEFT) — Vertical Tabs ══════════════════════ */}
-      <div className="flex w-44 shrink-0 flex-col border-r border-gray-200 bg-white">
-        <div className="shrink-0 border-b border-gray-100 px-4 py-3">
+      {/* ══ COLUMN 3 (LEFT) — Tabs: شريط أفقي على الجوال، عمودي على الشاشات الكبيرة ══════════════════════ */}
+      <div className="order-2 flex w-full shrink-0 flex-col border-b border-gray-200 bg-white lg:order-none lg:h-full lg:w-44 lg:border-b-0 lg:border-r">
+        <div className="hidden shrink-0 border-b border-gray-100 px-4 py-3 lg:block">
           <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">القائمة</span>
         </div>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            disabled={!selectedPatient}
-            onClick={() => selectedPatient && setActiveTab(tab.id)}
-            className={cn(
-              "flex w-full items-center gap-3 border-r-[3px] px-4 py-4 text-right text-sm font-medium transition-colors",
-              !selectedPatient
-                ? "cursor-not-allowed border-transparent text-gray-300"
-                : activeTab === tab.id
-                  ? "border-blue-600 bg-blue-50 text-blue-600"
-                  : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-            )}
-          >
-            <tab.icon className="h-4 w-4 shrink-0" />
-            <span>{tab.label}</span>
-          </button>
-        ))}
+        <div className="flex gap-1 overflow-x-auto overscroll-x-contain px-1.5 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] lg:flex lg:flex-col lg:gap-0 lg:overflow-visible lg:p-0 [&::-webkit-scrollbar]:hidden">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              disabled={!selectedPatient}
+              onClick={() => selectedPatient && setActiveTab(tab.id)}
+              className={cn(
+                "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-right text-xs font-medium transition-colors lg:w-full lg:gap-3 lg:rounded-none lg:border-0 lg:border-r-[3px] lg:px-4 lg:py-4 lg:text-sm",
+                !selectedPatient
+                  ? "cursor-not-allowed border-transparent text-gray-300"
+                  : activeTab === tab.id
+                    ? "border-blue-200 bg-blue-50 text-blue-600 lg:border-blue-600"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 lg:border-transparent",
+              )}
+            >
+              <tab.icon className="h-4 w-4 shrink-0" />
+              <span className="whitespace-nowrap">{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ══ ADD PATIENT MODAL ════════════════════════════════════ */}

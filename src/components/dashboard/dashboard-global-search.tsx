@@ -99,7 +99,10 @@ export default function DashboardGlobalSearch({ isDark }: { isDark: boolean }) {
   };
 
   return (
-    <div ref={wrapRef} className="relative w-full max-w-md">
+    <div
+      ref={wrapRef}
+      className="relative w-full min-w-0 max-w-full sm:max-w-md lg:max-w-sm"
+    >
       <div className="relative">
         <IconSearch
           className={cn(

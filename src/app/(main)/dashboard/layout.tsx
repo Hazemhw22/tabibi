@@ -16,19 +16,19 @@ export default async function DashboardLayout({
   /** المريض: نفس تجربة الموقع العام — Navbar + Footer من (main) فقط، بدون سايدبار/هيدر لوحة التحكم */
   if (isPatient) {
     return (
-      <div className="min-h-0 w-full min-w-0 max-w-[100vw] flex-1 overflow-x-hidden bg-gray-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 dark:bg-gray-950">
+      <div className="min-h-0 w-full min-w-0 max-w-[100vw] flex-1 overflow-x-hidden bg-gray-50 px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-5 md:px-6 dark:bg-gray-950">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gray-50 lg:flex-row">
+    <div className="fixed inset-0 z-50 flex min-h-0 flex-col overflow-hidden bg-gray-50 lg:flex-row">
       <DashboardThemeSync />
       <Sidebar />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
         <DashboardHeader />
-        <main className="min-h-0 min-w-0 w-full max-w-[100vw] flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 md:px-6">
+        <main className="min-h-0 min-w-0 w-full max-w-[100vw] flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-5 md:px-6">
           {children}
         </main>
       </div>
