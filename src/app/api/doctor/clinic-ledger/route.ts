@@ -10,9 +10,10 @@ const postSchema = z.object({
   title: z.string().min(1),
   amount: z.number().positive(),
   occurredAt: z.string().optional(),
-  notes: z.string().optional(),
-  staffUserId: z.string().optional(),
-  supplierId: z.string().optional(),
+  /** JSON قد يرسل null صريحاً — z.string().optional() وحده يرفض null */
+  notes: z.string().nullish(),
+  staffUserId: z.string().nullish(),
+  supplierId: z.string().nullish(),
 });
 
 async function assertOwnSupplier(doctorId: string, supplierId: string): Promise<boolean> {

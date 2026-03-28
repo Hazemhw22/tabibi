@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { DOCTOR_STAFF_ROLE_LABELS, isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { printHtmlDocument } from "@/lib/print-html";
@@ -93,6 +94,7 @@ export default function DoctorStaffPage() {
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editRow, setEditRow] = useState<StaffRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StaffRow | null>(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -135,19 +137,21 @@ export default function DoctorStaffPage() {
     setAddOpen(true);
   };
 
-  const removeStaff = async (u: StaffRow) => {
-    if (!confirm(`إلغاء ربط الموظف «${u.name ?? u.email}» بالعيادة؟ لن يعد بإمكانه الدخول كموظف.`)) return;
+  const confirmRemoveStaff = async () => {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/doctor/staff/${u.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/doctor/staff/${deleteTarget.id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error || "فشلت العملية");
-        return;
+        throw new Error("fail");
       }
       toast.success(data.message || "تم");
       load();
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message === "fail") throw e;
       toast.error("حدث خطأ");
+      throw new Error("fail");
     }
   };
 
@@ -351,7 +355,7 @@ export default function DoctorStaffPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => removeStaff(u)}
+                            onClick={() => setDeleteTarget(u)}
                             aria-label="إلغاء الربط"
                           >
                             <IconTrash className="h-4 w-4" />
@@ -470,6 +474,23 @@ export default function DoctorStaffPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="إلغاء ربط الموظف؟"
+        description={
+          deleteTarget
+            ? `سيتم إلغاء ربط «${deleteTarget.name ?? deleteTarget.email ?? "الموظف"}» بعيادتك. لن يعد بإمكانه تسجيل الدخول كموظف (يُحوَّل الحساب إلى صلاحية مريض).`
+            : ""
+        }
+        confirmLabel="نعم، ألغِ الربط"
+        cancelLabel="إلغاء"
+        variant="destructive"
+        onConfirm={confirmRemoveStaff}
+      />
     </div>
   );
 }

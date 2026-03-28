@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 
@@ -54,6 +55,7 @@ export default function DoctorSuppliersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editRow, setEditRow] = useState<SupplierRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SupplierRow | null>(null);
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
@@ -176,19 +178,21 @@ export default function DoctorSuppliersPage() {
     }
   };
 
-  const remove = async (row: SupplierRow) => {
-    if (!confirm(`حذف المزوّد «${row.name}»؟`)) return;
+  const confirmDeleteSupplier = async () => {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/doctor/suppliers/${row.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/doctor/suppliers/${deleteTarget.id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error || "فشل الحذف");
-        return;
+        throw new Error("fail");
       }
       toast.success("تم الحذف");
       load();
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message === "fail") throw e;
       toast.error("حدث خطأ");
+      throw new Error("fail");
     }
   };
 
@@ -297,7 +301,7 @@ export default function DoctorSuppliersPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => remove(u)}
+                            onClick={() => setDeleteTarget(u)}
                             aria-label="حذف"
                           >
                             <IconTrash className="h-4 w-4" />
@@ -432,6 +436,23 @@ export default function DoctorSuppliersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="حذف المزوّد؟"
+        description={
+          deleteTarget
+            ? `سيتم حذف «${deleteTarget.name}» نهائياً من قائمة المزوّدين. سجلات المصروفات المرتبطة سابقاً تبقى لكن دون ربط بالمزوّد.`
+            : ""
+        }
+        confirmLabel="نعم، احذف"
+        cancelLabel="إلغاء"
+        variant="destructive"
+        onConfirm={confirmDeleteSupplier}
+      />
     </div>
   );
 }

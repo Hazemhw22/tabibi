@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { printHtmlDocument } from "@/lib/print-html";
@@ -140,6 +141,7 @@ export default function DoctorClinicExpensesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editEntryId, setEditEntryId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<LedgerRow | null>(null);
   const [form, setForm] = useState({
     kind: "CLINIC_PURCHASE" as "CLINIC_PURCHASE" | "SALARY_PAYMENT",
     title: "",
@@ -183,19 +185,21 @@ export default function DoctorClinicExpensesPage() {
     setAddOpen(true);
   };
 
-  const removeEntry = async (row: LedgerRow) => {
-    if (!confirm("حذف هذا السجل من المصروفات؟")) return;
+  const confirmDeleteEntry = async () => {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/doctor/clinic-ledger/${row.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/doctor/clinic-ledger/${deleteTarget.id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error || "فشل الحذف");
-        return;
+        throw new Error("fail");
       }
       toast.success(data.message || "تم الحذف");
       load();
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message === "fail") throw e;
       toast.error("حدث خطأ");
+      throw new Error("fail");
     }
   };
 
@@ -445,7 +449,7 @@ export default function DoctorClinicExpensesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            onClick={() => removeEntry(row)}
+                            onClick={() => setDeleteTarget(row)}
                             aria-label="حذف"
                           >
                             <IconTrash className="h-4 w-4" />
@@ -631,6 +635,23 @@ export default function DoctorClinicExpensesPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="حذف المصروف؟"
+        description={
+          deleteTarget
+            ? `سيتم إزالة «${deleteTarget.title}» بمبلغ ₪${Number(deleteTarget.amount).toLocaleString("ar-EG")} من السجل بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.`
+            : ""
+        }
+        confirmLabel="نعم، احذف"
+        cancelLabel="إلغاء"
+        variant="destructive"
+        onConfirm={confirmDeleteEntry}
+      />
     </div>
   );
 }
