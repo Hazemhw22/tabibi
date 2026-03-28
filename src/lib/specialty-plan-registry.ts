@@ -249,12 +249,7 @@ export const CARE_PLAN_LABELS: Record<CarePlanType, string> = {
 
 /** خطط تعتمد جدول البنود والتكاليف (مثل الأسنان العامة) */
 export function carePlanUsesItemsCostGrid(t: CarePlanType): boolean {
-  return (
-    t === "GENERIC" ||
-    t === "DENTAL" ||
-    t === "DENTAL_IMPLANT_IMMEDIATE_SURGICAL" ||
-    t === "DENTAL_IMPLANT_COSMETIC"
-  );
+  return t === "GENERIC" || t === "DENTAL";
 }
 
 /** مخطط الأسنان التفاعلي (32 سنّاً) في صفحة المرضى */

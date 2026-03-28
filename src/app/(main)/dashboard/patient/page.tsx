@@ -134,7 +134,7 @@ export default async function PatientDashboard() {
   const { data: doctorsData } = await supabaseAdmin
     .from("Doctor")
     .select(`id, consultationFee, rating, createdAt, whatsapp, locationId, gender,
-       user:User(name, phone, image), specialty:Specialty(nameAr),
+       user:User!Doctor_userId_fkey(name, phone, image), specialty:Specialty(nameAr),
        clinics:Clinic(address, phone), reviews:Review(id)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true);

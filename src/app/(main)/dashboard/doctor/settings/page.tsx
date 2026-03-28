@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { DAYS_AR, formatDateLong } from "@/lib/utils";
+import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 function getDateForDayOfWeek(dayOfWeek: number): Date {
@@ -36,8 +37,15 @@ interface Specialty {
 }
 
 export default function DoctorSettingsPage() {
-  const { data: session, update: updateSession } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (session?.user?.role && isDoctorStaffRole(session.user.role)) {
+      router.replace("/dashboard/doctor/appointments");
+    }
+  }, [session?.user?.role, status, router]);
 
   const [loading, setLoading] = useState(false);
   const [visibleToPatients, setVisibleToPatients] = useState(true);

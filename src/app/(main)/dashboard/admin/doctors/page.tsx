@@ -27,7 +27,7 @@ export default async function AdminDoctorsPage() {
   const { data: doctors } = await supabaseAdmin
     .from("Doctor")
     .select(
-      "id, userId, status, subscriptionPeriod, subscriptionEndDate, medicalCenterId, canAddExtraClinics, createdAt, user:User(name, email), specialty:Specialty(nameAr)"
+      "id, userId, status, subscriptionPeriod, subscriptionEndDate, medicalCenterId, canAddExtraClinics, createdAt, user:User!Doctor_userId_fkey(name, email), specialty:Specialty(nameAr)"
     )
     .order("createdAt", { ascending: false });
 

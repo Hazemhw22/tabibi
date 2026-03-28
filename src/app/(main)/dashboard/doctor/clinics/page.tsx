@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DAYS_AR, cn } from "@/lib/utils";
 import { EXTRA_CLINIC_ANNUAL_FEE_NIS } from "@/lib/subscription-pricing";
+import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 interface Clinic {
@@ -37,8 +38,15 @@ interface TimeSlot {
 }
 
 export default function DoctorClinicsPage() {
-  useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (session?.user?.role && isDoctorStaffRole(session.user.role)) {
+      router.replace("/dashboard/doctor/appointments");
+    }
+  }, [session?.user?.role, status, router]);
 
   const [loading, setLoading] = useState(false);
   const [clinics, setClinics] = useState<Clinic[]>([]);

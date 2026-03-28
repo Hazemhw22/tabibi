@@ -16,7 +16,7 @@ export async function POST() {
     const { data: doctor, error } = await supabaseAdmin
       .from("Doctor")
       .select(
-        "id, medicalCenterId, userId, canAddExtraClinics, subscriptionPeriod, subscriptionEndDate, subscriptionPlan, user:User(name)"
+        "id, medicalCenterId, userId, canAddExtraClinics, subscriptionPeriod, subscriptionEndDate, subscriptionPlan, user:User!Doctor_userId_fkey(name)"
       )
       .eq("userId", session.user.id)
       .maybeSingle();

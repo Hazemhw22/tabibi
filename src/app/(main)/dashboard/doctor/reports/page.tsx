@@ -1,21 +1,20 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { redirectDoctorStaffToAppointments } from "@/lib/doctor-staff-route-guard";
 import IconTrendingUp from "@/components/icon/icon-trending-up";
 import IconCalendar from "@/components/icon/icon-calendar";
 import IconCircleCheck from "@/components/icon/icon-circle-check";
 import IconInfoCircle from "@/components/icon/icon-info-circle";
-import IconReceipt from "@/components/icon/icon-receipt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
-import { cn } from "@/lib/utils";
+import DoctorReportsFinancialSection, {
+  type DoctorFinancialRow,
+} from "./doctor-reports-financial-section";
 
 export default async function DoctorReportsPage() {
   const session = await auth();
   if (!session) redirect("/login");
+  redirectDoctorStaffToAppointments(session);
   if (session.user.role !== "DOCTOR") redirect("/");
 
   const { data: doctor } = await supabaseAdmin
@@ -81,24 +80,26 @@ export default async function DoctorReportsPage() {
     cpIds.length > 0
       ? supabaseAdmin
           .from("ClinicTransaction")
-          .select("id, type, description, amount, date, clinicPatient:ClinicPatient(name)")
+          .select(
+            "id, type, description, amount, date, clinicPatientId, clinicPatient:ClinicPatient(name)"
+          )
           .in("clinicPatientId", cpIds)
           .order("date", { ascending: false })
       : Promise.resolve({ data: [] }),
     supabaseAdmin
       .from("PlatformPatientTransaction")
-      .select("id, type, description, amount, date, patient:User(name)")
+      .select("id, type, description, amount, date, patientId, patient:User(name)")
       .eq("doctorId", doctor.id)
       .order("date", { ascending: false }),
   ]);
 
-  type TxRow = { id: string; type: string; description: string; amount: number; date: string; patientName: string; source: string };
   const clinicTxList = (clinicTxRes.data ?? []) as Array<{
     id: string;
     type: string;
     description: string;
     amount: number;
     date: string;
+    clinicPatientId: string;
     clinicPatient?: { name?: string };
   }>;
   const platformTxList = (platformTxRes.data ?? []) as Array<{
@@ -107,37 +108,37 @@ export default async function DoctorReportsPage() {
     description: string;
     amount: number;
     date: string;
+    patientId: string;
     patient?: { name?: string };
   }>;
 
-  const txRows: TxRow[] = [
-    ...platformIncomeRows.map((p) => ({
-      id: `platform-income-${p.id}`,
-      type: "PLATFORM_INCOME",
-      description: "وارد من حجز المنصة",
-      amount: p.amount,
-      date: p.date,
-      patientName: p.patientName,
-      source: "وارد المنصة",
-    })),
-    ...clinicTxList.map((t) => ({
-      id: t.id,
-      type: t.type,
-      description: t.description,
-      amount: t.amount,
-      date: t.date,
-      patientName: (t.clinicPatient as { name?: string })?.name ?? "—",
-      source: "عيادة",
-    })),
-    ...platformTxList.map((t) => ({
-      id: t.id,
-      type: t.type,
-      description: t.description,
-      amount: t.amount,
-      date: t.date,
-      patientName: (t.patient as { name?: string })?.name ?? "—",
-      source: "منصة (معاملات)",
-    })),
+  const isServiceOrPayment = (t: string) => t === "SERVICE" || t === "PAYMENT";
+
+  const financialRows: DoctorFinancialRow[] = [
+    ...clinicTxList
+      .filter((t) => isServiceOrPayment(t.type))
+      .map((t) => ({
+        id: t.id,
+        type: t.type as "SERVICE" | "PAYMENT",
+        description: t.description,
+        amount: t.amount,
+        date: t.date,
+        patientName: (t.clinicPatient as { name?: string })?.name ?? "—",
+        patientKey: `c:${t.clinicPatientId}`,
+        source: "عيادة" as const,
+      })),
+    ...platformTxList
+      .filter((t) => isServiceOrPayment(t.type))
+      .map((t) => ({
+        id: t.id,
+        type: t.type as "SERVICE" | "PAYMENT",
+        description: t.description,
+        amount: t.amount,
+        date: t.date,
+        patientName: (t.patient as { name?: string })?.name ?? "—",
+        patientKey: `p:${t.patientId}`,
+        source: "منصة" as const,
+      })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const clinicTx = clinicTxList;
@@ -226,75 +227,10 @@ export default async function DoctorReportsPage() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border-0 shadow-lg shadow-gray-200/50 dark:border dark:border-slate-700/80 dark:shadow-slate-950/50">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-l from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
-          <CardTitle className="flex items-center gap-3 text-lg dark:text-slate-100">
-            <div className="rounded-xl bg-slate-100 p-2 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              <IconReceipt className="h-5 w-5" />
-            </div>
-            الدفعات والديون
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {txRows.length === 0 ? (
-            <div className="py-12 text-center text-gray-500 dark:text-slate-400">
-              <IconReceipt className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-slate-600" />
-              <p>لا توجد دفعات أو ديون مسجلة</p>
-            </div>
-          ) : (
-            <div className="-mx-3 touch-pan-x overflow-x-auto px-3 scrollbar-hide sm:mx-0 sm:px-0">
-              <table className="min-w-[560px] w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80 text-right dark:border-slate-700 dark:bg-slate-800/60">
-                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">التاريخ</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">المريض</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">النوع</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">الوصف</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">المبلغ</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">المصدر</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700/80">
-                  {txRows.map((row) => {
-                    const signed = Number(row.amount);
-                    return (
-                      <tr
-                        key={`${row.source}-${row.id}`}
-                        className="transition-colors hover:bg-gray-50/80 dark:hover:bg-slate-800/50"
-                      >
-                        <td className="px-4 py-3 text-gray-700 dark:text-slate-300">
-                          {row.date ? format(new Date(row.date), "d MMM yyyy", { locale: ar }) : "—"}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">{row.patientName}</td>
-                        <td className="px-4 py-3">
-                          {row.type === "PLATFORM_INCOME" ? (
-                            <Badge className="border-0 bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200">
-                              وارد المنصة
-                            </Badge>
-                          ) : (
-                            <Badge variant={row.type === "PAYMENT" ? "default" : "secondary"}>
-                              {row.type === "PAYMENT" ? "دفعة" : "خدمة / دين"}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-slate-400">{row.description}</td>
-                        <td className={cn("px-4 py-3 font-semibold tabular-nums", amountSignedColorClass(signed))}>
-                          {formatSignedShekel(signed)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant="outline" className="text-xs dark:border-slate-600 dark:text-slate-300">
-                            {row.source}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <DoctorReportsFinancialSection
+        rows={financialRows}
+        doctorName={session.user.name ?? ""}
+      />
 
       <Card className="mt-8 overflow-hidden rounded-2xl border-0 shadow-lg shadow-gray-200/50 dark:border dark:border-slate-700/80 dark:shadow-slate-950/50">
         <CardHeader className="border-b border-gray-100 bg-gradient-to-l from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">

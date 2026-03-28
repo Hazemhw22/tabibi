@@ -1,0 +1,367 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import IconMenuUsers from "@/components/icon/menu/icon-menu-users";
+import IconLoader from "@/components/icon/icon-loader";
+import IconPlus from "@/components/icon/icon-plus";
+import IconPrinter from "@/components/icon/icon-printer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { DOCTOR_STAFF_ROLE_LABELS, isDoctorStaffRole } from "@/lib/doctor-team-roles";
+import { printHtmlDocument } from "@/lib/print-html";
+import { cn } from "@/lib/utils";
+
+type StaffRow = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  doctorStaffRole?: string | null;
+  salaryMonthly?: number | null;
+  createdAt?: string | null;
+};
+
+function staffRoleLabel(u: StaffRow): string {
+  if (u.doctorStaffRole) return DOCTOR_STAFF_ROLE_LABELS[u.doctorStaffRole] ?? u.doctorStaffRole;
+  return DOCTOR_STAFF_ROLE_LABELS[u.role ?? ""] ?? u.role ?? "—";
+}
+
+function buildStaffPdfHtml(rows: StaffRow[]): string {
+  const body = rows
+    .map(
+      (u, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${escapeHtml(u.name ?? "—")}</td>
+      <td dir="ltr">${escapeHtml(u.email ?? "—")}</td>
+      <td dir="ltr">${escapeHtml(u.phone ?? "—")}</td>
+      <td>${escapeHtml(staffRoleLabel(u))}</td>
+      <td>${u.salaryMonthly != null && u.salaryMonthly > 0 ? `₪${u.salaryMonthly}` : "—"}</td>
+      <td>${u.createdAt ? format(new Date(u.createdAt), "dd/MM/yyyy") : "—"}</td>
+    </tr>`,
+    )
+    .join("");
+  return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>موظفو العيادة</title>
+<style>
+  body{font-family:system-ui,Tahoma,sans-serif;padding:20px;font-size:13px;}
+  h1{font-size:18px;margin:0 0 8px;}
+  .meta{color:#666;font-size:12px;margin-bottom:16px;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{border:1px solid #ccc;padding:8px;text-align:right;}
+  th{background:#f3f4f6;font-weight:600;}
+</style></head><body>
+<h1>موظفو العيادة</h1>
+<p class="meta">تاريخ الطباعة: ${new Date().toLocaleString("ar")} — العدد: ${rows.length}</p>
+<table>
+<thead><tr><th>#</th><th>الاسم</th><th>البريد</th><th>الهاتف</th><th>الدور</th><th>راتب شهري</th><th>تاريخ الإضافة</th></tr></thead>
+<tbody>${body}</tbody>
+</table>
+</body></html>`;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export default function DoctorStaffPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [list, setList] = useState<StaffRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    name: "",
+    phone: "",
+    staffKind: "RECEPTION" as "RECEPTION" | "ASSISTANT",
+    salaryMonthly: "",
+  });
+
+  const resetForm = () =>
+    setForm({
+      email: "",
+      password: "",
+      name: "",
+      phone: "",
+      staffKind: "RECEPTION",
+      salaryMonthly: "",
+    });
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+    if (isDoctorStaffRole(session.user.role)) {
+      router.replace("/dashboard/doctor/appointments");
+      return;
+    }
+    if (session.user.role !== "DOCTOR") {
+      router.replace("/");
+    }
+  }, [session, status, router]);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch("/api/doctor/staff")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.error) toast.error(j.error);
+        else setList(j.staff ?? []);
+      })
+      .catch(() => toast.error("تعذر التحميل"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (status === "loading" || !session || session.user.role !== "DOCTOR") return;
+    load();
+  }, [session, status, load]);
+
+  const printPdf = () => {
+    if (!list.length) {
+      toast.message("لا توجد بيانات للطباعة");
+      return;
+    }
+    printHtmlDocument(buildStaffPdfHtml(list), "staff-list");
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (session?.user?.role !== "DOCTOR") return;
+    setSubmitting(true);
+    try {
+      const salaryMonthly = form.salaryMonthly.trim() ? Number(form.salaryMonthly) : undefined;
+      const res = await fetch("/api/doctor/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email.trim(),
+          password: form.password,
+          name: form.name.trim(),
+          phone: form.phone.trim() || undefined,
+          staffKind: form.staffKind,
+          salaryMonthly: Number.isFinite(salaryMonthly) ? salaryMonthly : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "فشل الإنشاء");
+        return;
+      }
+      toast.success(data.message || "تم إنشاء حساب الموظف");
+      resetForm();
+      setAddOpen(false);
+      load();
+    } catch {
+      toast.error("حدث خطأ");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (status === "loading" || !session || session.user.role !== "DOCTOR") {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <IconLoader className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <Link
+        href="/dashboard/doctor"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+      >
+        ← الرئيسية
+      </Link>
+
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="border-b border-gray-100 bg-gray-50/80">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <IconMenuUsers className="h-5 w-5 text-blue-600" />
+                موظفو العيادة
+              </CardTitle>
+              
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Button type="button" variant="outline" className="gap-1.5" onClick={printPdf} disabled={!list.length}>
+                <IconPrinter className="h-4 w-4" />
+                PDF / طباعة
+              </Button>
+              <Button type="button" className="gap-1.5" onClick={() => { resetForm(); setAddOpen(true); }}>
+                <IconPlus className="h-4 w-4" />
+                إضافة موظف
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <IconLoader className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : list.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-400">
+              لا يوجد موظفون بعد — اضغط «إضافة موظف».
+            </p>
+          ) : (
+            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700 sm:mx-0">
+              <table className="min-w-[720px] w-full text-sm">
+                <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
+                  <tr>
+                    <th className="px-3 py-3 w-10">#</th>
+                    <th className="px-3 py-3">الاسم</th>
+                    <th className="px-3 py-3">البريد</th>
+                    <th className="px-3 py-3">الهاتف</th>
+                    <th className="px-3 py-3">الدور</th>
+                    <th className="px-3 py-3 whitespace-nowrap">الراتب (₪)</th>
+                    <th className="px-3 py-3 whitespace-nowrap">تاريخ الإضافة</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                  {list.map((u, i) => (
+                    <tr key={u.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40">
+                      <td className="px-3 py-3 text-gray-400 tabular-nums">{i + 1}</td>
+                      <td className="px-3 py-3 font-medium text-gray-900 dark:text-slate-100">{u.name ?? "—"}</td>
+                      <td className="px-3 py-3 text-gray-600" dir="ltr">
+                        {u.email ?? "—"}
+                      </td>
+                      <td className="px-3 py-3 text-gray-600" dir="ltr">
+                        {u.phone ?? "—"}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-slate-800">
+                          {staffRoleLabel(u)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 tabular-nums">
+                        {u.salaryMonthly != null && u.salaryMonthly > 0 ? `₪${u.salaryMonthly}` : "—"}
+                      </td>
+                      <td className="px-3 py-3 text-gray-600 whitespace-nowrap">
+                        {u.createdAt ? format(new Date(u.createdAt), "dd/MM/yyyy") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className={cn("max-h-[90vh] overflow-y-auto sm:max-w-lg")} dir="rtl">
+          <DialogHeader>
+            <DialogTitle>إضافة موظف</DialogTitle>
+            <DialogDescription>
+              يُنشأ حساب دخول جديد للموظف. يمكنه بعدها تسجيل الدخول بالبريد وكلمة المرور التي تحددها.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label>الاسم</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  required
+                  minLength={2}
+                  className="mt-1"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>البريد (اسم المستخدم)</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>كلمة المرور</Label>
+                <Input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                  required
+                  minLength={6}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>هاتف (اختياري)</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>الدور</Label>
+                <select
+                  value={form.staffKind}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, staffKind: e.target.value as "RECEPTION" | "ASSISTANT" }))
+                  }
+                  className="mt-1 flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-900"
+                >
+                  <option value="RECEPTION">استقبال</option>
+                  <option value="ASSISTANT">مساعد طبيب</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label>راتب شهري مرجعي (₪، اختياري)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.salaryMonthly}
+                  onChange={(e) => setForm((p) => ({ ...p, salaryMonthly: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+                إلغاء
+              </Button>
+              <Button type="submit" disabled={submitting} className="gap-2">
+                {submitting ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
+                إنشاء الحساب
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

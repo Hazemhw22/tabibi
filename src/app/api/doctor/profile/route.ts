@@ -15,7 +15,7 @@ export async function GET() {
     const { data: doctor, error: docError } = await supabaseAdmin
       .from("Doctor")
       .select(
-        "*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*), medicalCenterId, canAddExtraClinics, user:User(name, image, phone)"
+        "*, specialty:Specialty(*), clinics:Clinic(*), timeSlots:TimeSlot(*), medicalCenterId, canAddExtraClinics, user:User!Doctor_userId_fkey(name, image, phone)"
       )
       .eq("userId", session.user.id)
       .single();

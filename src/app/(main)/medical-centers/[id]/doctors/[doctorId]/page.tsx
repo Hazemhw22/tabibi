@@ -38,7 +38,7 @@ async function getCenterDoctor(centerId: string, doctorId: string) {
     .select(`
       id, consultationFee, patientFeeServiceType, rating, experienceYears, bio, status,
       whatsapp, visibleToPatients,
-      user:User(name, phone),
+      user:User!Doctor_userId_fkey(name, phone),
       specialty:Specialty(nameAr),
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId, slotCapacity)
     `)

@@ -11,6 +11,7 @@ import IconUpload from "@/components/icon/icon-upload";
 import IconInfoCircle from "@/components/icon/icon-info-circle";
 import IconMapPin from "@/components/icon/icon-map-pin";
 import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
+import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,8 +23,15 @@ interface Specialty {
 }
 
 export default function DoctorSetupPage() {
-  const { status } = useSession();
+  const { status, data: session } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (session?.user?.role && isDoctorStaffRole(session.user.role)) {
+      router.replace("/dashboard/doctor/appointments");
+    }
+  }, [session?.user?.role, status, router]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

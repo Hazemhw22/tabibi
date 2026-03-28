@@ -27,7 +27,7 @@ export default async function AdminAppointmentsPage() {
     .select(`
       id, appointmentDate, startTime, endTime, status, fee,
       patient:User(name, email),
-      doctor:Doctor(user:User(name), specialty:Specialty(nameAr))
+      doctor:Doctor(user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr))
     `)
     .order("appointmentDate", { ascending: false })
     .limit(100);

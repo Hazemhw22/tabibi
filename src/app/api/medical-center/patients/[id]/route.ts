@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     const { data: appointments } = await supabaseAdmin
       .from("Appointment")
-      .select("id, appointmentDate, startTime, endTime, status, paymentStatus, fee, notes, doctor:Doctor(user:User(name), specialty:Specialty(nameAr))")
+      .select("id, appointmentDate, startTime, endTime, status, paymentStatus, fee, notes, doctor:Doctor(user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr))")
       .eq("medicalCenterId", centerId)
       .eq("patientId", id)
       .order("appointmentDate", { ascending: false })

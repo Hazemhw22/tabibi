@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { formatDateNumeric } from "@/lib/utils";
+import { buildAppointmentConfirmedSmsMessage, sendSms } from "@/lib/sms";
+import { notifyAppointmentConfirmedByDoctor } from "@/lib/notifications";
 
 export async function GET(
   req: Request,
@@ -19,7 +22,7 @@ export async function GET(
       .select(`
         *,
         patient:User(name, email, phone),
-        doctor:Doctor(user:User(name), specialty:Specialty(nameAr)),
+        doctor:Doctor(user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr)),
         clinic:Clinic(*),
         payment:Payment(*)
       `)
@@ -71,13 +74,15 @@ export async function PATCH(
 
     const { data: appointment, error: findErr } = await supabaseAdmin
       .from("Appointment")
-      .select("id, patientId, doctorId, appointmentDate, startTime")
+      .select("id, patientId, doctorId, appointmentDate, startTime, status")
       .eq("id", id)
       .single();
 
     if (findErr || !appointment) {
       return NextResponse.json({ error: "الموعد غير موجود" }, { status: 404 });
     }
+
+    const prevStatus = String((appointment as { status?: string }).status ?? "").toUpperCase();
 
     if (session.user.role === "PATIENT") {
       if (appointment.patientId !== session.user.id) {
@@ -135,6 +140,60 @@ export async function PATCH(
         .from("Payment")
         .update({ status: "PAID", updatedAt: new Date().toISOString() })
         .eq("appointmentId", id);
+    }
+
+    /* تأكيد الطبيب للحجز: إشعار + SMS للمريض */
+    if (
+      session.user.role === "DOCTOR" &&
+      prevStatus === "DRAFT" &&
+      statusUpper === "CONFIRMED"
+    ) {
+      const { data: aptFull } = await supabaseAdmin
+        .from("Appointment")
+        .select(
+          `
+          patientId,
+          appointmentDate,
+          startTime,
+          patient:User(phone, name),
+          doctor:Doctor(user:User!Doctor_userId_fkey(name)),
+          clinic:Clinic(name)
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (aptFull) {
+        type Pt = { phone?: string | null; name?: string | null };
+        type DocRel = { user?: { name?: string | null } };
+        type Clin = { name?: string | null };
+        const patient = aptFull.patient as Pt | Pt[] | null;
+        const p = Array.isArray(patient) ? patient[0] : patient;
+        const doctorRel = aptFull.doctor as DocRel | DocRel[] | null;
+        const d = Array.isArray(doctorRel) ? doctorRel[0] : doctorRel;
+        const clinicRel = aptFull.clinic as Clin | Clin[] | null;
+        const c = Array.isArray(clinicRel) ? clinicRel[0] : clinicRel;
+        const doctorName = d?.user?.name ?? "الطبيب";
+        const rawDate = (aptFull as { appointmentDate: string }).appointmentDate;
+        const dateStr = formatDateNumeric(typeof rawDate === "string" ? rawDate : new Date(rawDate).toISOString());
+        const timeStr = String((aptFull as { startTime: string }).startTime ?? "").slice(0, 5);
+        const msg = buildAppointmentConfirmedSmsMessage({
+          doctorName,
+          dateStr,
+          timeStr,
+          clinicName: c?.name ?? null,
+        });
+        const phone = p?.phone?.trim();
+        if (phone) {
+          await sendSms(phone, msg);
+        }
+        await notifyAppointmentConfirmedByDoctor({
+          patientUserId: (aptFull as { patientId: string }).patientId,
+          doctorName,
+          date: dateStr,
+          time: timeStr,
+        });
+      }
     }
 
     return NextResponse.json({ appointment: updated });

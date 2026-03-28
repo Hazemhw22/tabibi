@@ -14,7 +14,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CarePlanType } from "@/lib/specialty-plan-registry";
-import { CARE_PLAN_LABELS, carePlanUsesItemsCostGrid, isStructuredIntlCarePlan } from "@/lib/specialty-plan-registry";
+import {
+  CARE_PLAN_LABELS,
+  carePlanShowsDentalToothChart,
+  carePlanUsesItemsCostGrid,
+  isStructuredIntlCarePlan,
+} from "@/lib/specialty-plan-registry";
+import { DentalToothChartBlock } from "./dental-tooth-chart-block";
 import { PregnancyWeekSvg } from "./pregnancy-week-svg";
 import {
   PediatricsBodySvg,
@@ -265,6 +271,13 @@ export function CarePlanPanel({
           data={data}
           setData={setData}
           printBridge={printBridge}
+        />
+      )}
+      {carePlanShowsDentalToothChart(carePlanType) && (
+        <DentalToothChartBlock
+          clinicPatientId={patientId}
+          patientSource={patientSource}
+          heading="مخطط الأسنان"
         />
       )}
       {carePlanUsesItemsCostGrid(carePlanType) && (

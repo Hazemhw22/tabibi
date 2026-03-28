@@ -55,7 +55,7 @@ export default async function AdminDoctorDetailPage({
       canAddExtraClinics,
       createdAt,
       updatedAt,
-      user:User(id, name, email, phone, createdAt),
+      user:User!Doctor_userId_fkey(id, name, email, phone, createdAt),
       specialty:Specialty(id, nameAr, name),
       clinics:Clinic(id, name, address, city, phone, locationId, isMain),
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId)

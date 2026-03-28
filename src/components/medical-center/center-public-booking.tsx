@@ -210,7 +210,11 @@ export default function CenterPublicBooking({
         toast.error(data.error || "حدث خطأ في الحجز");
         return;
       }
-      toast.success("تم تأكيد الموعد");
+      toast.success(
+        typeof data.message === "string"
+          ? data.message
+          : "تم إرسال طلب الحجز، وبانتظار موافقة الطبيب."
+      );
       router.push(`/appointments/${data.appointmentId}/success`);
     } catch {
       toast.error("حدث خطأ");
@@ -458,12 +462,12 @@ export default function CenterPublicBooking({
                   {loading ? (
                     <>
                       <IconLoader className="h-4 w-4 animate-spin" />
-                      جاري التأكيد...
+                      جاري إرسال الطلب...
                     </>
                   ) : (
                     <>
                       <IconCreditCard className="h-4 w-4" />
-                      تأكيد الحجز
+                      إرسال طلب الحجز
                     </>
                   )}
                 </Button>

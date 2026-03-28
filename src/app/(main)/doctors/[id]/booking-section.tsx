@@ -198,7 +198,11 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
       if (!res.ok) {
         toast.error(data.error || "حدث خطأ في الحجز");
       } else {
-        toast.success("تم تأكيد الموعد. الدفع عند الوصول للعيادة.");
+        toast.success(
+          typeof data.message === "string"
+            ? data.message
+            : "تم إرسال طلب الحجز، وبانتظار موافقة الطبيب."
+        );
         router.push(`/appointments/${data.appointmentId}/success`);
       }
     } catch {
@@ -409,9 +413,9 @@ export default function BookingSection({ doctor, timeSlots, clinics, isLoggedIn,
           className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl text-base hover:bg-blue-700 active:scale-[.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
         >
           {loading ? (
-            <><IconLoader className="h-5 w-5 animate-spin" /> جاري المعالجة...</>
+            <><IconLoader className="h-5 w-5 animate-spin" /> جاري إرسال الطلب...</>
           ) : (
-            "حجز الموعد"
+            "إرسال طلب الحجز"
           )}
         </button>
       </div>

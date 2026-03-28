@@ -108,18 +108,39 @@ export async function notifyAppointmentBooked({
     createNotification({
       userId:  doctorUserId,
       title:   "موعد جديد",
-      message: `${patientName} حجز موعداً بتاريخ ${date}`,
+      message: `${patientName} طلب موعداً بتاريخ ${date} — بانتظار تأكيدك`,
       type:    "appointment",
       link:    "/dashboard/doctor/appointments",
     }),
     createNotification({
       userId:  patientUserId,
-      title:   "تم تأكيد موعدك",
-      message: `موعدك مع ${doctorName} بتاريخ ${date} تم تسجيله`,
+      title:   "طلب حجز قيد الانتظار",
+      message: `تم استلام طلب موعد مع ${doctorName} بتاريخ ${date}. سيتم إشعارك عند تأكيد الطبيب.`,
       type:    "appointment",
       link:    "/dashboard/patient/appointments",
     }),
   ]);
+}
+
+/** بعد تأكيد الطبيب للحجز (DRAFT → CONFIRMED) */
+export async function notifyAppointmentConfirmedByDoctor({
+  patientUserId,
+  doctorName,
+  date,
+  time,
+}: {
+  patientUserId: string;
+  doctorName: string;
+  date: string;
+  time: string;
+}) {
+  await createNotification({
+    userId: patientUserId,
+    title: "تم تأكيد موعدك",
+    message: `تم تأكيد موعدك مع ${doctorName} بتاريخ ${date} الساعة ${time}.`,
+    type: "appointment",
+    link: "/dashboard/patient/appointments",
+  });
 }
 
 /**

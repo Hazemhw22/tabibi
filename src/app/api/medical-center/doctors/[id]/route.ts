@@ -54,7 +54,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         doctorClinicFee,
         patientFeeServiceType,
         experienceYears,
-        user:User(name, phone, email),
+        user:User!Doctor_userId_fkey(name, phone, email),
         specialty:Specialty(id, nameAr),
         timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId, slotCapacity),
         clinics:Clinic(id, name, isMain)

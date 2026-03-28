@@ -32,7 +32,7 @@ export async function GET() {
     if (doctorIds.length > 0) {
       const { data: doctors } = await supabaseAdmin
         .from("Doctor")
-        .select("id, user:User(name), specialty:Specialty(nameAr)")
+        .select("id, user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr)")
         .in("id", doctorIds);
       for (const d of doctors ?? []) {
         const row = d as {

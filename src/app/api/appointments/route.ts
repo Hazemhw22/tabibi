@@ -11,6 +11,7 @@ import { buildOccupiedTurnsOrdered, firstFreeSlotTurn } from "@/lib/appointment-
 import { getAppointmentFinanceSnapshot } from "@/lib/medical-center-finance";
 import { formatDateNumeric } from "@/lib/utils";
 import { z } from "zod";
+import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 
 const appointmentSchema = z.object({
   doctorId: z.string(),
@@ -47,7 +48,8 @@ export async function POST(req: Request) {
       .eq("id", data.doctorId)
       .single();
 
-    if (doctorRow?.visibleToPatients === false && session.user.role !== "DOCTOR") {
+    const staffBooking = isDoctorStaffRole(session.user.role);
+    if (doctorRow?.visibleToPatients === false && session.user.role !== "DOCTOR" && !staffBooking) {
       const bookableViaCenter = Boolean(doctorRow?.medicalCenterId);
       if (!bookableViaCenter) {
         const { data: clinicPatient } = await supabaseAdmin
@@ -133,13 +135,20 @@ export async function POST(req: Request) {
       }
     }
 
+    if (staffBooking) {
+      const sid = (session.user as { doctorId?: string | null }).doctorId;
+      if (!sid || sid !== data.doctorId) {
+        return NextResponse.json({ error: "غير مصرح بحجز لهذا الطبيب" }, { status: 403 });
+      }
+    }
+
     let patientId = session.user.id;
-    if (session.user.role === "DOCTOR" && data.patientId) {
+    if ((session.user.role === "DOCTOR" || staffBooking) && data.patientId) {
       patientId = data.patientId;
     }
 
     const fin = await getAppointmentFinanceSnapshot(data.doctorId);
-    const isBookedByDoctor = session.user.role === "DOCTOR";
+    const isBookedByDoctor = session.user.role === "DOCTOR" || staffBooking;
     const viaCenter = data.viaMedicalCenter === true;
     const isCenterChannelBooking = Boolean(fin.medicalCenterId) && viaCenter;
     const finalFee = isCenterChannelBooking
@@ -188,7 +197,7 @@ export async function POST(req: Request) {
     /* إشعارات للطبيب والمريض */
     const { data: doctorUser } = await supabaseAdmin
       .from("Doctor")
-      .select("userId, user:User(name)")
+      .select("userId, user:User!Doctor_userId_fkey(name)")
       .eq("id", data.doctorId)
       .single();
     const doctorUserId = doctorUser?.userId;
@@ -240,7 +249,7 @@ export async function GET(req: Request) {
       .select(`
         *,
         patient:User(name, email, phone),
-        doctor:Doctor(user:User(name), specialty:Specialty(nameAr)),
+        doctor:Doctor(user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr)),
         clinic:Clinic(*),
         payment:Payment(*)
       `)
@@ -256,6 +265,10 @@ export async function GET(req: Request) {
         .single();
       if (!doc) return NextResponse.json({ appointments: [] });
       query = query.eq("doctorId", doc.id);
+    } else if (isDoctorStaffRole(session.user.role)) {
+      const did = (session.user as { doctorId?: string | null }).doctorId;
+      if (!did) return NextResponse.json({ appointments: [] });
+      query = query.eq("doctorId", did);
     } else {
       return NextResponse.json({ appointments: [] });
     }

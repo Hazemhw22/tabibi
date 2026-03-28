@@ -43,7 +43,7 @@ async function getFeaturedDoctors() {
   const { data } = await supabaseAdmin
     .from("Doctor")
     .select(`id, locationId, rating, totalReviews, consultationFee, experienceYears, whatsapp, gender,
-      user:User(name, phone, image), specialty:Specialty(nameAr), clinics:Clinic(address, phone)`)
+      user:User!Doctor_userId_fkey(name, phone, image), specialty:Specialty(nameAr), clinics:Clinic(address, phone)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true)
     .order("rating", { ascending: false })

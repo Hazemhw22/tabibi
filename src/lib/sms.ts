@@ -149,6 +149,34 @@ export function buildTransactionSmsMessage(options: {
   return `Tabibi: تم تسجيل خدمة (${description}) بقيمة ₪${amount} في ملفك لدى${name}.`.trim();
 }
 
+/** SMS عند تأكيد الطبيب للحجز */
+export function buildAppointmentConfirmedSmsMessage(options: {
+  doctorName: string;
+  dateStr: string;
+  timeStr: string;
+  clinicName?: string | null;
+}): string {
+  const { doctorName, dateStr, timeStr, clinicName } = options;
+  let msg = `Tabibi: تم تأكيد موعدك مع د. ${doctorName} بتاريخ ${dateStr} الساعة ${timeStr}.`;
+  if (clinicName?.trim()) msg += ` العيادة: ${clinicName}.`;
+  msg += " نراك قريباً.";
+  return msg.trim();
+}
+
+/** تذكير تلقائي: يوم قبل الموعد */
+export function buildAppointmentReminderSmsMessage(options: {
+  doctorName: string;
+  dateStr: string;
+  timeStr: string;
+  clinicName?: string | null;
+}): string {
+  const { doctorName, dateStr, timeStr, clinicName } = options;
+  let msg = `Tabibi: تذكير — موعدك غداً ${dateStr} الساعة ${timeStr} مع د. ${doctorName}.`;
+  if (clinicName?.trim()) msg += ` ${clinicName}.`;
+  msg += " نرجو الحضور قبل 10 دقائق.";
+  return msg.trim();
+}
+
 /** هل إعدادات Twilio WhatsApp مكتملة؟ إن لم تكن، لا نعطي أولوية للواتساب ونرسل SMS بدلًا منه. */
 export function isWhatsAppConfigured(): boolean {
   return Boolean(

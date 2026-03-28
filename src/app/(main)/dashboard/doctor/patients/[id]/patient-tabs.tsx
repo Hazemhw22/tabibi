@@ -9,6 +9,7 @@ import IconCalendar from "@/components/icon/icon-calendar";
 import IconReceipt from "@/components/icon/icon-receipt";
 import IconBarChart from "@/components/icon/icon-bar-chart";
 import IconPlus from "@/components/icon/icon-plus";
+import IconPrinter from "@/components/icon/icon-printer";
 import IconLoader from "@/components/icon/icon-loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { buildFinancialReportPrintHtml } from "@/lib/financial-report-print-html";
+import { printHtmlDocument } from "@/lib/print-html";
 
 type TabId = "info" | "appointments" | "transactions" | "summary";
 
@@ -68,6 +71,7 @@ interface Props {
   balance: number;
   doctorId?: string;
   defaultFee?: number;
+  doctorDisplayName?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -86,6 +90,7 @@ export default function PatientTabs({
   balance,
   doctorId,
   defaultFee = 0,
+  doctorDisplayName = "",
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("info");
@@ -512,6 +517,37 @@ export default function PatientTabs({
         {activeTab === "transactions" && (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={transactions.length === 0}
+                onClick={() => {
+                  if (transactions.length === 0) return;
+                  const html = buildFinancialReportPrintHtml({
+                    mode: "single-patient",
+                    doctorName: doctorDisplayName || "—",
+                    patientLine: patient.name,
+                    patientChannelLabel: patient.source === "clinic" ? "عيادة" : "منصة",
+                    issuedAtLabel: new Date().toLocaleString("ar", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }),
+                    rows: transactions.map((t) => ({
+                      date: t.date,
+                      type: t.type as "SERVICE" | "PAYMENT",
+                      description: t.description,
+                      notes: t.notes,
+                      amount: t.amount,
+                    })),
+                  });
+                  printHtmlDocument(html, `معاملات — ${patient.name}`);
+                }}
+              >
+                <IconPrinter className="h-4 w-4" />
+                طباعة / PDF
+              </Button>
               <Button
                 type="button"
                 variant="outline"

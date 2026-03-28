@@ -107,7 +107,7 @@ export function CarePlanFollowUpsSection({ data, setData, carePlanType }: Props)
                 />
               </div>
               <div className="grid gap-1 flex-1 min-w-[140px]">
-                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">الدور / الفتحة</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">الدور</span>
                 <Input
                   className="h-9 text-sm"
                   placeholder="حسب عيادتك (اختياري)"

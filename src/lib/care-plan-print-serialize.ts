@@ -136,10 +136,17 @@ export function serializeCarePlanSectionsForPrint(
       });
       break;
     }
-    case "GENERIC":
-    case "DENTAL":
     case "DENTAL_IMPLANT_IMMEDIATE_SURGICAL":
     case "DENTAL_IMPLANT_COSMETIC": {
+      sections.push({
+        titleAr: CARE_PLAN_LABELS[carePlanType],
+        titleEn: "Dental implant plan",
+        bodyHtml: `<p class="muted">تفاصيل الأسنان والتكاليف تُسجَّل في مخطط الأسنان والمعاملات في ملف العيادة.</p>`,
+      });
+      break;
+    }
+    case "GENERIC":
+    case "DENTAL": {
       const items = (data.items as { label: string; detail: string; cost: number }[]) || [];
       const rows = items
         .filter((r) => r.label?.trim() || r.detail?.trim())
@@ -148,12 +155,7 @@ export function serializeCarePlanSectionsForPrint(
             `<tr><td class="l">${escapeHtml(r.label || "—")}</td><td>${escapeHtml(r.detail || "—")}${r.cost ? ` — <span dir="ltr">${r.cost} ₪</span>` : ""}</td></tr>`,
         )
         .join("");
-      const titleEn =
-        carePlanType === "GENERIC" ?
-          "General plan"
-        : carePlanType === "DENTAL" ?
-          "Dental plan"
-        : "Dental specialty plan";
+      const titleEn = carePlanType === "GENERIC" ? "General plan" : "Dental plan";
       sections.push({
         titleAr: CARE_PLAN_LABELS[carePlanType],
         titleEn,

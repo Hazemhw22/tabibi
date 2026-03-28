@@ -30,7 +30,7 @@ export async function GET() {
     if (doctorIds.length > 0) {
       const { data: doctorRows, error: doctorsErr } = await supabaseAdmin
         .from("Doctor")
-        .select("id, user:User(name)")
+        .select("id, user:User!Doctor_userId_fkey(name)")
         .in("id", doctorIds)
         .order("createdAt", { ascending: true });
       if (doctorsErr) {

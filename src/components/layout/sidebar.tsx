@@ -23,6 +23,7 @@ import IconXCircle from "@/components/icon/icon-x-circle";
 import IconSend from "@/components/icon/icon-send";
 import IconArchive from "@/components/icon/icon-archive";
 import { getDoctorAvatar, getPatientAvatar } from "@/lib/avatar";
+import { DOCTOR_STAFF_ROLE_LABELS, isDoctorStaffRole } from "@/lib/doctor-team-roles";
 
 interface NavItem {
   label: string;
@@ -52,6 +53,8 @@ const doctorSectionsFull: NavSection[] = [
     items: [
       { label: "التقارير", href: "/dashboard/doctor/reports", icon: IconBarChart },
       { label: "العيادات والمواعيد", href: "/dashboard/doctor/clinics", icon: IconClipboardText },
+      { label: "الموظفون", href: "/dashboard/doctor/staff", icon: IconMenuUsers },
+      { label: "مصروفات العيادة", href: "/dashboard/doctor/expenses", icon: IconDollarSignCircle },
     ],
   },
   {
@@ -62,6 +65,17 @@ const doctorSectionsFull: NavSection[] = [
 
 const doctorSectionsLimited: NavSection[] = [
   { title: "الرئيسية", items: [{ label: "الرئيسية", href: "/dashboard/doctor", icon: IconMenuDashboard }] },
+];
+
+/** موظفو الطبيب: مواعيد + مرضى فقط */
+const doctorSectionsStaff: NavSection[] = [
+  {
+    title: "الرئيسية",
+    items: [
+      { label: "المواعيد", href: "/dashboard/doctor/appointments", icon: IconCalendar },
+      { label: "المرضى", href: "/dashboard/doctor/patients", icon: IconUsersGroup },
+    ],
+  },
 ];
 
 const adminSections: NavSection[] = [
@@ -258,6 +272,8 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
     userRole === "MEDICAL_CENTER_ADMIN" ? "مركز طبي" :
     userRole === "MEDICAL_CENTER_RECEPTIONIST" ? "استقبال" :
     userRole === "MEDICAL_CENTER_LAB_STAFF" ? "مختبر / أشعة" :
+    userRole === "DOCTOR_RECEPTION" || userRole === "DOCTOR_ASSISTANT"
+      ? (DOCTOR_STAFF_ROLE_LABELS[userRole] ?? "موظف عيادة") :
     userRole === "PLATFORM_ADMIN" || userRole === "CLINIC_ADMIN" ? "مشرف" :
     "مريض";
 
@@ -284,7 +300,7 @@ function SidebarContent({ sections, roleLabel, pathname, onLinkClick, isDark, us
                   ? "👨‍⚕️"
                   : userRole === "MEDICAL_CENTER_ADMIN"
                     ? "🏥"
-                    : userRole === "MEDICAL_CENTER_RECEPTIONIST"
+                    : userRole === "MEDICAL_CENTER_RECEPTIONIST" || userRole === "DOCTOR_RECEPTION" || userRole === "DOCTOR_ASSISTANT"
                       ? "📋"
                       : userRole === "MEDICAL_CENTER_LAB_STAFF"
                         ? "🔬"
@@ -383,17 +399,21 @@ export default function Sidebar() {
       ? doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING"
         ? doctorSectionsLimited
         : doctorSectionsFull
-      : role === "MEDICAL_CENTER_ADMIN" ||
-          role === "MEDICAL_CENTER_RECEPTIONIST" ||
-          role === "MEDICAL_CENTER_LAB_STAFF"
-        ? medicalCenterNavForRole(role)
-        : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
-          ? adminSections
-          : patientSections;
+      : isDoctorStaffRole(role)
+        ? doctorSectionsStaff
+        : role === "MEDICAL_CENTER_ADMIN" ||
+            role === "MEDICAL_CENTER_RECEPTIONIST" ||
+            role === "MEDICAL_CENTER_LAB_STAFF"
+          ? medicalCenterNavForRole(role)
+          : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
+            ? adminSections
+            : patientSections;
 
   const roleLabel =
     role === "DOCTOR"
       ? "طبيب"
+      : role === "DOCTOR_RECEPTION" || role === "DOCTOR_ASSISTANT"
+        ? (DOCTOR_STAFF_ROLE_LABELS[role ?? ""] ?? "موظف عيادة")
       : role === "PLATFORM_ADMIN"
         ? "مشرف المنصة"
         : role === "CLINIC_ADMIN"

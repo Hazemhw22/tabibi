@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSessionDoctorRecordId } from "@/lib/doctor-api-scope";
+import { isDoctorOrStaffRole } from "@/lib/doctor-team-roles";
 import {
   linkClinicPatientAndSendPasswordSetup,
   notifyClinicPatientLinkedExisting,
@@ -27,16 +29,12 @@ const schema = z.object({
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session || session.user.role !== "DOCTOR") {
+    if (!session || !isDoctorOrStaffRole(session.user.role)) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    const { data: doctor } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("userId", session.user.id)
-      .single();
-    if (!doctor) return NextResponse.json({ error: "الطبيب غير موجود" }, { status: 404 });
+    const doctorId = getSessionDoctorRecordId(session);
+    if (!doctorId) return NextResponse.json({ error: "الطبيب غير موجود" }, { status: 404 });
 
     const body = await req.json();
     const data = schema.parse(body);
@@ -72,7 +70,7 @@ export async function POST(req: Request) {
     const { data: patient, error } = await supabaseAdmin
       .from("ClinicPatient")
       .insert({
-        doctorId: doctor.id,
+        doctorId,
         name: data.name,
         phone: data.phone || null,
         whatsapp: data.whatsapp || null,
@@ -125,16 +123,12 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session || session.user.role !== "DOCTOR") {
+    if (!session || !isDoctorOrStaffRole(session.user.role)) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    const { data: doctor } = await supabaseAdmin
-      .from("Doctor")
-      .select("id")
-      .eq("userId", session.user.id)
-      .single();
-    if (!doctor) return NextResponse.json({ patients: [] });
+    const doctorId = getSessionDoctorRecordId(session);
+    if (!doctorId) return NextResponse.json({ patients: [] });
 
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
@@ -142,7 +136,7 @@ export async function GET(req: Request) {
     let query = supabaseAdmin
       .from("ClinicPatient")
       .select("id, name, phone, whatsapp, email, fileNumber, createdAt")
-      .eq("doctorId", doctor.id)
+      .eq("doctorId", doctorId)
       .eq("isActive", true)
       .order("createdAt", { ascending: false });
 

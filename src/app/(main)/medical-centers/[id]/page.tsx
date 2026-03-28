@@ -43,7 +43,7 @@ export default async function MedicalCenterDetailPage({ params }: { params: Prom
       locationId,
       gender,
       whatsapp,
-      user:User(name, phone, image),
+      user:User!Doctor_userId_fkey(name, phone, image),
       specialty:Specialty(nameAr)
     `)
     .eq("medicalCenterId", id)

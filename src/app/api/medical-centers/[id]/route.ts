@@ -34,7 +34,7 @@ export async function GET(
         experienceYears,
         bio,
         visibleToPatients,
-        user:User(name, phone),
+        user:User!Doctor_userId_fkey(name, phone),
         specialty:Specialty(nameAr)
       `)
         .in("id", doctorIds)

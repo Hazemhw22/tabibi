@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     .from("Doctor")
     .select(`
       id, rating, consultationFee, experienceYears, locationId, totalReviews,
-      user:User(name, phone),
+      user:User!Doctor_userId_fkey(name, phone),
       specialty:Specialty(nameAr),
       clinics:Clinic(address, phone)
     `)

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -14,6 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DoctorActions from "./doctor-actions";
+import DoctorDashboardFinanceCharts from "./doctor-dashboard-finance-charts";
+import {
+  aggregateDoctorMonthlyFinance,
+  buildLastNMonthBuckets,
+} from "@/lib/doctor-dashboard-monthly-finance";
 import UpcomingAppointments, { type ScheduleApt } from "./upcoming-appointments";
 import DoctorMedicalCenterInvitesCard from "@/components/medical-center/doctor-medical-center-invites-card";
 import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display";
@@ -23,6 +29,9 @@ import { cn } from "@/lib/utils";
 export default async function DoctorDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
+  if (isDoctorStaffRole(session.user.role)) {
+    redirect("/dashboard/doctor/appointments");
+  }
   if (session.user.role !== "DOCTOR") redirect("/");
 
   const { data: doctor } = await supabaseAdmin
@@ -205,6 +214,74 @@ export default async function DoctorDashboard() {
     0
   );
   const totalEarningsWithPayments = totalEarnings + totalPaymentsAdded;
+
+  const ledgerRes = await supabaseAdmin
+    .from("DoctorClinicLedger")
+    .select("amount")
+    .eq("doctorId", doctor.id);
+  const totalClinicLedgerExpenses = ledgerRes.error
+    ? 0
+    : (ledgerRes.data ?? []).reduce(
+        (s: number, r: { amount?: number }) => s + Number(r.amount ?? 0),
+        0,
+      );
+
+  /* ─────────────── Last 6 months (charts) ─────────────── */
+  const sixMonthsStart = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+  sixMonthsStart.setHours(0, 0, 0, 0);
+  const sixMonthsIso = sixMonthsStart.toISOString();
+
+  const [
+    { data: monthlyPayments },
+    { data: monthlyPlatformTx },
+    { data: monthlyClinicTx },
+    { data: monthlyLedger },
+    { data: monthlyCompletedApts },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("Payment")
+      .select("amount, createdAt, appointment:Appointment!inner(doctorId)")
+      .eq("status", "PAID")
+      .eq("appointment.doctorId", doctor.id)
+      .gte("createdAt", sixMonthsIso),
+    supabaseAdmin
+      .from("PlatformPatientTransaction")
+      .select("type, amount, date")
+      .eq("doctorId", doctor.id)
+      .gte("date", sixMonthsIso),
+    cpIds.length > 0
+      ? supabaseAdmin
+          .from("ClinicTransaction")
+          .select("type, amount, date")
+          .in("clinicPatientId", cpIds)
+          .gte("date", sixMonthsIso)
+      : Promise.resolve({ data: [] as { type: string; amount: number; date: string }[] }),
+    supabaseAdmin
+      .from("DoctorClinicLedger")
+      .select("amount, occurredAt")
+      .eq("doctorId", doctor.id)
+      .gte("occurredAt", sixMonthsIso),
+    supabaseAdmin
+      .from("Appointment")
+      .select("appointmentDate, fee, doctorClinicFeeSnapshot, medicalCenterId")
+      .eq("doctorId", doctor.id)
+      .eq("status", "COMPLETED")
+      .gte("appointmentDate", sixMonthsIso),
+  ]);
+
+  const monthBuckets = buildLastNMonthBuckets(today, 6);
+  const monthlyFinanceSeries = aggregateDoctorMonthlyFinance(monthBuckets, {
+    payments: (monthlyPayments ?? []) as { amount: number; createdAt: string }[],
+    platformTx: (monthlyPlatformTx ?? []) as { type: string; amount: number; date: string }[],
+    clinicTx: (monthlyClinicTx ?? []) as { type: string; amount: number; date: string }[],
+    completedAppointments: (monthlyCompletedApts ?? []) as Array<{
+      appointmentDate: string;
+      fee?: number | null;
+      doctorClinicFeeSnapshot?: number | null;
+      medicalCenterId?: string | null;
+    }>,
+    ledger: (monthlyLedger ?? []) as { amount: number; occurredAt: string }[],
+  });
 
   /* ─────────────── Last 5 transactions ─────────────── */
   type TxRow = { id: string; type: string; description: string; amount: number; date: string; patientName: string; source: string };
@@ -389,6 +466,13 @@ export default async function DoctorDashboard() {
           </Card>
         ))}
       </div>
+
+      <DoctorDashboardFinanceCharts
+        series={monthlyFinanceSeries}
+        totalEarningsNis={totalEarningsWithPayments}
+        expensesNis={totalClinicLedgerExpenses}
+        receivablesNis={debtAfterDeduction}
+      />
 
       {/* ── Main grid: Upcoming Appointments + Appoint Request ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

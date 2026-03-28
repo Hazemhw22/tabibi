@@ -48,10 +48,7 @@ export default function AdminMessagesSettingsPage() {
             <span className="font-mono"> SMS_API_ID</span> و <span className="font-mono">SMS_SENDER</span> و{" "}
             <span className="font-mono">SMS_API_URL</span>.
           </p>
-          <p className="text-gray-600 dark:text-gray-300">
-            إذا ظهر رد <span className="font-mono">H004|IP Not Allowed</span> فهذا يعني أن مزود Astra لم يسمح بعنوان IP
-            الخاص بالسيرفر. (يجب عمل whitelist لعنوان IP الحقيقي الذي يعمل منه السيرفر).
-          </p>
+        
         </CardContent>
       </Card>
 

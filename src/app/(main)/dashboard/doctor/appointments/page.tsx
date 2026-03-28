@@ -1,6 +1,5 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireDoctorPageContext } from "@/lib/doctor-session-context";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import Link from "next/link";
@@ -39,16 +38,7 @@ type UnifiedAppointment = {
 };
 
 export default async function DoctorAppointmentsPage() {
-  const session = await auth();
-  if (!session) redirect("/login");
-  if (session.user.role !== "DOCTOR") redirect("/");
-
-  const { data: doctor } = await supabaseAdmin
-    .from("Doctor")
-    .select("id")
-    .eq("userId", session.user.id)
-    .single();
-  if (!doctor) redirect("/dashboard/doctor/setup");
+  const { doctor } = await requireDoctorPageContext();
 
   const [platformRes, clinicRes] = await Promise.all([
     supabaseAdmin

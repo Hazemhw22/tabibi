@@ -18,6 +18,10 @@ enum Role {
   MEDICAL_CENTER_ADMIN // مدير المركز — إشراف كامل وحسابات وموظفون
   MEDICAL_CENTER_RECEPTIONIST // استقبال — مواعيد، تسجيل مرضى، تحصيل
   MEDICAL_CENTER_LAB_STAFF // مختبر/أشعة — رفع نتائج لملف المريض
+  /// موظفو عيادة الطبيب (حساب منفصل): استقبال — مواعيد ومرضى فقط
+  DOCTOR_RECEPTION
+  /// مساعد طبيب — نفس صلاحيات الاستقبال لدى الطبيب
+  DOCTOR_ASSISTANT
 }
 
 enum AppointmentStatus {
@@ -99,6 +103,35 @@ model User {
   medicalCenterPatientDocsUploaded  MedicalCenterPatientDocument[] @relation("MedicalCenterDocUploader")
 
   sentMessages MessageLog[] @relation("MessageLogSender")
+
+  /// موظف عند طبيب معيّن (استقبال / مساعد) — لا يُستخدم مع medicalCenterId
+  employerDoctorId String?
+  employerDoctor   Doctor? @relation("DoctorEmployedStaff", fields: [employerDoctorId], references: [id], onDelete: SetNull)
+  /// RECEPTION | ASSISTANT — يكمّل role عند DOCTOR_RECEPTION / DOCTOR_ASSISTANT
+  doctorStaffRole  String?
+}
+
+/// مصروفات العيادة ودفعات رواتب لموظفي الطبيب — تُسجَّل كتكلفة على الطبيب (عرض سالب في الملخص)
+enum DoctorClinicLedgerKind {
+  CLINIC_PURCHASE // شراء مستلزمات / معدات للعيادة
+  SALARY_PAYMENT // دفع راتب لموظف
+}
+
+model DoctorClinicLedger {
+  id          String               @id @default(cuid())
+  doctorId    String
+  kind        DoctorClinicLedgerKind
+  title       String
+  /// مبلغ موجب = مبلغ خرج من جيب الطبيب
+  amount      Float
+  occurredAt  DateTime             @default(now())
+  notes       String?
+  /// عند kind = SALARY_PAYMENT
+  staffUserId String?
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, occurredAt])
 }
 
 /// سجل رسائل SMS/WhatsApp داخل المنصة
@@ -297,6 +330,8 @@ model Doctor {
   platformPatientCarePlans PlatformPatientCarePlan[]
   medicalCenterInvites     MedicalCenterDoctorInvite[]
   messageLogs              MessageLog[]                @relation("DoctorMessageLogs")
+  employedStaff            User[]                      @relation("DoctorEmployedStaff")
+  clinicLedger           DoctorClinicLedger[]
 }
 
 /// طلب من مركز طبي لربط طبيب مسجّل مسبقاً — يظهر للطبيب للموافقة أو الرفض
@@ -381,6 +416,8 @@ model Appointment {
   slotTurn                Int?
   /// يطابق followUpVisits[].id في خطة العلاج — لعرض الموعد في لوحة المريض بعد حفظ الخطة
   carePlanFollowUpId      String?
+  /// تاريخ إرسال SMS تذكير الموعد (يوم قبل الموعد) — لتجنب التكرار
+  appointmentReminderSentAt DateTime?
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 

@@ -1,6 +1,5 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireDoctorPageContext } from "@/lib/doctor-session-context";
 import {
   carePlanShowsDentalToothChart,
   resolveCarePlanType,
@@ -77,15 +76,7 @@ export default async function DoctorPatientsPage({
 }: {
   searchParams: Promise<{ q?: string; id?: string; source?: string; owner?: "LOCAL" | "CENTER" }>;
 }) {
-  const session = await auth();
-  if (!session || session.user.role !== "DOCTOR") redirect("/login");
-
-  const { data: doctor } = await supabaseAdmin
-    .from("Doctor")
-    .select("id, consultationFee, specialty:Specialty(nameAr), medicalCenter:MedicalCenter(name, nameAr)")
-    .eq("userId", session.user.id)
-    .single();
-  if (!doctor) redirect("/dashboard/doctor/setup");
+  const { session, doctor, isStaff } = await requireDoctorPageContext();
 
   const specialtyNameAr = (
     (doctor as { specialty?: { nameAr?: string | null } | null }).specialty?.nameAr ?? ""
@@ -280,6 +271,7 @@ export default async function DoctorPatientsPage({
         showDentalToothChart={showDentalToothChart}
         carePlanType={carePlanType}
         doctorDisplayName={session.user?.name ?? ""}
+        isStaff={isStaff}
         centerDisplayName={
           ((doctor as { medicalCenter?: { nameAr?: string | null; name?: string | null } | null }).medicalCenter?.nameAr ??
             (doctor as { medicalCenter?: { name?: string | null } | null }).medicalCenter?.name ??

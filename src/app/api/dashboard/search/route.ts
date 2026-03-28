@@ -40,7 +40,7 @@ export async function GET(req: Request) {
               .from("Doctor")
               .select(
                 `id, status, consultationFee,
-           user:User(name, email, phone),
+           user:User!Doctor_userId_fkey(name, email, phone),
            specialty:Specialty(nameAr)`
               )
               .in("id", linkedIds)
@@ -114,7 +114,7 @@ export async function GET(req: Request) {
     } else if (role === "PATIENT") {
       const { data: doctors } = await supabaseAdmin
         .from("Doctor")
-        .select(`id, user:User(name), specialty:Specialty(nameAr)`)
+        .select(`id, user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr)`)
         .eq("status", "APPROVED")
         .eq("visibleToPatients", true)
         .limit(100);

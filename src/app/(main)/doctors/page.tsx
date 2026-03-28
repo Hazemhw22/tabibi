@@ -39,7 +39,7 @@ async function getDoctors(
 ) {
   let query = supabaseAdmin
     .from("Doctor")
-    .select(`*, locationId, gender, user:User(name, phone, image), specialty:Specialty(*), clinics:Clinic(*), reviews:Review(id)`)
+    .select(`*, locationId, gender, user:User!Doctor_userId_fkey(name, phone, image), specialty:Specialty(*), clinics:Clinic(*), reviews:Review(id)`)
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true);
 

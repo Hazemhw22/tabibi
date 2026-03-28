@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireDoctorPageContext } from "@/lib/doctor-session-context";
 import { ledgerBalance } from "@/lib/patient-transaction-math";
 import Link from "next/link";
 import IconArrowForward from "@/components/icon/icon-arrow-forward";
@@ -13,15 +13,7 @@ export default async function PatientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await auth();
-  if (!session || session.user.role !== "DOCTOR") redirect("/login");
-
-  const { data: doctor } = await supabaseAdmin
-    .from("Doctor")
-    .select("id, consultationFee")
-    .eq("userId", session.user.id)
-    .single();
-  if (!doctor) redirect("/dashboard/doctor/setup");
+  const { session, doctor } = await requireDoctorPageContext();
 
   const { data: clinicPatient } = await supabaseAdmin
     .from("ClinicPatient")
@@ -121,6 +113,7 @@ export default async function PatientDetailPage({
           balance={balance}
           doctorId={doctor.id}
           defaultFee={doctor.consultationFee ?? 0}
+          doctorDisplayName={session.user?.name ?? ""}
         />
       </div>
     );
@@ -226,6 +219,7 @@ export default async function PatientDetailPage({
         balance={platformBalance}
         doctorId={doctor.id}
         defaultFee={doctor.consultationFee ?? 0}
+        doctorDisplayName={session.user?.name ?? ""}
       />
     </div>
   );

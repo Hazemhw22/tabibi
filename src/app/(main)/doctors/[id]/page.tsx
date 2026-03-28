@@ -19,7 +19,7 @@ async function getDoctor(id: string) {
     .from("Doctor")
     .select(`
       id, consultationFee, rating, experienceYears, bio, status, whatsapp, visibleToPatients, locationId, gender,
-      user:User(name, phone, image),
+      user:User!Doctor_userId_fkey(name, phone, image),
       specialty:Specialty(nameAr),
       clinics:Clinic(id, name, address, city, phone, isMain, locationId),
       timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId, slotCapacity)

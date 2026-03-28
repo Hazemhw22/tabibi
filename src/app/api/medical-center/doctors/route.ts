@@ -74,7 +74,7 @@ export async function GET() {
         consultationFee,
         doctorClinicFee,
         experienceYears,
-        user:User(name, phone, email),
+        user:User!Doctor_userId_fkey(name, phone, email),
         specialty:Specialty(nameAr),
         timeSlots:TimeSlot(id, dayOfWeek, startTime, endTime, isActive, clinicId)
       `)

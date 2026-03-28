@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import IconSend from "@/components/icon/icon-send";
 import IconUsersGroup from "@/components/icon/icon-users-group";
 import IconUser from "@/components/icon/icon-user";
@@ -14,45 +14,71 @@ import { toast } from "sonner";
 
 export type FixedTemplate = { id: string; label: string; body: string };
 
+/** قوالب مالية تُملأ من ملف مريض العيادة عند الاختيار من القائمة */
+const CLINIC_LEDGER_TEMPLATES: FixedTemplate[] = [
+  {
+    id: "account_statement",
+    label: "كشف حساب",
+    body:
+      "طبيبي — كشف حساب\n{{patient_name}}\n• الرصيد الحالي: ₪{{balance}}\n• مجموع الخدمات (الديون): ₪{{total_services}}\n• مجموع الدفعات: ₪{{total_payments}}\nللاستفسار تواصل مع العيادة.",
+  },
+  {
+    id: "collection",
+    label: "تحصيل",
+    body:
+      "طبيبي — تذكير بالتحصيل\n{{patient_name}}\nالمستحق / الرصيد: ₪{{balance}}\nخدمات مسجّلة: ₪{{total_services}} | دفعات: ₪{{total_payments}}\nشكراً لتعاونكم.",
+  },
+];
+
 const DEFAULT_FIXED_TEMPLATES: FixedTemplate[] = [
   {
     id: "welcome_platform",
     label: "تهنئة انضمام",
     body: "أهلاً وسهلاً بك في منصة طبيبي 🌿\nتم إنشاء حسابك بنجاح.\nلأي استفسار نحن بالخدمة.",
   },
-  {
-    id: "booking_confirm",
-    label: "تأكيد حجز",
-    body: "طبيبي: تم تأكيد حجزك. التاريخ: {{date}} الساعة: {{time}}. شكراً لك.",
-  },
-  {
-    id: "booking_pending",
-    label: "طلب حجز",
-    body: "طبيبي: تم استلام طلب الحجز وسيتم تأكيده قريباً. التاريخ: {{date}} الساعة: {{time}}.",
-  },
-  {
-    id: "payment_received",
-    label: "تأكيد دفعة",
-    body: "طبيبي: تم تسجيل دفعة بقيمة ₪{{amount}}. شكراً لك.",
-  },
-  {
-    id: "service_added",
-    label: "تسجيل خدمة",
-    body: "طبيبي: تم تسجيل خدمة ({{service}}) بقيمة ₪{{amount}}.",
-  },
-  {
-    id: "appointment_reminder",
-    label: "تذكير موعد",
-    body: "طبيبي: تذكير بموعدك بتاريخ {{date}} الساعة {{time}}. الرجاء الحضور قبل 10 دقائق.",
-  },
 ];
+
+type LedgerSummary = {
+  balance: number;
+  totalPayments: number;
+  totalServices: number;
+  patientName: string | null;
+};
+
+function formatShekel(n: number): string {
+  return String(Math.round(Number.isFinite(n) ? n : 0));
+}
+
+function applyLedgerPlaceholders(
+  body: string,
+  summary: LedgerSummary | null,
+  patientName: string,
+): string {
+  const bal = summary ? formatShekel(summary.balance) : "—";
+  const ts = summary ? formatShekel(summary.totalServices) : "—";
+  const tp = summary ? formatShekel(summary.totalPayments) : "—";
+  const name = patientName.trim() || "—";
+  return body
+    .replace(/\{\{patient_name\}\}/g, name)
+    .replace(/\{\{balance\}\}/g, bal)
+    .replace(/\{\{total_services\}\}/g, ts)
+    .replace(/\{\{total_payments\}\}/g, tp);
+}
 
 type TargetType = "individual" | "all_users";
 type RecipientMode = "manual" | "pick";
 type Recipient = { id: string; name: string | null; phone: string | null };
 
-export function SendMessagePage(props: { title: string; subtitle?: string; allowAllUsers?: boolean }) {
-  const { title, subtitle, allowAllUsers } = props;
+const LEDGER_TEMPLATE_IDS = new Set(["account_statement", "collection"]);
+
+export function SendMessagePage(props: {
+  title: string;
+  subtitle?: string;
+  allowAllUsers?: boolean;
+  /** طبيب عيادة: قوالب كشف حساب/تحصيل + جلب الأرقام عند اختيار مريض من القائمة */
+  clinicPatientLedger?: boolean;
+}) {
+  const { title, subtitle, allowAllUsers, clinicPatientLedger } = props;
   const [targetType, setTargetType] = useState<TargetType>("individual");
   const [recipientMode, setRecipientMode] = useState<RecipientMode>("pick");
   const [to, setTo] = useState("");
@@ -62,8 +88,17 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
   const [recipientQuery, setRecipientQuery] = useState("");
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [loadingRecipients, setLoadingRecipients] = useState(false);
+  /** مريض عيادة مختار (لجلب الملخص المالي) */
+  const [selectedClinicPatientId, setSelectedClinicPatientId] = useState<string | null>(null);
+  const [pickedPatientName, setPickedPatientName] = useState("");
+  const [ledgerSummary, setLedgerSummary] = useState<LedgerSummary | null>(null);
+  const [loadingLedger, setLoadingLedger] = useState(false);
 
-  const templates = DEFAULT_FIXED_TEMPLATES;
+  const templates = useMemo(
+    () =>
+      clinicPatientLedger ? [...CLINIC_LEDGER_TEMPLATES, ...DEFAULT_FIXED_TEMPLATES] : DEFAULT_FIXED_TEMPLATES,
+    [clinicPatientLedger],
+  );
   const selectedTpl = templates.find((t) => t.id === selectedTplId) ?? null;
 
   const estimatedSmsCount = useMemo(() => {
@@ -71,11 +106,62 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
     return Math.max(1, Math.ceil(len / 160));
   }, [body]);
 
+  const displayName = useMemo(
+    () => pickedPatientName.trim() || ledgerSummary?.patientName?.trim() || "",
+    [pickedPatientName, ledgerSummary?.patientName],
+  );
+
   const chooseTemplate = (id: string) => {
     setSelectedTplId(id);
     const tpl = templates.find((t) => t.id === id);
-    if (tpl) setBody(tpl.body);
+    if (!tpl) return;
+    if (clinicPatientLedger && LEDGER_TEMPLATE_IDS.has(id)) {
+      setBody(applyLedgerPlaceholders(tpl.body, ledgerSummary, displayName));
+    } else {
+      setBody(tpl.body);
+    }
   };
+
+  useEffect(() => {
+    if (!clinicPatientLedger || !selectedClinicPatientId) {
+      setLedgerSummary(null);
+      setLoadingLedger(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingLedger(true);
+    void (async () => {
+      try {
+        const res = await fetch(`/api/clinic/patients/${selectedClinicPatientId}/ledger-summary`);
+        const j = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || j.error) {
+          setLedgerSummary(null);
+          return;
+        }
+        setLedgerSummary({
+          balance: Number(j.balance) || 0,
+          totalPayments: Number(j.totalPayments) || 0,
+          totalServices: Number(j.totalServices) || 0,
+          patientName: typeof j.patientName === "string" ? j.patientName : null,
+        });
+      } catch {
+        if (!cancelled) setLedgerSummary(null);
+      } finally {
+        if (!cancelled) setLoadingLedger(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clinicPatientLedger, selectedClinicPatientId]);
+
+  useEffect(() => {
+    if (!clinicPatientLedger || !LEDGER_TEMPLATE_IDS.has(selectedTplId)) return;
+    const tpl = templates.find((t) => t.id === selectedTplId);
+    if (!tpl) return;
+    setBody(applyLedgerPlaceholders(tpl.body, ledgerSummary, displayName));
+  }, [clinicPatientLedger, ledgerSummary, displayName, selectedTplId, templates]);
 
   const loadRecipients = async (opts: { all?: boolean; q?: string } = {}) => {
     const q = (opts.q ?? recipientQuery).trim();
@@ -231,7 +317,12 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
               </button>
               <button
                 type="button"
-                onClick={() => setRecipientMode("manual")}
+                onClick={() => {
+                  setRecipientMode("manual");
+                  setSelectedClinicPatientId(null);
+                  setPickedPatientName("");
+                  setLedgerSummary(null);
+                }}
                 className={cn(
                   "px-3 py-2 rounded-full text-xs font-semibold border transition-colors",
                   recipientMode === "manual"
@@ -251,13 +342,27 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
                   className="mt-1"
                   placeholder="0599xxxxxx أو +972..."
                   value={to}
-                  onChange={(e) => setTo(e.target.value)}
+                  onChange={(e) => {
+                    setTo(e.target.value);
+                    setSelectedClinicPatientId(null);
+                    setPickedPatientName("");
+                    setLedgerSummary(null);
+                  }}
                 />
                 <p className="text-[11px] text-gray-500 mt-2">
                   يمكن استخدام المتغيرات داخل النص مثل:{" "}
                   <span className="font-mono">{"{{date}}"}</span>{" "}
                   <span className="font-mono">{"{{time}}"}</span>{" "}
                   <span className="font-mono">{"{{amount}}"}</span>
+                  {clinicPatientLedger && (
+                    <>
+                      {" "}
+                      <span className="font-mono">{"{{balance}}"}</span>{" "}
+                      <span className="font-mono">{"{{total_services}}"}</span>{" "}
+                      <span className="font-mono">{"{{total_payments}}"}</span>{" "}
+                      <span className="font-mono">{"{{patient_name}}"}</span>
+                    </>
+                  )}
                 </p>
               </div>
             ) : (
@@ -317,6 +422,10 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
                                 return;
                               }
                               setTo(r.phone);
+                              if (clinicPatientLedger) {
+                                setSelectedClinicPatientId(r.id);
+                                setPickedPatientName(r.name?.trim() ?? "");
+                              }
                               toast.success("تم اختيار العميل");
                             }}
                           >
@@ -348,7 +457,15 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
             </h3>
 
             <div className="space-y-2">
-              <Label>رسائل ثابتة</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Label className="mb-0">رسائل ثابتة</Label>
+                {clinicPatientLedger && loadingLedger && selectedClinicPatientId && (
+                  <span className="text-[11px] text-gray-500">جاري جلب كشف الحساب...</span>
+                )}
+              </div>
+              {clinicPatientLedger && (
+               <p></p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {templates.map((t) => (
                   <button
@@ -441,10 +558,6 @@ export function SendMessagePage(props: { title: string; subtitle?: string; allow
               </div>
             </div>
 
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
-              تنبيه: إذا ظهر <span className="font-mono">H004|IP Not Allowed</span> فهذا من مزود Astra ويحتاج whitelist
-              لعنوان IP الحقيقي للسيرفر.
-            </div>
           </CardContent>
         </Card>
       </div>

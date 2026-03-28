@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import IconArchive from "@/components/icon/icon-archive";
+import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -17,17 +20,27 @@ type Row = {
 };
 
 export default function DoctorMessagesHistoryPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (status === "loading") return;
+    if (session?.user?.role && isDoctorStaffRole(session.user.role)) {
+      router.replace("/dashboard/doctor/appointments");
+    }
+  }, [session?.user?.role, status, router]);
+
+  useEffect(() => {
+    if (status === "loading" || (session?.user?.role && isDoctorStaffRole(session.user.role))) return;
     fetch("/api/messages/history")
       .then((r) => r.json())
       .then((j) => setRows(j.messages ?? []))
       .catch(() => setRows([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [status, session?.user?.role]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();

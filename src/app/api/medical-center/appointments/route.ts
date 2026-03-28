@@ -59,7 +59,7 @@ export async function GET() {
         medicalCenterId,
         notes,
         patient:User(id, name, phone, email),
-        doctor:Doctor(id, user:User(name), specialty:Specialty(nameAr))
+        doctor:Doctor(id, user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr))
       `)
       .eq("medicalCenterId", centerId)
       .in("doctorId", ids)
@@ -198,7 +198,7 @@ export async function POST(req: Request) {
 
     const { data: doctorUser } = await supabaseAdmin
       .from("Doctor")
-      .select("userId, user:User(name)")
+      .select("userId, user:User!Doctor_userId_fkey(name)")
       .eq("id", data.doctorId)
       .single();
     const doctorUserId = doctorUser?.userId;

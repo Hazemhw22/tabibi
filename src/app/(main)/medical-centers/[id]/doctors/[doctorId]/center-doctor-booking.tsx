@@ -143,7 +143,11 @@ export default function CenterDoctorBooking({ centerId, doctor, isLoggedIn, isPa
       if (!res.ok) {
         toast.error(data.error || "حدث خطأ في الحجز");
       } else {
-        toast.success("تم تأكيد الموعد");
+        toast.success(
+          typeof data.message === "string"
+            ? data.message
+            : "تم إرسال طلب الحجز، وبانتظار موافقة الطبيب."
+        );
         router.push(`/appointments/${data.appointmentId}/success`);
       }
     } catch {
@@ -341,7 +345,7 @@ export default function CenterDoctorBooking({ centerId, doctor, isLoggedIn, isPa
         {loading ? (
           <>
             <IconLoader className="h-5 w-5 animate-spin" />
-            جاري المعالجة...
+            جاري إرسال الطلب...
           </>
         ) : !selectedDate ? (
           "اختر اليوم أولاً"
@@ -350,7 +354,7 @@ export default function CenterDoctorBooking({ centerId, doctor, isLoggedIn, isPa
         ) : (
           <>
             <IconCreditCard className="h-5 w-5" />
-            تأكيد الحجز
+            إرسال طلب الحجز
           </>
         )}
       </button>
