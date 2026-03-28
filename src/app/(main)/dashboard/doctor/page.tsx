@@ -214,6 +214,8 @@ export default async function DoctorDashboard() {
     0
   );
   const totalEarningsWithPayments = totalEarnings + totalPaymentsAdded;
+  /** مدفوعات مواعيد المنصة (Payment) + دفعات مسجّلة في ملف المريض على المنصة */
+  const earningsFromPlatform = totalEarnings + platformPayments;
 
   const ledgerRes = await supabaseAdmin
     .from("DoctorClinicLedger")
@@ -429,6 +431,7 @@ export default async function DoctorDashboard() {
             bg: "bg-blue-50",
             iconColor: "text-blue-500",
             valueFmt: (v: number | string) => `₪${Number(v).toFixed(0)}`,
+            subtitle: `من المنصة ₪${earningsFromPlatform.toFixed(0)}`,
           },
           {
             label: "إجمالي المواعيد",
@@ -460,6 +463,9 @@ export default async function DoctorDashboard() {
                   <p className="font-heading text-2xl font-bold text-slate-800 leading-none">
                     {stat.valueFmt(stat.value)}
                   </p>
+                  {stat.subtitle ? (
+                    <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">{stat.subtitle}</p>
+                  ) : null}
                 </div>
               </div>
             </CardContent>

@@ -18,7 +18,7 @@ export function DoctorWhatsAppFloat() {
       aria-label="تواصل معنا عبر واتساب"
     >
       <IconMessage className="h-6 w-6 shrink-0" />
-      <span className="text-sm font-medium whitespace-nowrap">تواصل معنا</span>
+      <span className="text-sm font-medium whitespace-nowrap">الدعم الفني</span>
     </a>
   );
 }
