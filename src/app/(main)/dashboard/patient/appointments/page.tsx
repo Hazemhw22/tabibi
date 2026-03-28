@@ -32,7 +32,7 @@ export default async function PatientAppointmentsPage() {
     .from("Appointment")
     .select(`
       id, appointmentDate, startTime, endTime, status, fee,
-      doctor:Doctor(User(name), Specialty(nameAr)),
+      doctor:Doctor(user:User!Doctor_userId_fkey(name), Specialty(nameAr)),
       clinic:Clinic(name),
       Review(id)
     `)

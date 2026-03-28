@@ -18,7 +18,7 @@ export default async function PatientReviewsPage() {
     .from("Review")
     .select(`
       id, rating, comment, createdAt,
-      doctor:Doctor(User(name), Specialty(nameAr)),
+      doctor:Doctor(user:User!Doctor_userId_fkey(name), Specialty(nameAr)),
       appointment:Appointment(appointmentDate)
     `)
     .eq("patientId", session.user.id)

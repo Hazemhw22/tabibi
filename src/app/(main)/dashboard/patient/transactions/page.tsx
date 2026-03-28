@@ -23,7 +23,7 @@ export default async function PatientTransactionsPage() {
 
   const { data: platformTxRes } = await supabaseAdmin
     .from("PlatformPatientTransaction")
-    .select(`id, type, description, amount, date, doctor:Doctor(User(name))`)
+    .select(`id, type, description, amount, date, doctor:Doctor(user:User!Doctor_userId_fkey(name))`)
     .eq("patientId", session.user.id)
     .order("date", { ascending: false });
 
@@ -39,7 +39,7 @@ export default async function PatientTransactionsPage() {
         description: string;
         amount: number;
         date: string;
-        clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
+        clinicPatient?: { name?: string; doctor?: { User?: { name?: string }; user?: { name?: string } } };
       }>
     | null = null;
 
@@ -49,7 +49,7 @@ export default async function PatientTransactionsPage() {
       .from("ClinicTransaction")
       .select(
         `id, type, description, amount, date,
-         clinicPatient:ClinicPatient(name, doctor:Doctor(User(name)))`
+         clinicPatient:ClinicPatient(name, doctor:Doctor(user:User!Doctor_userId_fkey(name)))`
       )
       .in("clinicPatientId", cpIds)
       .order("date", { ascending: false });
@@ -59,7 +59,7 @@ export default async function PatientTransactionsPage() {
       description: string;
       amount: number;
       date: string;
-      clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
+      clinicPatient?: { name?: string; doctor?: { User?: { name?: string }; user?: { name?: string } } };
     }> | null;
   }
 
@@ -69,7 +69,7 @@ export default async function PatientTransactionsPage() {
     description: string;
     amount: number;
     date: string;
-    doctor?: { User?: { name?: string } };
+    doctor?: { User?: { name?: string }; user?: { name?: string } };
   }>;
 
   const txRows: PatientTxRow[] = [
@@ -79,7 +79,7 @@ export default async function PatientTransactionsPage() {
       type: t.type,
       description: t.description,
       amount: t.amount,
-      doctorName: t.doctor?.User?.name ?? "—",
+      doctorName: t.doctor?.User?.name ?? t.doctor?.user?.name ?? "—",
       source: "منصة" as const,
     })),
     ...((clinicTxList ?? []) as Array<{
@@ -88,7 +88,7 @@ export default async function PatientTransactionsPage() {
       description: string;
       amount: number;
       date: string;
-      clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
+      clinicPatient?: { name?: string; doctor?: { User?: { name?: string }; user?: { name?: string } } };
     }>).map((t) => ({
       id: t.id,
       date: t.date,
@@ -96,7 +96,9 @@ export default async function PatientTransactionsPage() {
       description: t.description,
       amount: t.amount,
       doctorName:
-        (t.clinicPatient as { doctor?: { User?: { name?: string } } })?.doctor?.User?.name ?? "—",
+        (t.clinicPatient as { doctor?: { User?: { name?: string }; user?: { name?: string } } })?.doctor?.User?.name ??
+        (t.clinicPatient as { doctor?: { User?: { name?: string }; user?: { name?: string } } })?.doctor?.user?.name ??
+        "—",
       source: "عيادة" as const,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

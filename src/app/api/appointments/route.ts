@@ -22,9 +22,13 @@ const appointmentSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   notes: z.string().optional(),
-  fee: z.number().positive(),
+  /**
+   * يُقبل 0 (مثلاً طبيب مركز تظهر رسومه لاحقاً من لقطة المركز، أو consultationFee = 0 في القاعدة).
+   * سابقاً `positive()` رفضت الرقم 0 فكان الحجز يفشل بصمت بـ «بيانات غير صالحة».
+   */
+  fee: z.coerce.number().min(0).default(0),
   /** رقم الدور 1..slotCapacity ضمن نفس الفترة */
-  slotTurn: z.number().int().min(1).max(100).optional(),
+  slotTurn: z.coerce.number().int().min(1).max(100).optional(),
   /**
    * true فقط عند الحجز من صفحة المركز أو صفحة طبيب داخل المركز.
    * الحجز من صفحة الطبيب العامة لا يُسجّل كحجز مركز ولا يظهر في لوحة المركز.
@@ -227,7 +231,19 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
+      const first = error.issues[0];
+      const hint =
+        first?.path.join(".") === "fee" && first?.code === "too_small"
+          ? "الرسوم يجب أن تكون رقماً صالحاً (يُقبل 0 عند تعريف الرسوم من المركز)."
+          : undefined;
+      return NextResponse.json(
+        {
+          error: "بيانات غير صالحة",
+          ...(hint && { hint }),
+          ...(process.env.NODE_ENV === "development" && { issues: error.issues }),
+        },
+        { status: 400 },
+      );
     }
     console.error("Appointment error:", error);
     return NextResponse.json({ error: "حدث خطأ في الخادم" }, { status: 500 });

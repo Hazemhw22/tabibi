@@ -72,7 +72,7 @@ export default async function PatientDashboard() {
     .from("Appointment")
     .select(`
       id, appointmentDate, startTime, endTime, status, fee, paymentStatus,
-      doctor:Doctor(rating, gender, User(name, image), Specialty(nameAr)),
+      doctor:Doctor(rating, gender, user:User!Doctor_userId_fkey(name, image), Specialty(nameAr)),
       clinic:Clinic(name),
       Review(id)
     `)
@@ -81,7 +81,7 @@ export default async function PatientDashboard() {
 
   const { data: platformTxRes } = await supabaseAdmin
     .from("PlatformPatientTransaction")
-    .select(`id, type, description, amount, date, doctor:Doctor(User(name))`)
+    .select(`id, type, description, amount, date, doctor:Doctor(user:User!Doctor_userId_fkey(name))`)
     .eq("patientId", session.user.id)
     .order("date", { ascending: false });
 
@@ -92,14 +92,14 @@ export default async function PatientDashboard() {
 
   let clinicTxList: Array<{
     id: string; type: string; description: string; amount: number; date: string;
-    clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
+    clinicPatient?: { name?: string; doctor?: { User?: { name?: string }; user?: { name?: string } } };
   }> | null = null;
 
   const cpIds = (clinicPatients ?? []).map((p: { id: string }) => p.id);
   if (cpIds.length > 0) {
     const { data: clinicTxData } = await supabaseAdmin
       .from("ClinicTransaction")
-      .select(`id, type, description, amount, date, clinicPatient:ClinicPatient(name, doctor:Doctor(User(name)))`)
+      .select(`id, type, description, amount, date, clinicPatient:ClinicPatient(name, doctor:Doctor(user:User!Doctor_userId_fkey(name)))`)
       .in("clinicPatientId", cpIds)
       .order("date", { ascending: false });
     clinicTxList = clinicTxData as typeof clinicTxList;
@@ -112,21 +112,26 @@ export default async function PatientDashboard() {
 
   const platformTxList = (platformTxRes ?? []) as Array<{
     id: string; type: string; description: string; amount: number; date: string;
-    doctor?: { User?: { name?: string } };
+    doctor?: { User?: { name?: string }; user?: { name?: string } };
   }>;
 
   const txRows: PatientTxRow[] = [
     ...platformTxList.map((t) => ({
       id: t.id, date: t.date, type: t.type, description: t.description,
-      amount: t.amount, doctorName: t.doctor?.User?.name ?? "—", source: "منصة" as const,
+      amount: t.amount,
+      doctorName: t.doctor?.User?.name ?? t.doctor?.user?.name ?? "—",
+      source: "منصة" as const,
     })),
     ...((clinicTxList ?? []) as Array<{
       id: string; type: string; description: string; amount: number; date: string;
-      clinicPatient?: { name?: string; doctor?: { User?: { name?: string } } };
+      clinicPatient?: { name?: string; doctor?: { User?: { name?: string }; user?: { name?: string } } };
     }>).map((t) => ({
       id: t.id, date: t.date, type: t.type, description: t.description,
       amount: t.amount,
-      doctorName: (t.clinicPatient as { doctor?: { User?: { name?: string } } })?.doctor?.User?.name ?? "—",
+      doctorName:
+        (t.clinicPatient as { doctor?: { User?: { name?: string }; user?: { name?: string } } })?.doctor?.User?.name ??
+        (t.clinicPatient as { doctor?: { User?: { name?: string }; user?: { name?: string } } })?.doctor?.user?.name ??
+        "—",
       source: "عيادة" as const,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

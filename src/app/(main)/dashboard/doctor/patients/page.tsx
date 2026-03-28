@@ -216,8 +216,12 @@ export default async function DoctorPatientsPage({
             .eq("patientId", selectedId)
             .eq("doctorId", doctor.id)
             .order("appointmentDate", { ascending: false });
+          /**
+           * بدون `owner` في الرابط: نعرض كل مواعيد الطبيب مع المريض (مركز + عيادة).
+           * سابقاً كان الفرع الافتراضي يقيّد بـ medicalCenterId = null فقط فاختفت مواعيد المركز.
+           */
           if (selectedOwner === "CENTER") qA = qA.not("medicalCenterId", "is", null);
-          else qA = qA.is("medicalCenterId", null);
+          else if (selectedOwner === "LOCAL") qA = qA.is("medicalCenterId", null);
           const { data } = await qA;
           return { data };
         })(),
@@ -230,7 +234,7 @@ export default async function DoctorPatientsPage({
           .order("date", { ascending: false }),
       ]);
 
-      if (platformApts?.length) {
+      if (userData) {
         const transactions: TransactionRow[] = (txData ?? []).map((t) => ({
           id: t.id, type: t.type, description: t.description,
           amount: t.amount, date: t.date, notes: t.notes,
@@ -245,14 +249,27 @@ export default async function DoctorPatientsPage({
           notes: (a as { notes?: string | null }).notes ?? null,
         }));
         const balance = ledgerBalance(transactions);
+        let ownership: "LOCAL" | "CENTER" = "LOCAL";
+        if (selectedOwner === "CENTER" || selectedOwner === "LOCAL") {
+          ownership = selectedOwner;
+        } else {
+          const raw = platformApts ?? [];
+          const hasCenter = raw.some((r: { medicalCenterId?: string | null }) =>
+            Boolean(r.medicalCenterId),
+          );
+          const hasLocal = raw.some((r: { medicalCenterId?: string | null }) => !r.medicalCenterId);
+          if (hasCenter && !hasLocal) ownership = "CENTER";
+          else if (hasLocal && !hasCenter) ownership = "LOCAL";
+        }
         selectedPatient = {
-          id: selectedId, name: userData?.name ?? "—",
-          phone: userData?.phone ?? null,
-          email: userData?.email ?? null,
+          id: selectedId,
+          name: userData.name ?? "—",
+          phone: userData.phone ?? null,
+          email: userData.email ?? null,
           fileNumber: null, gender: null, dateOfBirth: null, address: null,
           bloodType: null, allergies: null, notes: null,
           source: "platform", appointments, transactions, balance,
-          ownership: selectedOwner === "CENTER" ? "CENTER" : "LOCAL",
+          ownership,
         };
       }
     }
