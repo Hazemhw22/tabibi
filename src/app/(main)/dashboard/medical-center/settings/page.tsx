@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { DAYS_AR } from "@/lib/utils";
-import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS } from "@/data/west-bank-locations";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 import LoadingScreen from "@/components/ui/loading-screen";
 import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
@@ -25,7 +25,7 @@ import { CENTER_ROLE_ADMIN } from "@/lib/medical-center-roles";
 const DAY_OPTIONS = DAYS_AR.map((d, idx) => ({ value: String(idx), label: d }));
 const LOCATION_OPTIONS = [
   { value: "", label: "— اختر المنطقة —" },
-  ...WEST_BANK_LOCATIONS.filter((l) => l.type !== "governorate").map((l) => ({
+  ...PALESTINE_LOCATIONS.filter((l) => l.type !== "governorate").map((l) => ({
     value: l.id,
     label: `${l.governorateAr} — ${l.nameAr}`,
   })),
@@ -256,7 +256,7 @@ export default function MedicalCenterSettingsPage() {
             موقع المركز على الخريطة
           </h2>
           <p className="text-xs text-slate-500 mb-4">
-            اختر المدينة أو القرية من الضفة الغربية (لتظهر في البحث والفلترة).
+            اختر المدينة أو القرية من الضفة أو غزة (لتظهر في البحث والفلترة).
           </p>
           <div className="w-full min-w-0">
             <DropdownSelect

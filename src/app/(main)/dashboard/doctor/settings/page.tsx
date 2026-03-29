@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { DAYS_AR, formatDateLong } from "@/lib/utils";
 import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
-import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 function getDateForDayOfWeek(dayOfWeek: number): Date {
   const today = new Date();
@@ -406,7 +406,7 @@ export default function DoctorSettingsPage() {
               منطقتك (مكان العمل)
             </CardTitle>
             <p className="text-sm text-gray-500 mt-1">
-              اختر المدينة أو المحافظة في الضفة الغربية. سيُستخدم لعرضك للمرضى عند البحث حسب المنطقة.
+              اختر المدينة أو المحافظة في الضفة أو قطاع غزة. سيُستخدم لعرضك للمرضى عند البحث حسب المنطقة.
             </p>
           </CardHeader>
           <CardContent>
@@ -416,7 +416,7 @@ export default function DoctorSettingsPage() {
               className="w-full h-11 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
             >
               <option value="">اختر المدينة أو المحافظة</option>
-              {WEST_BANK_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
+              {PALESTINE_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.nameAr} — {loc.governorateAr}
                 </option>

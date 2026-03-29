@@ -10,7 +10,7 @@ import IconPlus from "@/components/icon/icon-plus";
 import IconUpload from "@/components/icon/icon-upload";
 import IconInfoCircle from "@/components/icon/icon-info-circle";
 import IconMapPin from "@/components/icon/icon-map-pin";
-import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS } from "@/data/west-bank-locations";
 import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -165,11 +165,11 @@ export default function DoctorSetupPage() {
               </div>
             </div>
 
-            {/* المنطقة - الضفة الغربية */}
+            {/* المنطقة - الضفة أو غزة */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <IconMapPin className="inline h-4 w-4 ml-1" />
-                المنطقة (الضفة الغربية)
+                المنطقة (الضفة أو غزة)
               </label>
               <select
                 value={locationId}
@@ -177,7 +177,7 @@ export default function DoctorSetupPage() {
                 className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 <option value="">اختر المدينة أو القرية</option>
-                {WEST_BANK_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
+                {PALESTINE_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
                   <option key={loc.id} value={loc.id}>
                     {loc.nameAr} - {loc.governorateAr}
                   </option>

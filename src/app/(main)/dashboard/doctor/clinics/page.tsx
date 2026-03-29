@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { DAYS_AR, cn } from "@/lib/utils";
 import { EXTRA_CLINIC_ANNUAL_FEE_NIS } from "@/lib/subscription-pricing";
 import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
-import { WEST_BANK_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS, getLocationById } from "@/data/west-bank-locations";
 
 interface Clinic {
   id?: string;
@@ -306,7 +306,7 @@ export default function DoctorClinicsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">العيادات والمواعيد</h1>
         <p className="text-gray-500 mt-1">
-          إدارة عياداتك ومواعيد العمل لكل عيادة. يمكن أن يكون لكل عيادة موقع مختلف داخل الضفة
+          إدارة عياداتك ومواعيد العمل لكل عيادة. يمكن أن يكون لكل عيادة موقع مختلف في الضفة أو غزة
           الغربية.
         </p>
       </div>
@@ -415,7 +415,7 @@ export default function DoctorClinicsPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                    المنطقة (مدينة / قرية في الضفة الغربية)
+                    المنطقة (مدينة / قرية في الضفة أو غزة)
                   </label>
                   <select
                     value={clinic.locationId ?? ""}
@@ -427,7 +427,7 @@ export default function DoctorClinicsPage() {
                     <option value="">
                       {clinic.locationId ? getLocationLabel(clinic.locationId) : "اختر المنطقة"}
                     </option>
-                    {WEST_BANK_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
+                    {PALESTINE_LOCATIONS.filter((l) => l.type !== "governorate").map((loc) => (
                       <option key={loc.id} value={loc.id}>
                         {loc.nameAr} — {loc.governorateAr}
                       </option>

@@ -7,12 +7,12 @@ import IconFilter from "@/components/icon/icon-filter";
 import IconMapPin from "@/components/icon/icon-map-pin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS } from "@/data/west-bank-locations";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 
 const LOCATION_FILTER_OPTIONS = [
   { value: "", label: "الكل" },
-  ...WEST_BANK_LOCATIONS.map((loc) => ({
+  ...PALESTINE_LOCATIONS.map((loc) => ({
     value: loc.id,
     label:
       loc.type === "governorate"
@@ -110,11 +110,11 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
           </div>
         </div>
 
-        {/* Location - الضفة الغربية */}
+        {/* Location - فلسطين */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <IconMapPin className="inline h-4 w-4 ml-1" />
-            المنطقة (الضفة الغربية)
+            المنطقة (الضفة أو غزة)
           </label>
           <select
             value={locationId}
@@ -122,7 +122,7 @@ export default function DoctorFilters({ specialties, currentParams }: Props) {
             className="w-full h-10 border border-gray-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="">الكل</option>
-            {WEST_BANK_LOCATIONS.map((loc) => (
+            {PALESTINE_LOCATIONS.map((loc) => (
               <option key={loc.id} value={loc.id}>
                 {loc.type === "governorate" ? `محافظة ${loc.nameAr}` : loc.nameAr} {loc.type !== "governorate" ? `- ${loc.governorateAr}` : ""}
               </option>

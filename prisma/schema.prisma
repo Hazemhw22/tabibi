@@ -77,7 +77,7 @@ model User {
   image         String?
   password      String?
   phone         String?
-  regionId      String? // منطقة المريض (مدينة/قرية من الضفة الغربية)
+  regionId      String? // منطقة المريض (مدينة/قرية — الضفة أو غزة)
   role          Role      @default(PATIENT)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -325,7 +325,7 @@ model Doctor {
   /// رقم الواتساب للتواصل
   whatsapp              String?
   visibleToPatients     Boolean   @default(true)
-  /// معرف الموقع من قائمة مدن وقرى الضفة الغربية
+  /// معرف الموقع من قائمة مدن وقرى فلسطين (الضفة وغزة)
   locationId            String?
   /// إن وُجد: الطبيب ضمن هذا المركز الطبي (يظهر في صفحة المركز)
   medicalCenterId       String?
@@ -388,7 +388,7 @@ model Clinic {
   phone           String?
   mapUrl          String?
   isMain          Boolean @default(false)
-  locationId      String? // منطقة هذه العيادة (مدينة/قرية من الضفة الغربية)
+  locationId      String? // منطقة هذه العيادة (مدينة/قرية — الضفة أو غزة)
   /// عند الربط بمركز طبي (فرع المركز للطبيب)
   medicalCenterId String?
 

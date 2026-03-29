@@ -8,13 +8,13 @@ import IconLoader from "@/components/icon/icon-loader";
 import IconLogin from "@/components/icon/icon-login";
 import IconUserPlus from "@/components/icon/icon-user-plus";
 import { Button } from "@/components/ui/button";
-import { WEST_BANK_LOCATIONS, suggestLocationIdFromPlaceName } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS, suggestLocationIdFromPlaceName } from "@/data/west-bank-locations";
 import { getStoredUserRole } from "./role-choice-modal";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 
 const REGION_OPTIONS = [
   { value: "", label: "اختر المدينة أو المحافظة" },
-  ...WEST_BANK_LOCATIONS.map((loc) => ({
+  ...PALESTINE_LOCATIONS.map((loc) => ({
     value: loc.id,
     label:
       loc.type === "governorate"
@@ -131,7 +131,7 @@ export default function RegionModal() {
           </h2>
         </div>
         <p className="text-gray-500 text-sm mb-4">
-          اختر منطقتك في الضفة الغربية لعرض الأطباء القريبين منك، أو استخدم موقعك الحالي.
+          اختر منطقتك في الضفة أو قطاع غزة لعرض الأطباء القريبين منك، أو استخدم موقعك الحالي.
         </p>
 
         <Button

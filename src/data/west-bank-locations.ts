@@ -1,6 +1,6 @@
 /**
- * مدن وقرى الضفة الغربية - للاختيار عند التسجيل والفلترة
- * المصدر: محافظات ومدن السلطة الفلسطينية في الضفة الغربية
+ * مدن وقرى فلسطين — الضفة الغربية وقطاع غزة — للاختيار عند التسجيل والفلترة
+ * المصدر: تقسيم محافظات السلطة الفلسطينية
  */
 
 export type LocationItem = {
@@ -116,12 +116,51 @@ export const WEST_BANK_LOCATIONS: LocationItem[] = [
   { id: "hebron-tarqumiya", governorateAr: "الخليل", nameAr: "ترقوميا", type: "village" },
 ];
 
+/** قطاع غزة — المحافظات الخمس والمدن والمناطق الرئيسية */
+export const GAZA_STRIP_LOCATIONS: LocationItem[] = [
+  // ========== محافظة شمال غزة ==========
+  { id: "north-gaza-gov", governorateAr: "شمال غزة", nameAr: "شمال غزة", type: "governorate" },
+  { id: "north-gaza-jabaliya", governorateAr: "شمال غزة", nameAr: "جباليا", type: "city" },
+  { id: "north-gaza-beit-lahiya", governorateAr: "شمال غزة", nameAr: "بيت لاهيا", type: "city" },
+  { id: "north-gaza-beit-hanoun", governorateAr: "شمال غزة", nameAr: "بيت حانون", type: "city" },
+  { id: "north-gaza-shati", governorateAr: "شمال غزة", nameAr: "معسكر جباليا", type: "city" },
+  // ========== محافظة غزة ==========
+  { id: "gaza-gov", governorateAr: "غزة", nameAr: "غزة", type: "governorate" },
+  { id: "gaza-city-center", governorateAr: "غزة", nameAr: "مدينة غزة", type: "city" },
+  { id: "gaza-al-shati", governorateAr: "غزة", nameAr: "الشاطئ", type: "city" },
+  { id: "gaza-al-remal", governorateAr: "غزة", nameAr: "الرمال", type: "city" },
+  { id: "gaza-al-sabra", governorateAr: "غزة", nameAr: "الصبرة", type: "city" },
+  { id: "gaza-al-tuffah", governorateAr: "غزة", nameAr: "التفاح", type: "city" },
+  { id: "gaza-al-daraj", governorateAr: "غزة", nameAr: "الدرج", type: "city" },
+  // ========== محافظة الدير البلح ==========
+  { id: "deir-al-balah-gov", governorateAr: "الدير البلح", nameAr: "الدير البلح", type: "governorate" },
+  { id: "deir-al-balah-city", governorateAr: "الدير البلح", nameAr: "الدير البلح (المدينة)", type: "city" },
+  { id: "deir-nuseirat", governorateAr: "الدير البلح", nameAr: "النصيرات", type: "city" },
+  { id: "deir-maghazi", governorateAr: "الدير البلح", nameAr: "المغازي", type: "village" },
+  { id: "deir-bureij", governorateAr: "الدير البلح", nameAr: "البريج", type: "village" },
+  { id: "deir-wadi-salqa", governorateAr: "الدير البلح", nameAr: "وادي السلقا", type: "village" },
+  // ========== محافظة خان يونس ==========
+  { id: "khan-yunis-gov", governorateAr: "خان يونس", nameAr: "خان يونس", type: "governorate" },
+  { id: "khan-yunis-city", governorateAr: "خان يونس", nameAr: "مدينة خان يونس", type: "city" },
+  { id: "khan-yunis-camp", governorateAr: "خان يونس", nameAr: "مخيم خان يونس", type: "city" },
+  { id: "khan-yunis-bani-suhaila", governorateAr: "خان يونس", nameAr: "بني سهيلا", type: "village" },
+  { id: "khan-yunis-khuzaa", governorateAr: "خان يونس", nameAr: "الخزاعة", type: "village" },
+  { id: "khan-yunis-absan", governorateAr: "خان يونس", nameAr: "عبسان الكبيرة", type: "village" },
+  // ========== محافظة رفح ==========
+  { id: "rafah-gov", governorateAr: "رفح", nameAr: "رفح", type: "governorate" },
+  { id: "rafah-city", governorateAr: "رفح", nameAr: "مدينة رفح", type: "city" },
+  { id: "rafah-camp", governorateAr: "رفح", nameAr: "مخيم رفح", type: "city" },
+];
+
+/** الضفة وغزة — القائمة الموحّدة للموقع والمرضى والعيادات */
+export const PALESTINE_LOCATIONS: LocationItem[] = [...WEST_BANK_LOCATIONS, ...GAZA_STRIP_LOCATIONS];
+
 /** المحافظات فقط (للاختيار السريع) */
-export const GOVERNORATES = WEST_BANK_LOCATIONS.filter((l) => l.type === "governorate");
+export const GOVERNORATES = PALESTINE_LOCATIONS.filter((l) => l.type === "governorate");
 
 /** الحصول على موقع بالمعرف */
 export function getLocationById(id: string): LocationItem | undefined {
-  return WEST_BANK_LOCATIONS.find((l) => l.id === id);
+  return PALESTINE_LOCATIONS.find((l) => l.id === id);
 }
 
 /** اسم المنطقة كاملاً للعرض (مثل: محافظة نابلس، أو نابلس - نابلس، أو يعبد - جنين) */
@@ -134,7 +173,7 @@ export function getLocationFullName(id: string): string {
 
 /** المواقع التابعة لمحافظة (نفس المحافظة) */
 export function getLocationsByGovernorate(governorateAr: string): LocationItem[] {
-  return WEST_BANK_LOCATIONS.filter((l) => l.governorateAr === governorateAr);
+  return PALESTINE_LOCATIONS.filter((l) => l.governorateAr === governorateAr);
 }
 
 /** هل الموقعين في نفس المحافظة؟ */
@@ -179,6 +218,19 @@ const GEO_TO_LOCATION_ID: Record<string, string> = {
   tubas: "tubas",
   jerusalem: "jerusalem",
   al_quds: "jerusalem",
+  gaza_city: "gaza-city-center",
+  gaza_strip: "gaza-gov",
+  gaza: "gaza-gov",
+  north_gaza: "north-gaza-gov",
+  jabalia: "north-gaza-jabaliya",
+  jabaliya: "north-gaza-jabaliya",
+  beit_lahiya: "north-gaza-beit-lahiya",
+  beit_hanoun: "north-gaza-beit-hanoun",
+  khan_yunis: "khan-yunis-gov",
+  khan_younis: "khan-yunis-gov",
+  rafah: "rafah-gov",
+  deir_al_balah: "deir-al-balah-gov",
+  deir_el_balah: "deir-al-balah-gov",
 };
 
 /** اقتراح موقع من اسم مكان (من reverse geocoding) */
@@ -187,7 +239,7 @@ export function suggestLocationIdFromPlaceName(placeName: string): string | null
   for (const [key, id] of Object.entries(GEO_TO_LOCATION_ID)) {
     if (normalized.includes(key)) return id;
   }
-  const byNameAr = WEST_BANK_LOCATIONS.find(
+  const byNameAr = PALESTINE_LOCATIONS.find(
     (l) => l.nameAr === placeName || l.governorateAr === placeName
   );
   return byNameAr?.id ?? null;

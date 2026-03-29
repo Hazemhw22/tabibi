@@ -126,7 +126,7 @@ export default async function HomePage() {
                   <span className="text-blue-600 dark:text-blue-400">في متناول يدك</span>
                 </h1>
                 <p className="text-gray-500 dark:text-slate-400 text-[13px] leading-relaxed mb-3">
-                  احجز موعدك مع أفضل الأطباء في الضفة الغربية بكل سهولة
+                  احجز موعدك مع أفضل الأطباء في فلسطين (الضفة وغزة) بكل سهولة
                 </p>
               </div>
               <div className="shrink-0 w-[200px] self-end mb-[10px]">
@@ -204,7 +204,7 @@ export default async function HomePage() {
                 <span className="text-blue-600 dark:text-blue-400">في متناول يدك</span>
               </h1>
               <p className="text-gray-500 dark:text-slate-400 text-sm lg:text-base mb-5 leading-relaxed max-w-sm">
-                احجز موعدك مع أفضل الأطباء في الضفة الغربية بكل سهولة
+                احجز موعدك مع أفضل الأطباء في فلسطين (الضفة وغزة) بكل سهولة
               </p>
 
               <Link href="/doctors" className="block max-w-sm mb-5">

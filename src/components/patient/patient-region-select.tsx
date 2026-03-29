@@ -6,13 +6,13 @@ import IconMapPin from "@/components/icon/icon-map-pin";
 import IconLoader from "@/components/icon/icon-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WEST_BANK_LOCATIONS } from "@/data/west-bank-locations";
+import { PALESTINE_LOCATIONS } from "@/data/west-bank-locations";
 import { toast } from "sonner";
 import { DropdownSelect } from "@/components/ui/dropdown-select";
 
 const REGION_OPTIONS = [
   { value: "", label: "اختر المدينة أو المحافظة" },
-  ...WEST_BANK_LOCATIONS.map((loc) => ({
+  ...PALESTINE_LOCATIONS.map((loc) => ({
     value: loc.id,
     label:
       loc.type === "governorate"
@@ -35,7 +35,7 @@ type Props = {
 export default function PatientRegionSelect({
   defaultRegionId,
   title = "اختر منطقتك لعرض الأطباء القريبين منك",
-  description = "حدّد المدينة أو المحافظة في الضفة الغربية لرؤية الأطباء في منطقتك فقط.",
+  description = "حدّد المدينة أو المحافظة في الضفة أو غزة لرؤية الأطباء في منطقتك فقط.",
   compact = false,
 }: Props) {
   const router = useRouter();
