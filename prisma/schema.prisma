@@ -531,10 +531,8 @@ model ClinicPatientCarePlan {
   id              String   @id @default(cuid())
   doctorId        String
   clinicPatientId String   @unique
-  /// FETAL_IMAGING | OB_GYN | PEDIATRICS | ORTHOPEDICS | NEPHROLOGY | UROLOGY_NEPHROLOGY | CARDIOLOGY |
-  /// PSYCHIATRY | OPHTHALMOLOGY | ENT | PHYSICAL_MEDICINE_REHAB | SPORTS_MEDICINE | OCCUPATIONAL_MEDICINE |
-  /// GASTROENTEROLOGY | ENDOCRINOLOGY | RHEUMATOLOGY | INFECTIOUS_DISEASE | ONCOLOGY | HEMATOLOGY | PULMONOLOGY |
-  /// DENTAL | GENERIC — وحقل data.intlClinical للخطط المنظمة
+  /// FETAL_IMAGING | OB_GYN | … | NUTRITION | DERMATOLOGY_LASER | NUTRITION_DERMATOLOGY | DENTAL | GENERIC —
+  /// وحقل data.intlClinical للخطط المنظمة؛ التغذية/البشرة في anthropometrics و nutritionPlan و dermatologyPlan
   planType        String
   /// بيانات الخطة: followUpVisits[] على الجذر (موحّد)، intlClinical، إلخ
   data            Json     @default("{}")

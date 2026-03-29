@@ -145,6 +145,87 @@ export function serializeCarePlanSectionsForPrint(
       });
       break;
     }
+    case "NUTRITION": {
+      const anth = data.anthropometrics as
+        | { heightCm?: number; weightKg?: number; history?: unknown[] }
+        | undefined;
+      const np = data.nutritionPlan as Record<string, unknown> | undefined;
+      const lines: string[] = [];
+      if (anth && (anth.heightCm || anth.weightKg)) {
+        lines.push(
+          `<p><strong>الطول / الوزن:</strong> ${anth.heightCm ?? "—"} سم — ${anth.weightKg ?? "—"} كغ</p>`,
+        );
+      }
+      if (np && Object.keys(np).length) {
+        lines.push(`<p class="mt-2 font-semibold">التغذية</p><pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(np, null, 2))}</pre>`);
+      }
+      sections.push({
+        titleAr: CARE_PLAN_LABELS[carePlanType],
+        titleEn: "Nutrition plan",
+        bodyHtml: lines.length ? lines.join("") : `<p class="muted">—</p>`,
+      });
+      break;
+    }
+    case "DERMATOLOGY_LASER": {
+      const dp = data.dermatologyPlan as Record<string, unknown> | undefined;
+      const lines: string[] = [];
+      if (dp && Object.keys(dp).length) {
+        lines.push(`<pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(dp, null, 2))}</pre>`);
+      }
+      sections.push({
+        titleAr: CARE_PLAN_LABELS[carePlanType],
+        titleEn: "Dermatology & laser plan",
+        bodyHtml: lines.length ? lines.join("") : `<p class="muted">—</p>`,
+      });
+      break;
+    }
+    case "NUTRITION_DERMATOLOGY": {
+      const anth = data.anthropometrics as
+        | { heightCm?: number; weightKg?: number; history?: unknown[] }
+        | undefined;
+      const np = data.nutritionPlan as Record<string, unknown> | undefined;
+      const dp = data.dermatologyPlan as Record<string, unknown> | undefined;
+      const focus = (data.planFocus as string) || "";
+      const lines: string[] = [];
+      if (focus === "nutrition") {
+        lines.push(`<p><strong>نوع الخطة:</strong> التغذية العلاجية</p>`);
+      } else if (focus === "dermatology") {
+        lines.push(`<p><strong>نوع الخطة:</strong> البشرة والليزر</p>`);
+      } else if (focus === "both") {
+        lines.push(`<p><strong>نوع الخطة (قديم):</strong> مدمج</p>`);
+      } else {
+        lines.push(`<p><strong>نوع الخطة:</strong> لم يُحدَّد — تُطبع أي بيانات متوفرة</p>`);
+      }
+      const showNutSide = focus === "nutrition" || focus === "both";
+      const showDermSide = focus === "dermatology" || focus === "both";
+      const showFallbackSides =
+        focus !== "nutrition" && focus !== "dermatology" && focus !== "both";
+      if (showNutSide || showFallbackSides) {
+        if (anth && (anth.heightCm || anth.weightKg)) {
+          lines.push(
+            `<p><strong>الطول / الوزن:</strong> ${anth.heightCm ?? "—"} سم — ${anth.weightKg ?? "—"} كغ</p>`,
+          );
+        }
+        if (np && Object.keys(np).length) {
+          lines.push(
+            `<p class="mt-2 font-semibold">التغذية</p><pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(np, null, 2))}</pre>`,
+          );
+        }
+      }
+      if (showDermSide || showFallbackSides) {
+        if (dp && Object.keys(dp).length) {
+          lines.push(
+            `<p class="mt-2 font-semibold">البشرة والليزر</p><pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(dp, null, 2))}</pre>`,
+          );
+        }
+      }
+      sections.push({
+        titleAr: CARE_PLAN_LABELS[carePlanType],
+        titleEn: "Nutrition / dermatology plan",
+        bodyHtml: lines.length > 1 ? lines.join("") : lines[0] || `<p class="muted">—</p>`,
+      });
+      break;
+    }
     case "GENERIC":
     case "DENTAL": {
       const items = (data.items as { label: string; detail: string; cost: number }[]) || [];

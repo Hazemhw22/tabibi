@@ -27,6 +27,12 @@ export type CarePlanType =
   /** زراعة الأسنان وتجميل الأسنان */
   | "DENTAL_IMPLANT_COSMETIC"
   | "DENTAL"
+  /** تغذية علاجية وحميات */
+  | "NUTRITION"
+  /** عناية بالبشرة والليزر */
+  | "DERMATOLOGY_LASER"
+  /** تغذية + بشرة وليزر — يختار الطبيب تركيز الخطة */
+  | "NUTRITION_DERMATOLOGY"
   | "GENERIC";
 
 /** خطط بنموذج سريري منظم (أقسام عربية مع عناوين إنجليزية مساعدة) */
@@ -106,6 +112,60 @@ const RULES: { type: CarePlanType; keys: string[] }[] = [
     ],
   },
   { type: "DENTAL", keys: ["اسنان", "سنان", "dent"] },
+  {
+    type: "NUTRITION_DERMATOLOGY",
+    keys: [
+      // يجب أن تسبق أي مفتاح يطابق «التغذية العلاجية» وحدها — وإلا يُصنَّف التخصص كـ NUTRITION فقط
+      "التغذية العلاجية والعناية بالبشرة والليزر",
+      "التغذية العلاجية والعناية بالبشرة",
+      "تغذية علاجية والعناية بالبشرة والليزر",
+      "تغذية علاجية والعناية بالبشرة",
+      "تغذية والعناية بالبشرة",
+      "تغذية والبشرة",
+      "تغذية وبشرة",
+      "تغذية وليزر",
+      "تغذية وبشرة وليزر",
+      "nutrition and skin",
+      "nutrition dermatology",
+      "nutrition-dermatology",
+      "تغذية تجميل",
+      "تغذيه والعنايه بالبشره",
+    ],
+  },
+  {
+    type: "NUTRITION",
+    keys: [
+      "تغذية علاجية",
+      "التغذية العلاجية",
+      "تغذية طبية",
+      "أخصائي تغذية",
+      "اخصائي تغذية",
+      "حمية علاجية",
+      "حميه علاجيه",
+      "علاج غذائي",
+      "dietitian",
+      "dietetic",
+      "clinical nutrition",
+      "تغذية رياضية",
+    ],
+  },
+  {
+    type: "DERMATOLOGY_LASER",
+    keys: [
+      "العناية بالبشرة والليزر",
+      "عناية بالبشرة والليزر",
+      "البشرة والليزر",
+      "بشرة وليزر",
+      "جلدية تجميلية",
+      "ليزر وبشرة",
+      "ليزر جلدي",
+      "dermatology laser",
+      "aesthetic dermatology",
+      "cosmetic dermatology",
+      "laser hair",
+      "إزالة شعر بالليزر",
+    ],
+  },
   {
     type: "FETAL_IMAGING",
     keys: [
@@ -244,6 +304,9 @@ export const CARE_PLAN_LABELS: Record<CarePlanType, string> = {
   DENTAL_IMPLANT_IMMEDIATE_SURGICAL: "زراعة الأسنان الفورية والجراحية",
   DENTAL_IMPLANT_COSMETIC: "زراعة الأسنان وتجميل الأسنان",
   DENTAL: "طب الأسنان",
+  NUTRITION: "التغذية العلاجية — وزن، طول، وخطة حمية",
+  DERMATOLOGY_LASER: "البشرة والليزر — تقييم وبروتوكول وجلسات",
+  NUTRITION_DERMATOLOGY: "التغذية والبشرة — اختر لكل مريض: خطة تغذية أو خطة بشرة وليزر",
   GENERIC: "خطة علاج عامة",
 };
 

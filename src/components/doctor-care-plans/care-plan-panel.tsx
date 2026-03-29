@@ -31,6 +31,7 @@ import { CardiologyHeartSvg, CARDIO_ZONES, type CardiologyZoneId } from "./cardi
 import { OrthopedicsSkeletonSvg } from "./orthopedics-skeleton-svg";
 import { FetalImagingCarePlanBlock } from "./fetal-imaging-care-plan-block";
 import { ClinicalIntlCarePlanBlock } from "./clinical-intl-care-plan-block";
+import { NutritionDermatologyCarePlanBlock } from "./nutrition-dermatology-care-plan-block";
 import { CarePlanFollowUpsSection } from "./care-plan-follow-ups-section";
 import { cn } from "@/lib/utils";
 import { printHtmlDocument } from "@/lib/print-html";
@@ -266,6 +267,11 @@ export function CarePlanPanel({
       {carePlanType === "CARDIOLOGY" && (
         <CardiologyBlock data={data} setData={setData} />
       )}
+      {(carePlanType === "NUTRITION" ||
+        carePlanType === "DERMATOLOGY_LASER" ||
+        carePlanType === "NUTRITION_DERMATOLOGY") && (
+        <NutritionDermatologyCarePlanBlock variant={carePlanType} data={data} setData={setData} />
+      )}
       {isStructuredIntlCarePlan(carePlanType) && (
         <ClinicalIntlCarePlanBlock
           carePlanType={carePlanType}
@@ -310,6 +316,9 @@ export function CarePlanPanel({
         "DENTAL",
         "DENTAL_IMPLANT_IMMEDIATE_SURGICAL",
         "DENTAL_IMPLANT_COSMETIC",
+        "NUTRITION",
+        "DERMATOLOGY_LASER",
+        "NUTRITION_DERMATOLOGY",
       ].includes(carePlanType) && <GenericBlock data={data} setData={setData} />}
 
       <CarePlanFollowUpsSection data={data} setData={setData} carePlanType={carePlanType} />
