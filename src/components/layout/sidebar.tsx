@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTabibiTheme } from "@/lib/tabibi-theme";
 import { cn } from "@/lib/utils";
 import IconMenuDashboard from "@/components/icon/menu/icon-menu-dashboard";
@@ -27,12 +27,32 @@ import { getDoctorAvatar, getPatientAvatar } from "@/lib/avatar";
 import { DOCTOR_STAFF_ROLE_LABELS, isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { DashboardUserMenu } from "@/components/layout/dashboard-user-menu";
+import { doctorMarketplaceNavVisibility } from "@/lib/marketplace-specialties";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
+}
+
+type NavSection = { title: string; items: NavItem[] };
+
+const doctorMarketplaceOfferItem: NavItem = { label: "العروضات", href: "/dashboard/doctor/offers", icon: IconFire };
+const doctorMarketplaceProductItem: NavItem = { label: "المنتجات", href: "/dashboard/doctor/products", icon: IconShoppingBag };
+
+/** يخفي قسم المتجر بالكامل إن لم يكن أي رابط مسموحاً؛ طبيب أسنان: عروض فقط بدون منتجات */
+function filterDoctorSectionsForMarketplace(sections: NavSection[], specialtyNameAr: string | null): NavSection[] {
+  const { offers, products } = doctorMarketplaceNavVisibility(specialtyNameAr);
+  return sections
+    .map((section) => {
+      if (section.title !== "المتجر") return section;
+      const items: NavItem[] = [];
+      if (offers) items.push(doctorMarketplaceOfferItem);
+      if (products) items.push(doctorMarketplaceProductItem);
+      return { title: "المتجر", items };
+    })
+    .filter((section) => section.title !== "المتجر" || section.items.length > 0);
 }
 
 const doctorSectionsFull: NavSection[] = [
@@ -60,6 +80,10 @@ const doctorSectionsFull: NavSection[] = [
       { label: "مزوّدون المستلزمات", href: "/dashboard/doctor/suppliers", icon: IconShoppingBag },
       { label: "مصروفات العيادة", href: "/dashboard/doctor/expenses", icon: IconDollarSignCircle },
     ],
+  },
+  {
+    title: "المتجر",
+    items: [doctorMarketplaceOfferItem, doctorMarketplaceProductItem],
   },
   {
     title: "الإعدادات",
@@ -109,8 +133,6 @@ const adminSections: NavSection[] = [
     items: [{ label: "الإعدادات", href: "/dashboard/admin/settings", icon: IconSettings }],
   },
 ];
-
-type NavSection = { title: string; items: NavItem[] };
 
 const medicalCenterSectionsAdmin: NavSection[] = [
   {
@@ -398,6 +420,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [doctorInfo, setDoctorInfo] = useState<{ status: string | null; specialty: string | null; image: string | null; gender: string | null }>({ status: null, specialty: null, image: null, gender: null });
+  const [doctorProfileResolved, setDoctorProfileResolved] = useState(false);
   const [centerInfo, setCenterInfo] = useState<{ image: string | null; name: string | null }>({ image: null, name: null });
   const [patientInfo, setPatientInfo] = useState<{ image: string | null; gender: string | null }>({ image: null, gender: null });
 
@@ -407,6 +430,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (role === "DOCTOR") {
+      setDoctorProfileResolved(false);
       fetch("/api/doctor/profile")
         .then((r) => r.json())
         .then((data) => setDoctorInfo({
@@ -415,7 +439,8 @@ export default function Sidebar() {
           image: data?.doctor?.user?.image ?? null,
           gender: data?.doctor?.gender ?? null,
         }))
-        .catch(() => setDoctorInfo({ status: null, specialty: null, image: null, gender: null }));
+        .catch(() => setDoctorInfo({ status: null, specialty: null, image: null, gender: null }))
+        .finally(() => setDoctorProfileResolved(true));
     } else if (
       role === "MEDICAL_CENTER_ADMIN" ||
       role === "MEDICAL_CENTER_RECEPTIONIST" ||
@@ -436,23 +461,32 @@ export default function Sidebar() {
           gender: data?.gender ?? null,
         }))
         .catch(() => setPatientInfo({ image: null, gender: null }));
+    } else {
+      setDoctorProfileResolved(false);
     }
   }, [role]);
 
-  const sections =
-    role === "DOCTOR"
-      ? doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING"
-        ? doctorSectionsLimited
-        : doctorSectionsFull
-      : isDoctorStaffRole(role)
-        ? doctorSectionsStaff
-        : role === "MEDICAL_CENTER_ADMIN" ||
-            role === "MEDICAL_CENTER_RECEPTIONIST" ||
-            role === "MEDICAL_CENTER_LAB_STAFF"
-          ? medicalCenterNavForRole(role)
-          : role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN"
-            ? adminSections
-            : patientSections;
+  const sections = useMemo(() => {
+    if (role === "DOCTOR") {
+      if (doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING") {
+        return doctorSectionsLimited;
+      }
+      if (!doctorProfileResolved) {
+        return doctorSectionsFull;
+      }
+      return filterDoctorSectionsForMarketplace(doctorSectionsFull, doctorInfo.specialty);
+    }
+    if (isDoctorStaffRole(role)) return doctorSectionsStaff;
+    if (
+      role === "MEDICAL_CENTER_ADMIN" ||
+      role === "MEDICAL_CENTER_RECEPTIONIST" ||
+      role === "MEDICAL_CENTER_LAB_STAFF"
+    ) {
+      return medicalCenterNavForRole(role);
+    }
+    if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") return adminSections;
+    return patientSections;
+  }, [role, doctorInfo.status, doctorInfo.specialty, doctorProfileResolved]);
 
   const roleLabel =
     role === "DOCTOR"

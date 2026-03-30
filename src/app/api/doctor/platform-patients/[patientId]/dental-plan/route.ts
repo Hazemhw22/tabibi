@@ -183,7 +183,7 @@ export async function POST(
         FILLING: "حشوة",
         RCT: "عصب",
         CROWN: "تاج",
-        IMPLANT: "زرعة",
+        IMPLANT: "زراعة",
         EXTRACTION: "خلع",
         ORTHO: "تقويم",
         BLEACHING: "تبييض",

@@ -15,7 +15,7 @@ const DENTAL_PROBLEMS: { id: string; label: string; color: string }[] = [
   { id: "FILLING", label: "حشوة", color: "bg-green-500" },
   { id: "RCT", label: "عصب", color: "bg-red-500" },
   { id: "CROWN", label: "تاج", color: "bg-purple-500" },
-  { id: "IMPLANT", label: "زرعة", color: "bg-orange-500" },
+  { id: "IMPLANT", label: "زراعة", color: "bg-orange-500" },
   { id: "EXTRACTION", label: "خلع", color: "bg-rose-500" },
   { id: "ORTHO", label: "تقويم", color: "bg-blue-500" },
   { id: "BLEACHING", label: "تبييض", color: "bg-cyan-500" },
@@ -27,10 +27,10 @@ const DENTAL_VIEW = { w: 800, h: 400 };
 
 const DENTAL_SIZE = {
   /** مقاس أساسي موحد */
-  baseW: 38,
-  baseH: 72,
+  baseW: 48,
+  baseH: 92,
   /** هامش يمين/يسار */
-  marginX: 46,
+  marginX: 34,
 } as const;
 
 const DENTAL_CHART_LAYOUT: { num: number; cx: number; cy: number; w: number; h: number }[] = [
@@ -67,6 +67,7 @@ export function DentalToothChartBlock({
   const router = useRouter();
   const filterId = `dentalSoftShadow-${useId().replace(/:/g, "")}`;
   const maskPrefix = `toothMask-${useId().replace(/:/g, "")}`;
+  const outlinePrefix = `toothOutline-${useId().replace(/:/g, "")}`;
 
   const [selectedTeeth, setSelectedTeeth] = useState<string[]>([]);
   const [toothProblems, setToothProblems] = useState<Record<string, string | null>>({});
@@ -338,7 +339,9 @@ export function DentalToothChartBlock({
                   const hasAnyColor = Boolean(toothProblems[id]) || Boolean(toothNotes[id]) || isSelected;
                   const href = `/Individual_Teeth_SVG/%23${t.num}.svg`;
                   const maskId = `${maskPrefix}-${t.num}`;
+                  const outlineId = `${outlinePrefix}-${t.num}`;
                   const tintOpacity = isSelected ? 0.45 : 0.28;
+                  const isImplant = toothProblems[id] === "IMPLANT";
                   return (
                     <g
                       key={`tooth-${t.num}`}
@@ -359,6 +362,18 @@ export function DentalToothChartBlock({
                           />
                         </mask>
                       )}
+                      {isSelected && (
+                        <filter id={outlineId} x="-20%" y="-20%" width="140%" height="140%">
+                          <feMorphology in="SourceAlpha" operator="dilate" radius="2.4" result="dilated" />
+                          <feMorphology in="SourceAlpha" operator="erode" radius="1.4" result="eroded" />
+                          <feComposite in="dilated" in2="eroded" operator="xor" result="ring" />
+                          <feFlood floodColor={stroke} floodOpacity="1" result="flood" />
+                          <feComposite in="flood" in2="ring" operator="in" result="coloredRing" />
+                          <feMerge>
+                            <feMergeNode in="coloredRing" />
+                          </feMerge>
+                        </filter>
+                      )}
                       <image
                         href={href}
                         x={t.cx - t.w / 2}
@@ -368,6 +383,17 @@ export function DentalToothChartBlock({
                         preserveAspectRatio="xMidYMid meet"
                         filter={`url(#${filterId})`}
                       />
+                      {isSelected && (
+                        <image
+                          href={href}
+                          x={t.cx - t.w / 2}
+                          y={t.cy - t.h / 2}
+                          width={t.w}
+                          height={t.h}
+                          preserveAspectRatio="xMidYMid meet"
+                          filter={`url(#${outlineId})`}
+                        />
+                      )}
                       {hasAnyColor && (
                         <rect
                           x={t.cx - t.w / 2}
@@ -379,16 +405,17 @@ export function DentalToothChartBlock({
                           mask={`url(#${maskId})`}
                         />
                       )}
-                      {/* hitbox */}
-                      <rect
-                        x={t.cx - t.w / 2}
-                        y={t.cy - t.h / 2}
-                        width={t.w}
-                        height={t.h}
-                        fill="transparent"
-                        stroke={isSelected ? stroke : "transparent"}
-                        strokeWidth={isSelected ? 1.5 : 0}
-                      />
+                      {isImplant && (
+                        <g
+                          transform={`translate(${t.cx}, ${t.cy + t.h / 2 - 14})`}
+                          mask={`url(#${maskId})`}
+                          opacity={0.95}
+                        >
+                          <rect x={-7} y={-2} width={14} height={9} rx={2} fill="#94a3b8" />
+                          <rect x={-5} y={6} width={10} height={8} rx={2} fill="#64748b" />
+                          <path d="M-4 0 L-1 4 M-1 0 L2 4 M2 0 L5 4" stroke="#e2e8f0" strokeWidth={1} strokeLinecap="round" />
+                        </g>
+                      )}
                       <text
                         x={t.cx}
                         y={t.cy + (t.num <= 16 ? t.h / 2 + 18 : -t.h / 2 - 6)}
@@ -423,7 +450,9 @@ export function DentalToothChartBlock({
                   const hasAnyColor = Boolean(toothProblems[id]) || Boolean(toothNotes[id]) || isSelected;
                   const href = `/Individual_Teeth_SVG/%23${t.num}.svg`;
                   const maskId = `${maskPrefix}-${t.num}`;
+                  const outlineId = `${outlinePrefix}-${t.num}`;
                   const tintOpacity = isSelected ? 0.45 : 0.28;
+                  const isImplant = toothProblems[id] === "IMPLANT";
                   return (
                     <g
                       key={`tooth-${t.num}`}
@@ -444,6 +473,18 @@ export function DentalToothChartBlock({
                           />
                         </mask>
                       )}
+                      {isSelected && (
+                        <filter id={outlineId} x="-20%" y="-20%" width="140%" height="140%">
+                          <feMorphology in="SourceAlpha" operator="dilate" radius="2.4" result="dilated" />
+                          <feMorphology in="SourceAlpha" operator="erode" radius="1.4" result="eroded" />
+                          <feComposite in="dilated" in2="eroded" operator="xor" result="ring" />
+                          <feFlood floodColor={stroke} floodOpacity="1" result="flood" />
+                          <feComposite in="flood" in2="ring" operator="in" result="coloredRing" />
+                          <feMerge>
+                            <feMergeNode in="coloredRing" />
+                          </feMerge>
+                        </filter>
+                      )}
                       <image
                         href={href}
                         x={t.cx - t.w / 2}
@@ -453,6 +494,17 @@ export function DentalToothChartBlock({
                         preserveAspectRatio="xMidYMid meet"
                         filter={`url(#${filterId})`}
                       />
+                      {isSelected && (
+                        <image
+                          href={href}
+                          x={t.cx - t.w / 2}
+                          y={t.cy - t.h / 2}
+                          width={t.w}
+                          height={t.h}
+                          preserveAspectRatio="xMidYMid meet"
+                          filter={`url(#${outlineId})`}
+                        />
+                      )}
                       {hasAnyColor && (
                         <rect
                           x={t.cx - t.w / 2}
@@ -464,16 +516,17 @@ export function DentalToothChartBlock({
                           mask={`url(#${maskId})`}
                         />
                       )}
-                      {/* hitbox */}
-                      <rect
-                        x={t.cx - t.w / 2}
-                        y={t.cy - t.h / 2}
-                        width={t.w}
-                        height={t.h}
-                        fill="transparent"
-                        stroke={isSelected ? stroke : "transparent"}
-                        strokeWidth={isSelected ? 1.5 : 0}
-                      />
+                      {isImplant && (
+                        <g
+                          transform={`translate(${t.cx}, ${t.cy + t.h / 2 - 14})`}
+                          mask={`url(#${maskId})`}
+                          opacity={0.95}
+                        >
+                          <rect x={-7} y={-2} width={14} height={9} rx={2} fill="#94a3b8" />
+                          <rect x={-5} y={6} width={10} height={8} rx={2} fill="#64748b" />
+                          <path d="M-4 0 L-1 4 M-1 0 L2 4 M2 0 L5 4" stroke="#e2e8f0" strokeWidth={1} strokeLinecap="round" />
+                        </g>
+                      )}
                       <text x={t.cx} y={t.cy - t.h / 2 - 6} textAnchor="middle" fontSize="11" fontWeight="600" fill="#374151">
                         {t.num}
                       </text>

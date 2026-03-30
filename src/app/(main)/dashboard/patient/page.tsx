@@ -24,7 +24,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button";
 import PatientRegionSelect from "@/components/patient/patient-region-select";
-import { doctorServesLocation, getLocationById } from "@/data/west-bank-locations";
+import { doctorServesLocation, getLocationById, getLocationFullName } from "@/data/west-bank-locations";
+import { isDentalSpecialtyNameAr, isHairSpecialtyNameAr, isSkinSpecialtyNameAr } from "@/lib/marketplace-specialties";
 
 const STATUS_CONFIG = {
   DRAFT: { label: "بانتظار الموافقة", variant: "secondary" as const, icon: IconInfoCircle, color: "text-gray-500" },
@@ -164,6 +165,94 @@ export default async function PatientDashboard() {
 
   const { data: specialtiesData } = await supabaseAdmin.from("Specialty").select("id, nameAr, icon").limit(8);
   const specialties = (specialtiesData ?? []) as Array<{ id: string; nameAr: string }>;
+
+  type PublicOffer = {
+    id: string;
+    title: string;
+    imageUrl: string;
+    price: number;
+    doctor?: {
+      id?: string;
+      locationId?: string | null;
+      whatsapp?: string | null;
+      user?: { name?: string | null; phone?: string | null };
+      specialty?: { nameAr?: string | null };
+    } | null;
+  };
+
+  type PublicProduct = {
+    id: string;
+    name: string;
+    imageUrl: string;
+    price: number;
+    doctor?: {
+      id?: string;
+      locationId?: string | null;
+      user?: { name?: string | null };
+      specialty?: { nameAr?: string | null };
+    } | null;
+  };
+
+  let publicOffers: PublicOffer[] = [];
+  let publicProducts: PublicProduct[] = [];
+
+  try {
+    const { data: offerRows } = await supabaseAdmin
+      .from("DoctorOffer")
+      .select(
+        `
+        id, title, imageUrl, price, isActive,
+        doctor:Doctor(
+          id, locationId, whatsapp, status, visibleToPatients,
+          user:User!Doctor_userId_fkey(name, phone),
+          specialty:Specialty(nameAr)
+        )
+      `,
+      )
+      .eq("isActive", true)
+      .order("createdAt", { ascending: false })
+      .limit(120);
+
+    publicOffers = (offerRows ?? [])
+      .map((r) => r as PublicOffer & { doctor?: PublicOffer["doctor"] & { status?: string; visibleToPatients?: boolean } })
+      .filter((o) => o.doctor?.status === "APPROVED" && o.doctor?.visibleToPatients !== false)
+      .filter((o) => {
+        const sp = o.doctor?.specialty?.nameAr ?? "";
+        return isDentalSpecialtyNameAr(sp) || isHairSpecialtyNameAr(sp) || isSkinSpecialtyNameAr(sp);
+      })
+      .slice(0, 24);
+  } catch {
+    publicOffers = [];
+  }
+
+  try {
+    const { data: productRows } = await supabaseAdmin
+      .from("DoctorProduct")
+      .select(
+        `
+        id, name, imageUrl, price, isActive,
+        doctor:Doctor(
+          id, locationId, status, visibleToPatients,
+          user:User!Doctor_userId_fkey(name),
+          specialty:Specialty(nameAr)
+        )
+      `,
+      )
+      .eq("isActive", true)
+      .order("createdAt", { ascending: false })
+      .limit(120);
+
+    publicProducts = (productRows ?? [])
+      .map((r) => r as PublicProduct & { doctor?: PublicProduct["doctor"] & { status?: string; visibleToPatients?: boolean } })
+      .filter((p) => p.doctor?.status === "APPROVED" && p.doctor?.visibleToPatients !== false)
+      .filter((p) => {
+        const sp = p.doctor?.specialty?.nameAr ?? "";
+        return isHairSpecialtyNameAr(sp) || isSkinSpecialtyNameAr(sp);
+      })
+      .slice(0, 24);
+  } catch {
+    publicProducts = [];
+  }
 
   const list = appointments ?? [];
   const statsMap = list.reduce((acc: Record<string, number>, a: { status: string }) => {
@@ -404,6 +493,102 @@ export default async function PatientDashboard() {
                   <span className="text-xs font-medium text-gray-700 dark:text-slate-300 whitespace-nowrap">{s.nameAr}</span>
                 </Link>
               ))}
+            </div>
+          </section>
+        )}
+
+        {publicOffers.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">عروضات الأطباء</h2>
+              <span className="text-[11px] text-gray-500">طلب عبر واتساب</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+              {publicOffers.map((o) => {
+                const docName = o.doctor?.user?.name ?? "—";
+                const region = o.doctor?.locationId ? getLocationFullName(o.doctor.locationId) : "—";
+                const contactRaw = o.doctor?.whatsapp || o.doctor?.user?.phone || "";
+                const wa = contactRaw.replace(/\D/g, "");
+                const msg = encodeURIComponent(
+                  `مرحباً د. ${docName}، أرغب بالاستفسار عن عرضكم: ${o.title} (السعر ₪${Number(o.price ?? 0).toFixed(0)})`,
+                );
+                const waHref = wa.length >= 9 ? `https://wa.me/${wa}?text=${msg}` : "";
+                return (
+                  <div
+                    key={o.id}
+                    className="snap-start shrink-0 w-44 sm:w-52 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex flex-col"
+                  >
+                    <div className="relative h-36 bg-gray-100">
+                      <Image src={o.imageUrl} alt={o.title} fill className="object-cover" unoptimized />
+                    </div>
+                    <div className="p-3 flex flex-col flex-1 gap-2">
+                      <p className="text-xs font-bold text-gray-900 dark:text-slate-100 line-clamp-2">{o.title}</p>
+                      <p className="text-[11px] text-gray-600 dark:text-slate-300 truncate">د. {docName}</p>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-slate-400 min-h-[2.25rem]">
+                        <IconMapPin className="h-3 w-3 shrink-0" />
+                        <span className="line-clamp-2">{region}</span>
+                      </div>
+                      <div className="mt-auto flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400">₪{Number(o.price ?? 0).toFixed(0)}</span>
+                        {waHref ? (
+                          <a
+                            href={waHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center bg-green-600 text-white text-[10px] font-bold py-2 rounded-xl hover:bg-green-700 transition-colors"
+                          >
+                            واتساب
+                          </a>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 flex-1 text-center">لا يوجد واتساب</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {publicProducts.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">منتجات (شعر/بشرة)</h2>
+              <span className="text-[11px] text-gray-500">دفع عند الاستلام</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+              {publicProducts.map((p) => {
+                const docName = p.doctor?.user?.name ?? "—";
+                const region = p.doctor?.locationId ? getLocationFullName(p.doctor.locationId) : "—";
+                return (
+                  <div
+                    key={p.id}
+                    className="snap-start shrink-0 w-44 sm:w-52 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex flex-col"
+                  >
+                    <div className="relative h-36 bg-gray-100">
+                      <Image src={p.imageUrl} alt={p.name} fill className="object-cover" unoptimized />
+                    </div>
+                    <div className="p-3 flex flex-col flex-1 gap-2">
+                      <p className="text-xs font-bold text-gray-900 dark:text-slate-100 line-clamp-2">{p.name}</p>
+                      <p className="text-[11px] text-gray-600 dark:text-slate-300 truncate">د. {docName}</p>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-slate-400 min-h-[2.25rem]">
+                        <IconMapPin className="h-3 w-3 shrink-0" />
+                        <span className="line-clamp-2">{region}</span>
+                      </div>
+                      <div className="mt-auto flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400">₪{Number(p.price ?? 0).toFixed(0)}</span>
+                        <Link
+                          href={`/dashboard/patient/checkout/product/${p.id}`}
+                          className="flex-1 text-center bg-blue-600 text-white text-[10px] font-bold py-2 rounded-xl hover:bg-blue-700 transition-colors"
+                        >
+                          طلب
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

@@ -10,7 +10,7 @@ const PROBLEM_LABELS: Record<string, string> = {
   FILLING: "حشوة",
   RCT: "عصب",
   CROWN: "تاج",
-  IMPLANT: "زرعة",
+  IMPLANT: "زراعة",
   EXTRACTION: "خلع",
   ORTHO: "تقويم",
   BLEACHING: "تبييض",
