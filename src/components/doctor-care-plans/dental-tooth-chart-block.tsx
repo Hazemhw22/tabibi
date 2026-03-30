@@ -23,38 +23,32 @@ const DENTAL_PROBLEMS: { id: string; label: string; color: string }[] = [
   { id: "OTHER", label: "أخرى", color: "bg-yellow-500" },
 ];
 
-const TOOTH_ICON_PATH =
-  "m328.179 0c-24.301 0-48.562 5.537-72.166 16.464-23.604-10.927-47.865-16.464-72.166-16.464-29.214 0-61.277 7.795-85.958 27.465-3.239 2.582-3.772 7.301-1.191 10.54 2.583 3.24 7.3 3.772 10.54 1.19 31.705-25.27 87.139-34.248 141.276-9.669v3.223c0 4.143 3.358 7.5 7.5 7.5s7.5-3.357 7.5-7.5v-3.223c21.235-9.641 42.968-14.526 64.665-14.526 121.121 0 157.052 139.411 88.845 231.763-8.882 11.845-10.82 46.142-12.09 64.017-3.276 46.125-10.624 115.807-33.228 156.168-11.212 20.02-24.335 29.85-40.021 30.053-23.798 0-41.207-46.824-45.424-71.976-11.587-69.101-10.841-64.882-11.075-65.633-2.662-8.581-10.188-14.125-19.173-14.125h-21.924c-4.142 0-7.5 3.357-7.5 7.5s3.358 7.5 7.5 7.5h2.543c-.007.036-.019.07-.025.106-11.282 67.278-12.088 83.621-25.835 109.293-9.848 18.393-19.802 27.334-30.333 27.335-56.745-.733-69.361-130.144-73.346-186.223-2.057-28.947-4.387-53.744-12.056-63.971-45.677-61.846-43.077-140.02-7.303-187.478 2.494-3.308 1.833-8.01-1.474-10.504-3.309-2.493-8.011-1.835-10.503 1.475-40.329 53.498-41.894 138.926 7.247 205.463 5.68 7.573 8.008 40.334 9.127 56.078 4.915 69.17 18.85 199.266 88.211 200.158 33.799 0 54.643-51.251 60.218-84.495l10.742-64.059c1.623-4.259 7.802-4.259 9.425 0l10.742 64.059c5.591 33.341 26.433 84.496 60.314 84.494 69.186-.893 83.216-131.189 88.115-200.156.725-10.198 3.036-47.959 9.16-56.123 75.374-102.059 33.234-255.719-100.879-255.719z";
-
-const TOOTH_BOUNDS: Record<"incisor" | "canine" | "premolar" | "molar", { w: number; h: number; tx: number; ty: number }> = {
-  incisor: { w: 512, h: 512, tx: -256, ty: -256 },
-  canine: { w: 512, h: 512, tx: -256, ty: -256 },
-  premolar: { w: 512, h: 512, tx: -256, ty: -256 },
-  molar: { w: 512, h: 512, tx: -256, ty: -256 },
-};
-
-function getToothType(n: number): "incisor" | "canine" | "premolar" | "molar" {
-  if ([1, 2, 3, 14, 15, 16, 17, 18, 19, 30, 31, 32].includes(n)) return "molar";
-  if ([4, 5, 12, 13, 20, 21, 28, 29].includes(n)) return "premolar";
-  if ([6, 11, 22, 27].includes(n)) return "canine";
-  return "incisor";
-}
-
 const DENTAL_VIEW = { w: 800, h: 400 };
-const DENTAL_CHART_LAYOUT: { num: number; cx: number; cy: number; w: number; h: number; type: "incisor" | "canine" | "premolar" | "molar" }[] = [
+
+const DENTAL_SIZE = {
+  /** مقاس أساسي موحد */
+  baseW: 38,
+  baseH: 72,
+  /** هامش يمين/يسار */
+  marginX: 46,
+} as const;
+
+const DENTAL_CHART_LAYOUT: { num: number; cx: number; cy: number; w: number; h: number }[] = [
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((num, i) => {
-    const cx = 80 + (i * 640) / 15;
+    const step = (DENTAL_VIEW.w - DENTAL_SIZE.marginX * 2) / 15;
+    const cx = DENTAL_SIZE.marginX + i * step;
     const cy = 95;
-    const w = [42, 40, 38, 30, 30, 26, 22, 22, 22, 22, 26, 30, 30, 38, 40, 42][i];
-    const h = 48;
-    return { num, cx, cy, w, h, type: getToothType(num) };
+    const w = DENTAL_SIZE.baseW;
+    const h = DENTAL_SIZE.baseH;
+    return { num, cx, cy, w, h };
   }),
   ...[17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32].map((num, i) => {
-    const cx = 80 + (i * 640) / 15;
+    const step = (DENTAL_VIEW.w - DENTAL_SIZE.marginX * 2) / 15;
+    const cx = DENTAL_SIZE.marginX + i * step;
     const cy = 298;
-    const w = [42, 40, 38, 30, 30, 26, 22, 22, 22, 22, 26, 30, 30, 38, 40, 42][i];
-    const h = 48;
-    return { num, cx, cy, w, h, type: getToothType(num) };
+    const w = DENTAL_SIZE.baseW;
+    const h = DENTAL_SIZE.baseH;
+    return { num, cx, cy, w, h };
   }),
 ];
 
@@ -72,6 +66,7 @@ export function DentalToothChartBlock({
 }: DentalToothChartBlockProps) {
   const router = useRouter();
   const filterId = `dentalSoftShadow-${useId().replace(/:/g, "")}`;
+  const maskPrefix = `toothMask-${useId().replace(/:/g, "")}`;
 
   const [selectedTeeth, setSelectedTeeth] = useState<string[]>([]);
   const [toothProblems, setToothProblems] = useState<Record<string, string | null>>({});
@@ -339,9 +334,11 @@ export function DentalToothChartBlock({
                 {DENTAL_CHART_LAYOUT.filter((t) => t.num <= 16).map((t) => {
                   const id = String(t.num);
                   const { fill, stroke } = getToothColors(id);
-                  const b = TOOTH_BOUNDS[t.type];
-                  const sx = t.w / b.w;
-                  const sy = t.h / b.h;
+                  const isSelected = selectedTeeth.includes(id);
+                  const hasAnyColor = Boolean(toothProblems[id]) || Boolean(toothNotes[id]) || isSelected;
+                  const href = `/Individual_Teeth_SVG/%23${t.num}.svg`;
+                  const maskId = `${maskPrefix}-${t.num}`;
+                  const tintOpacity = isSelected ? 0.45 : 0.28;
                   return (
                     <g
                       key={`tooth-${t.num}`}
@@ -350,16 +347,47 @@ export function DentalToothChartBlock({
                       className="cursor-pointer"
                       style={{ transition: "fill 0.3s ease" }}
                     >
-                      <path
-                        d={TOOTH_ICON_PATH}
-                        fill={fill}
-                        fillOpacity={1}
-                        fillRule="nonzero"
-                        stroke={stroke}
-                        strokeWidth={2}
-                        strokeLinejoin="round"
+                      {hasAnyColor && (
+                        <mask id={maskId} maskUnits="userSpaceOnUse">
+                          <image
+                            href={href}
+                            x={t.cx - t.w / 2}
+                            y={t.cy - t.h / 2}
+                            width={t.w}
+                            height={t.h}
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        </mask>
+                      )}
+                      <image
+                        href={href}
+                        x={t.cx - t.w / 2}
+                        y={t.cy - t.h / 2}
+                        width={t.w}
+                        height={t.h}
+                        preserveAspectRatio="xMidYMid meet"
                         filter={`url(#${filterId})`}
-                        transform={`translate(${t.cx},${t.cy}) scale(${sx},${-sy}) translate(${b.tx},${b.ty})`}
+                      />
+                      {hasAnyColor && (
+                        <rect
+                          x={t.cx - t.w / 2}
+                          y={t.cy - t.h / 2}
+                          width={t.w}
+                          height={t.h}
+                          fill={fill}
+                          fillOpacity={tintOpacity}
+                          mask={`url(#${maskId})`}
+                        />
+                      )}
+                      {/* hitbox */}
+                      <rect
+                        x={t.cx - t.w / 2}
+                        y={t.cy - t.h / 2}
+                        width={t.w}
+                        height={t.h}
+                        fill="transparent"
+                        stroke={isSelected ? stroke : "transparent"}
+                        strokeWidth={isSelected ? 1.5 : 0}
                       />
                       <text
                         x={t.cx}
@@ -391,9 +419,11 @@ export function DentalToothChartBlock({
                 {DENTAL_CHART_LAYOUT.filter((t) => t.num >= 17).map((t) => {
                   const id = String(t.num);
                   const { fill, stroke } = getToothColors(id);
-                  const b = TOOTH_BOUNDS[t.type];
-                  const sx = t.w / b.w;
-                  const sy = t.h / b.h;
+                  const isSelected = selectedTeeth.includes(id);
+                  const hasAnyColor = Boolean(toothProblems[id]) || Boolean(toothNotes[id]) || isSelected;
+                  const href = `/Individual_Teeth_SVG/%23${t.num}.svg`;
+                  const maskId = `${maskPrefix}-${t.num}`;
+                  const tintOpacity = isSelected ? 0.45 : 0.28;
                   return (
                     <g
                       key={`tooth-${t.num}`}
@@ -402,16 +432,47 @@ export function DentalToothChartBlock({
                       className="cursor-pointer"
                       style={{ transition: "fill 0.3s ease" }}
                     >
-                      <path
-                        d={TOOTH_ICON_PATH}
-                        fill={fill}
-                        fillOpacity={1}
-                        fillRule="nonzero"
-                        stroke={stroke}
-                        strokeWidth={2}
-                        strokeLinejoin="round"
+                      {hasAnyColor && (
+                        <mask id={maskId} maskUnits="userSpaceOnUse">
+                          <image
+                            href={href}
+                            x={t.cx - t.w / 2}
+                            y={t.cy - t.h / 2}
+                            width={t.w}
+                            height={t.h}
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        </mask>
+                      )}
+                      <image
+                        href={href}
+                        x={t.cx - t.w / 2}
+                        y={t.cy - t.h / 2}
+                        width={t.w}
+                        height={t.h}
+                        preserveAspectRatio="xMidYMid meet"
                         filter={`url(#${filterId})`}
-                        transform={`translate(${t.cx},${t.cy}) scale(${sx},${sy}) translate(${b.tx},${b.ty})`}
+                      />
+                      {hasAnyColor && (
+                        <rect
+                          x={t.cx - t.w / 2}
+                          y={t.cy - t.h / 2}
+                          width={t.w}
+                          height={t.h}
+                          fill={fill}
+                          fillOpacity={tintOpacity}
+                          mask={`url(#${maskId})`}
+                        />
+                      )}
+                      {/* hitbox */}
+                      <rect
+                        x={t.cx - t.w / 2}
+                        y={t.cy - t.h / 2}
+                        width={t.w}
+                        height={t.h}
+                        fill="transparent"
+                        stroke={isSelected ? stroke : "transparent"}
+                        strokeWidth={isSelected ? 1.5 : 0}
                       />
                       <text x={t.cx} y={t.cy - t.h / 2 - 6} textAnchor="middle" fontSize="11" fontWeight="600" fill="#374151">
                         {t.num}

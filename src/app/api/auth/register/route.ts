@@ -21,10 +21,6 @@ const registerSchema = z
     message: "البريد الإلكتروني مطلوب للطبيب",
     path: ["email"],
   })
-  .refine((d) => d.role !== "DOCTOR" || (d.specialtyId && d.specialtyId.length > 0), {
-    message: "يجب اختيار التخصص",
-    path: ["specialtyId"],
-  })
   .refine((d) => d.role !== "DOCTOR" || (d.phone && d.phone.replace(/\D/g, "").length >= 9), {
     message: "رقم الهاتف مطلوب للطبيب (9 أرقام على الأقل)",
     path: ["phone"],
@@ -140,7 +136,10 @@ export async function POST(req: Request) {
       const whatsappDigits = whatsappRaw.replace(/\D/g, "").slice(-9);
       const whatsappValue = whatsappDigits ? `972${whatsappDigits}` : null;
 
-      const { error: doctorInsertErr } = await supabaseAdmin.from("Doctor").insert({
+      const { error: doctorInsertErr } = await supabaseAdmin
+        .from("Doctor")
+        .upsert(
+          {
         userId,
         specialtyId,
         whatsapp: whatsappValue,
@@ -149,7 +148,9 @@ export async function POST(req: Request) {
         consultationFee: 0,
         rating: 0,
         totalReviews: 0,
-      });
+          },
+          { onConflict: "userId" },
+        );
       if (doctorInsertErr) {
         console.error("[register] Doctor insert failed:", doctorInsertErr.code, doctorInsertErr.message, doctorInsertErr.details);
         await supabaseAdmin.from("User").delete().eq("id", userId);
