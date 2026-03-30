@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { generatePasswordRecoveryLink } from "@/lib/auth-recovery";
 import { sendPasswordResetEmail } from "@/lib/email";
-import { sendSms, sendWhatsApp } from "@/lib/sms";
+import { sendSmsAndWhatsAppToSameNumber, deliveryAnyChannelSucceeded } from "@/lib/sms";
 
 const bodySchema = z.object({
   login: z.string().min(1, "أدخل البريد أو رقم الهاتف"),
@@ -58,9 +58,10 @@ export async function POST(req: Request) {
       const phone = (user.phone ?? "").trim();
       if (phone) {
         const body = `Tabibi: لاستعادة كلمة المرور افتح الرابط:\n${link}`;
-        let sent = await sendWhatsApp(phone, body);
-        if (!sent) sent = await sendSms(phone, body);
-        if (!sent) console.warn("[forgot-password] فشل إرسال SMS للمريض", user.id);
+        const delivery = await sendSmsAndWhatsAppToSameNumber(phone, body);
+        if (!deliveryAnyChannelSucceeded(delivery)) {
+          console.warn("[forgot-password] فشل إرسال SMS/واتساب للمريض", user.id);
+        }
       }
     } else {
       const sent = await sendPasswordResetEmail(user.email, link);

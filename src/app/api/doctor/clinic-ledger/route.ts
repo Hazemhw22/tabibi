@@ -45,7 +45,15 @@ export async function GET() {
       .from("DoctorClinicLedger")
       .select(
         `
-        *,
+        id,
+        doctorId,
+        kind,
+        title,
+        amount,
+        occurredAt,
+        notes,
+        staffUserId,
+        supplierId,
         DoctorClinicSupplier (
           id,
           name,

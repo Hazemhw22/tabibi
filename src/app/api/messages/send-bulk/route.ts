@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { sendSms } from "@/lib/sms";
+import {
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 import { randomUUID } from "crypto";
 
 const schema = z.object({
@@ -37,6 +40,9 @@ export async function POST(req: Request) {
 
     let sent = 0;
     let failed = 0;
+    let smsSent = 0;
+    let whatsappSent = 0;
+    let whatsappAttempted = 0;
 
     // Concurrency = 3
     const batchSize = 3;
@@ -65,26 +71,56 @@ export async function POST(req: Request) {
             throw new Error(`log_insert_failed:${insErr.message}`);
           }
 
-          const ok = await sendSms(phone, data.body);
+          const r = await sendSmsAndWhatsAppToSameNumber(phone, data.body);
+          const ok = deliveryAnyChannelSucceeded(r);
+          const parts = [`sms:${r.sms ? "ok" : "fail"}`];
+          if (r.whatsapp !== null) parts.push(`whatsapp:${r.whatsapp ? "ok" : "fail"}`);
+          const providerResponse = parts.join(";");
           const status = ok ? "SENT" : "FAILED";
-          const providerResponse = ok ? "OK" : "FAILED";
+          const provider = r.whatsapp !== null ? "ASTRA+TWILIO_WA" : "ASTRA";
+          const channel = r.whatsapp !== null ? "SMS+WHATSAPP" : "SMS";
 
           await supabaseAdmin
             .from("MessageLog")
-            .update({ status, providerResponse, updatedAt: new Date().toISOString() })
+            .update({
+              status,
+              provider,
+              channel,
+              providerResponse,
+              updatedAt: new Date().toISOString(),
+            })
             .eq("id", id);
 
-          return ok;
+          return { ok, sms: r.sms, whatsapp: r.whatsapp };
         })
       );
 
       for (const r of results) {
-        if (r.status === "fulfilled" && r.value === true) sent += 1;
-        else failed += 1;
+        if (r.status !== "fulfilled") {
+          failed += 1;
+          continue;
+        }
+        sent += r.value.ok ? 1 : 0;
+        failed += r.value.ok ? 0 : 1;
+        if (r.value.sms) smsSent += 1;
+        if (r.value.whatsapp !== null) {
+          whatsappAttempted += 1;
+          if (r.value.whatsapp) whatsappSent += 1;
+        }
       }
     }
 
-    return NextResponse.json({ total: phones.length, sent, failed }, { status: 201 });
+    return NextResponse.json(
+      {
+        total: phones.length,
+        sent,
+        failed,
+        smsSent,
+        whatsappSent,
+        whatsappAttempted,
+      },
+      { status: 201 },
+    );
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "بيانات غير صالحة", details: e.issues }, { status: 400 });

@@ -5,7 +5,11 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getSessionDoctorRecordId } from "@/lib/doctor-api-scope";
 import { doctorHasCareAccessToPlatformPatient } from "@/lib/doctor-platform-patient-care-access";
 import { isDoctorOrStaffRole } from "@/lib/doctor-team-roles";
-import { buildCarePlanNewServicesSmsMessage, sendSms } from "@/lib/sms";
+import {
+  buildCarePlanNewServicesSmsMessage,
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 
 const itemSchema = z.object({
   toothNumber: z.number().int().min(1).max(32),
@@ -233,7 +237,7 @@ export async function POST(
         .maybeSingle();
       const phone = (userRow as { phone?: string | null } | null)?.phone?.trim();
       if (phone) {
-        dentalSmsSent = await sendSms(phone, msg);
+        dentalSmsSent = deliveryAnyChannelSucceeded(await sendSmsAndWhatsAppToSameNumber(phone, msg));
       }
     }
 

@@ -232,9 +232,19 @@ export function SendMessagePage(props: {
         return;
       }
       if (targetType === "all_users") {
-        toast.success(`تم الإرسال: ${j.sent ?? 0} / فشل: ${j.failed ?? 0} / مستلمين: ${j.total ?? 0}`);
+        const waAttempted = typeof j.whatsappAttempted === "number" ? j.whatsappAttempted : null;
+        const waSent = typeof j.whatsappSent === "number" ? j.whatsappSent : null;
+        const waPart =
+          waAttempted != null && waSent != null
+            ? ` — واتساب: ${waSent} / ${waAttempted}`
+            : "";
+        toast.success(`تم الإرسال: ${j.sent ?? 0} / فشل: ${j.failed ?? 0} / مستلمين: ${j.total ?? 0}${waPart}`);
       } else {
-        toast.success("تم الإرسال");
+        if (typeof j.whatsappSent === "boolean") {
+          toast.success(j.whatsappSent ? "تم الإرسال (SMS + واتساب)." : "تم الإرسال عبر SMS (تعذّر واتساب).");
+        } else {
+          toast.success("تم الإرسال.");
+        }
       }
       setTo("");
       setBody("");

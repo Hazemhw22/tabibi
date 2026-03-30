@@ -90,7 +90,8 @@ export default function DoctorStaffPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [list, setList] = useState<StaffRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [listRefreshing, setListRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editRow, setEditRow] = useState<StaffRow | null>(null);
@@ -137,6 +138,30 @@ export default function DoctorStaffPage() {
     setAddOpen(true);
   };
 
+  const refreshStaffList = useCallback(() => {
+    setListRefreshing(true);
+    fetch("/api/doctor/staff")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.error) toast.error(j.error);
+        else setList(j.staff ?? []);
+      })
+      .catch(() => toast.error("تعذر تحديث القائمة"))
+      .finally(() => setListRefreshing(false));
+  }, []);
+
+  const load = useCallback(() => {
+    setInitialLoading(true);
+    fetch("/api/doctor/staff")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.error) toast.error(j.error);
+        else setList(j.staff ?? []);
+      })
+      .catch(() => toast.error("تعذر التحميل"))
+      .finally(() => setInitialLoading(false));
+  }, []);
+
   const confirmRemoveStaff = async () => {
     if (!deleteTarget) return;
     try {
@@ -147,7 +172,7 @@ export default function DoctorStaffPage() {
         throw new Error("fail");
       }
       toast.success(data.message || "تم");
-      load();
+      refreshStaffList();
     } catch (e) {
       if (e instanceof Error && e.message === "fail") throw e;
       toast.error("حدث خطأ");
@@ -169,18 +194,6 @@ export default function DoctorStaffPage() {
       router.replace("/");
     }
   }, [session, status, router]);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    fetch("/api/doctor/staff")
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.error) toast.error(j.error);
-        else setList(j.staff ?? []);
-      })
-      .catch(() => toast.error("تعذر التحميل"))
-      .finally(() => setLoading(false));
-  }, []);
 
   useEffect(() => {
     if (status === "loading" || !session || session.user.role !== "DOCTOR") return;
@@ -220,10 +233,13 @@ export default function DoctorStaffPage() {
           return;
         }
         toast.success(data.message || "تم التحديث");
+        if (data.staff && editRow) {
+          const row = data.staff as StaffRow;
+          setList((prev) => prev.map((u) => (u.id === editRow.id ? { ...u, ...row } : u)));
+        }
         setEditRow(null);
         resetForm();
         setAddOpen(false);
-        load();
         return;
       }
       const res = await fetch("/api/doctor/staff", {
@@ -246,7 +262,7 @@ export default function DoctorStaffPage() {
       toast.success(data.message || "تم إنشاء حساب الموظف");
       resetForm();
       setAddOpen(false);
-      load();
+      refreshStaffList();
     } catch {
       toast.error("حدث خطأ");
     } finally {
@@ -292,8 +308,8 @@ export default function DoctorStaffPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
-          {loading ? (
+        <CardContent className="pt-6 relative">
+          {initialLoading ? (
             <div className="flex justify-center py-16">
               <IconLoader className="h-8 w-8 animate-spin text-gray-400" />
             </div>
@@ -302,7 +318,17 @@ export default function DoctorStaffPage() {
               لا يوجد موظفون بعد — اضغط «إضافة موظف».
             </p>
           ) : (
-            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-900/40 sm:mx-0">
+            <div
+              className={cn(
+                "relative table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-900/40 sm:mx-0 transition-opacity",
+                listRefreshing && "opacity-70 pointer-events-none",
+              )}
+            >
+              {listRefreshing && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/40 dark:bg-slate-900/30">
+                  <IconLoader className="h-7 w-7 animate-spin text-blue-600" />
+                </div>
+              )}
               <table className="min-w-[820px] w-full text-sm">
                 <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-300">
                   <tr>

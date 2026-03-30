@@ -1,7 +1,7 @@
 /**
- * إرسال رسالة SMS للمريض عند إضافة دفعة أو خدمة.
- * يستخدم Astra API (astra.htd.ps) إذا وُجد SMS_API_ID.
- * للتشخيص: راقب الطرفية حيث يعمل npm run dev — تظهر سطور [SMS].
+ * إرسال SMS (Astra عبر SMS_API_ID / البروكسي) واختيارياً واتساب (Twilio) لنفس الرقم.
+ * الواتساب: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (مثل whatsapp:+14155238886).
+ * استخدم sendSmsAndWhatsAppToSameNumber لإرسال القناتين معاً عند تفعيل Twilio.
  */
 
 /**
@@ -97,6 +97,35 @@ export async function sendSms(to: string, body: string): Promise<boolean> {
     console.error("[SMS] خطأ في الإرسال:", err);
     return false;
   }
+}
+
+/** نتيجة إرسال SMS + واتساب لنفس الرقم */
+export type SmsWhatsAppDeliveryResult = {
+  sms: boolean;
+  /** null إذا Twilio WhatsApp غير مضبوط — لم تُجرَ محاولة واتساب */
+  whatsapp: boolean | null;
+};
+
+/** نجحت قناة واحدة على الأقل */
+export function deliveryAnyChannelSucceeded(r: SmsWhatsAppDeliveryResult): boolean {
+  if (r.whatsapp === null) return r.sms;
+  return r.sms || r.whatsapp;
+}
+
+/**
+ * SMS (Astra) + واتساب (Twilio) إلى نفس الرقم عند توفر TWILIO_*.
+ * يُرسلان بالتوازي عند تفعيل الواتساب لتقليل زمن الاستجابة.
+ */
+export async function sendSmsAndWhatsAppToSameNumber(
+  to: string,
+  body: string,
+): Promise<SmsWhatsAppDeliveryResult> {
+  if (!isWhatsAppConfigured()) {
+    const sms = await sendSms(to, body);
+    return { sms, whatsapp: null };
+  }
+  const [sms, whatsapp] = await Promise.all([sendSms(to, body), sendWhatsApp(to, body)]);
+  return { sms, whatsapp };
 }
 
 /** إشعار قصير عند حفظ خطة علاج لا تُنشئ بنود تكلفة تلقائياً (تصوير جنين، نساء، نماذج دولية…). */

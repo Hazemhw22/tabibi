@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { sendSms } from "@/lib/sms";
+import {
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 import { getMedicalCenterIdForUser } from "@/lib/medical-center-auth";
 import { randomUUID } from "crypto";
 
@@ -78,16 +81,30 @@ export async function POST(req: Request) {
       );
     }
 
-    const ok = await sendSms(data.to, data.body);
-
+    const r = await sendSmsAndWhatsAppToSameNumber(data.to, data.body);
+    const ok = deliveryAnyChannelSucceeded(r);
+    const parts = [`sms:${r.sms ? "ok" : "fail"}`];
+    if (r.whatsapp !== null) parts.push(`whatsapp:${r.whatsapp ? "ok" : "fail"}`);
+    const providerResponse = parts.join(";");
     const status = ok ? "SENT" : "FAILED";
-    const providerResponse = ok ? "OK" : "FAILED";
+    const provider = r.whatsapp !== null ? "ASTRA+TWILIO_WA" : "ASTRA";
+    const channel = r.whatsapp !== null ? "SMS+WHATSAPP" : "SMS";
+
     await supabaseAdmin
       .from("MessageLog")
-      .update({ status, providerResponse, updatedAt: new Date().toISOString() })
+      .update({
+        status,
+        provider,
+        channel,
+        providerResponse,
+        updatedAt: new Date().toISOString(),
+      })
       .eq("id", row.id);
 
-    return NextResponse.json({ id: row.id, status }, { status: ok ? 201 : 502 });
+    return NextResponse.json(
+      { id: row.id, status, smsSent: r.sms, whatsappSent: r.whatsapp },
+      { status: ok ? 201 : 502 },
+    );
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "بيانات غير صالحة", details: e.issues }, { status: 400 });

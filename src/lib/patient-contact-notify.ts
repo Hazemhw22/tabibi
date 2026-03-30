@@ -1,6 +1,9 @@
-import { sendSms, sendWhatsApp, isWhatsAppConfigured } from "@/lib/sms";
+import {
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 
-/** إرسال SMS/واتساب لمريض العيادة — نفس منطق مسار المعاملات (تجاهل واتساب إن Twilio غير مضبوط). */
+/** إرسال SMS وواتساب (Twilio) إلى نفس الرقم عند التفعيل — أولوية phone ثم المرتبط ثم حقل واتساب في السجل. */
 export async function sendToClinicPatientPhoneOrWhatsapp(options: {
   /** حقل phone في ClinicPatient */
   clinicPhone: string | null | undefined;
@@ -12,18 +15,9 @@ export async function sendToClinicPatientPhoneOrWhatsapp(options: {
   const patientWhatsapp = String(options.whatsapp ?? "").trim();
   const clinicPhone = String(options.clinicPhone ?? "").trim();
   const fallback = String(options.fallbackUserPhone ?? "").trim();
-  const smsTarget = clinicPhone || fallback || "";
+  const primary = clinicPhone || fallback || patientWhatsapp;
+  if (!primary) return null;
 
-  let smsSent: boolean | null = null;
-  if (patientWhatsapp && isWhatsAppConfigured()) {
-    smsSent = await sendWhatsApp(patientWhatsapp, options.message);
-    if (smsSent === false && smsTarget) {
-      smsSent = await sendSms(smsTarget, options.message);
-    }
-  } else if (smsTarget) {
-    smsSent = await sendSms(smsTarget, options.message);
-  } else if (patientWhatsapp) {
-    smsSent = await sendSms(patientWhatsapp, options.message);
-  }
-  return smsSent;
+  const r = await sendSmsAndWhatsAppToSameNumber(primary, options.message);
+  return deliveryAnyChannelSucceeded(r);
 }

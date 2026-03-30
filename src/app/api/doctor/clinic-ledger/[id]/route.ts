@@ -24,16 +24,6 @@ async function assertOwnSupplier(doctorId: string, supplierId: string): Promise<
   return Boolean(data?.id);
 }
 
-async function assertOwnLedger(doctorId: string, ledgerId: string) {
-  const { data } = await supabaseAdmin
-    .from("DoctorClinicLedger")
-    .select("id")
-    .eq("id", ledgerId)
-    .eq("doctorId", doctorId)
-    .maybeSingle();
-  return Boolean(data?.id);
-}
-
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth();
@@ -49,9 +39,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const { id } = await params;
-    if (!(await assertOwnLedger(doctorId, id))) {
-      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
-    }
 
     const body = await req.json();
     const data = patchSchema.parse(body);
@@ -88,11 +75,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       supplierId: data.kind === "CLINIC_PURCHASE" && data.supplierId ? data.supplierId : null,
     };
 
-    const { error } = await supabaseAdmin.from("DoctorClinicLedger").update(update).eq("id", id).eq("doctorId", doctorId);
+    const { data: updatedRows, error } = await supabaseAdmin
+      .from("DoctorClinicLedger")
+      .update(update)
+      .eq("id", id)
+      .eq("doctorId", doctorId)
+      .select("id");
 
     if (error) {
       console.error(error);
       return NextResponse.json({ error: "تعذر التحديث" }, { status: 500 });
+    }
+    if (!updatedRows?.length) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
     }
 
     return NextResponse.json({ message: "تم التحديث" });
@@ -120,15 +115,20 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     }
 
     const { id } = await params;
-    if (!(await assertOwnLedger(doctorId, id))) {
-      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
-    }
 
-    const { error } = await supabaseAdmin.from("DoctorClinicLedger").delete().eq("id", id).eq("doctorId", doctorId);
+    const { data: deletedRows, error } = await supabaseAdmin
+      .from("DoctorClinicLedger")
+      .delete()
+      .eq("id", id)
+      .eq("doctorId", doctorId)
+      .select("id");
 
     if (error) {
       console.error(error);
       return NextResponse.json({ error: "تعذر الحذف" }, { status: 500 });
+    }
+    if (!deletedRows?.length) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
     }
 
     return NextResponse.json({ message: "تم الحذف" });

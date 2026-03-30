@@ -14,7 +14,12 @@ import {
 import type { CarePlanServiceLine } from "@/lib/care-plan-billing";
 import { extractCarePlanServiceLines, normalizeCarePlanCosts } from "@/lib/care-plan-billing";
 import { syncCarePlanFollowUpsToAppointments } from "@/lib/care-plan-appointment-sync";
-import { buildCarePlanNewServicesSmsMessage, buildCarePlanSavedInfoSmsMessage, sendSms } from "@/lib/sms";
+import {
+  buildCarePlanNewServicesSmsMessage,
+  buildCarePlanSavedInfoSmsMessage,
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 
 const putSchema = z.object({
   planType: z.string().min(1),
@@ -259,7 +264,7 @@ export async function PUT(
             lines: newlyInserted,
             doctorName: session.user.name ?? undefined,
           });
-          carePlanSmsSent = await sendSms(phone, msg);
+          carePlanSmsSent = deliveryAnyChannelSucceeded(await sendSmsAndWhatsAppToSameNumber(phone, msg));
         }
       }
     }
@@ -278,7 +283,7 @@ export async function PUT(
         .maybeSingle();
       const phone = (userRow as { phone?: string | null } | null)?.phone?.trim();
       if (phone) {
-        carePlanSmsSent = await sendSms(phone, msg);
+        carePlanSmsSent = deliveryAnyChannelSucceeded(await sendSmsAndWhatsAppToSameNumber(phone, msg));
       }
     }
 

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { sendSms, buildTransactionSmsMessage } from "@/lib/sms";
+import {
+  buildTransactionSmsMessage,
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 import { sendTransactionEmail } from "@/lib/email";
 import { notifyClinicTransaction } from "@/lib/notifications";
 import { z } from "zod";
@@ -119,7 +123,8 @@ export async function POST(
         doctorName: session.user.name ?? undefined,
         balanceAfter,
       });
-      smsSent = await sendSms(phone, msg);
+      const delivery = await sendSmsAndWhatsAppToSameNumber(phone, msg);
+      smsSent = deliveryAnyChannelSucceeded(delivery);
     } else {
       console.warn("[SMS] لا يوجد رقم هاتف للمريض (User.id =", patientId, ")");
     }

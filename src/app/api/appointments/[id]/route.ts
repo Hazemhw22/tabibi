@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { formatDateNumeric } from "@/lib/utils";
-import { buildAppointmentConfirmedSmsMessage, sendSms } from "@/lib/sms";
+import {
+  buildAppointmentConfirmedSmsMessage,
+  sendSmsAndWhatsAppToSameNumber,
+} from "@/lib/sms";
 import { notifyAppointmentConfirmedByDoctor } from "@/lib/notifications";
 
 export async function GET(
@@ -185,7 +188,7 @@ export async function PATCH(
         });
         const phone = p?.phone?.trim();
         if (phone) {
-          await sendSms(phone, msg);
+          await sendSmsAndWhatsAppToSameNumber(phone, msg);
         }
         await notifyAppointmentConfirmedByDoctor({
           patientUserId: (aptFull as { patientId: string }).patientId,

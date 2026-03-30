@@ -137,7 +137,10 @@ export default function DoctorClinicExpensesPage() {
   const [totalOut, setTotalOut] = useState(0);
   const [staffList, setStaffList] = useState<StaffOpt[]>([]);
   const [supplierList, setSupplierList] = useState<SupplierOpt[]>([]);
-  const [loading, setLoading] = useState(true);
+  /** تحميل أولي للصفحة (الجدول + قوائم النماذج) */
+  const [initialLoading, setInitialLoading] = useState(true);
+  /** تحديث دفتر المصروفات فقط بعد حفظ/حذف — بدون إعادة جلب الموظفين والمزوّدين وبدون إخفاء الصفحة */
+  const [ledgerRefreshing, setLedgerRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editEntryId, setEditEntryId] = useState<string | null>(null);
@@ -185,6 +188,41 @@ export default function DoctorClinicExpensesPage() {
     setAddOpen(true);
   };
 
+  const refreshLedger = useCallback(() => {
+    setLedgerRefreshing(true);
+    fetch("/api/doctor/clinic-ledger")
+      .then((r) => r.json())
+      .then((ledger) => {
+        if (ledger.error) toast.error(ledger.error);
+        else {
+          setEntries(ledger.entries ?? []);
+          setTotalOut(Number(ledger.totalOut ?? 0));
+        }
+      })
+      .catch(() => toast.error("تعذر تحديث المصروفات"))
+      .finally(() => setLedgerRefreshing(false));
+  }, []);
+
+  const load = useCallback(() => {
+    setInitialLoading(true);
+    Promise.all([
+      fetch("/api/doctor/clinic-ledger").then((r) => r.json()),
+      fetch("/api/doctor/staff").then((r) => r.json()),
+      fetch("/api/doctor/suppliers").then((r) => r.json()),
+    ])
+      .then(([ledger, staffRes, supRes]) => {
+        if (ledger.error) toast.error(ledger.error);
+        else {
+          setEntries(ledger.entries ?? []);
+          setTotalOut(Number(ledger.totalOut ?? 0));
+        }
+        if (!staffRes.error) setStaffList(staffRes.staff ?? []);
+        if (!supRes.error) setSupplierList(supRes.suppliers ?? []);
+      })
+      .catch(() => toast.error("تعذر التحميل"))
+      .finally(() => setInitialLoading(false));
+  }, []);
+
   const confirmDeleteEntry = async () => {
     if (!deleteTarget) return;
     try {
@@ -195,7 +233,7 @@ export default function DoctorClinicExpensesPage() {
         throw new Error("fail");
       }
       toast.success(data.message || "تم الحذف");
-      load();
+      refreshLedger();
     } catch (e) {
       if (e instanceof Error && e.message === "fail") throw e;
       toast.error("حدث خطأ");
@@ -242,26 +280,6 @@ export default function DoctorClinicExpensesPage() {
       router.replace("/");
     }
   }, [session, status, router]);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    Promise.all([
-      fetch("/api/doctor/clinic-ledger").then((r) => r.json()),
-      fetch("/api/doctor/staff").then((r) => r.json()),
-      fetch("/api/doctor/suppliers").then((r) => r.json()),
-    ])
-      .then(([ledger, staffRes, supRes]) => {
-        if (ledger.error) toast.error(ledger.error);
-        else {
-          setEntries(ledger.entries ?? []);
-          setTotalOut(Number(ledger.totalOut ?? 0));
-        }
-        if (!staffRes.error) setStaffList(staffRes.staff ?? []);
-        if (!supRes.error) setSupplierList(supRes.suppliers ?? []);
-      })
-      .catch(() => toast.error("تعذر التحميل"))
-      .finally(() => setLoading(false));
-  }, []);
 
   useEffect(() => {
     if (status === "loading" || !session || session.user.role !== "DOCTOR") return;
@@ -317,7 +335,7 @@ export default function DoctorClinicExpensesPage() {
       resetForm();
       setEditEntryId(null);
       setAddOpen(false);
-      load();
+      refreshLedger();
     } catch {
       toast.error("حدث خطأ");
     } finally {
@@ -379,8 +397,8 @@ export default function DoctorClinicExpensesPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
-          {loading ? (
+        <CardContent className="pt-6 relative">
+          {initialLoading ? (
             <div className="flex justify-center py-16">
               <IconLoader className="h-8 w-8 animate-spin text-gray-400" />
             </div>
@@ -389,7 +407,17 @@ export default function DoctorClinicExpensesPage() {
               لا توجد مصروفات مسجّلة — اضغط «تسجيل مصروف».
             </p>
           ) : (
-            <div className="table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-900/40 sm:mx-0">
+            <div
+              className={cn(
+                "relative table-scroll-mobile -mx-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-900/40 sm:mx-0 transition-opacity",
+                ledgerRefreshing && "opacity-70 pointer-events-none",
+              )}
+            >
+              {ledgerRefreshing && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/40 dark:bg-slate-900/30">
+                  <IconLoader className="h-7 w-7 animate-spin text-amber-600" />
+                </div>
+              )}
               <table className="min-w-[980px] w-full text-sm">
                 <thead className="border-b border-gray-100 bg-gray-50 text-right text-xs font-medium text-gray-500 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-300">
                   <tr>

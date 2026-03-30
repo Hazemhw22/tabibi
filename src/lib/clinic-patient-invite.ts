@@ -1,5 +1,5 @@
 import { findOrCreatePatientByPhone } from "@/lib/patient-account";
-import { sendSms, sendWhatsApp } from "@/lib/sms";
+import { sendSmsAndWhatsAppToSameNumber, deliveryAnyChannelSucceeded } from "@/lib/sms";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 function buildNewAccountSms(): string {
@@ -15,9 +15,8 @@ export async function notifyClinicPatientLinkedExisting(phoneRaw: string): Promi
   const digits = phoneRaw.replace(/\D/g, "");
   if (digits.length < 9) return false;
   const body = buildLinkedExistingSms();
-  let sent = await sendWhatsApp(phoneRaw, body);
-  if (!sent) sent = await sendSms(phoneRaw, body);
-  return sent;
+  const r = await sendSmsAndWhatsAppToSameNumber(phoneRaw, body);
+  return deliveryAnyChannelSucceeded(r);
 }
 
 /**
@@ -52,10 +51,8 @@ export async function linkClinicPatientAndSendPasswordSetup(options: {
   }
 
   const body = acc.created ? buildNewAccountSms() : buildLinkedExistingSms();
-  let sent = await sendWhatsApp(phoneRaw, body);
-  if (!sent) {
-    sent = await sendSms(phoneRaw, body);
-  }
+  const r = await sendSmsAndWhatsAppToSameNumber(phoneRaw, body);
+  const sent = deliveryAnyChannelSucceeded(r);
 
   return { userId: acc.id, setupSmsSent: sent };
 }

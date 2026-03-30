@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { buildAppointmentReminderSmsMessage, sendSms } from "@/lib/sms";
+import {
+  buildAppointmentReminderSmsMessage,
+  sendSmsAndWhatsAppToSameNumber,
+  deliveryAnyChannelSucceeded,
+} from "@/lib/sms";
 import { formatDateNumeric } from "@/lib/utils";
 
 /** تاريخ التقويم (يوم/شهر/سنة) بتوقيت القدس */
@@ -100,8 +104,8 @@ export async function GET(req: Request) {
       clinicName: clinicRel?.name ?? null,
     });
 
-    const ok = await sendSms(phone, msg);
-    if (ok) {
+    const delivery = await sendSmsAndWhatsAppToSameNumber(phone, msg);
+    if (deliveryAnyChannelSucceeded(delivery)) {
       await supabaseAdmin
         .from("Appointment")
         .update({
