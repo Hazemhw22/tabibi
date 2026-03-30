@@ -31,18 +31,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           let emailToUse: string;
 
           if (isEmail) {
-            emailToUse = login.trim();
+            emailToUse = login.trim().toLowerCase();
           } else {
             const digits = login.replace(/\D/g, "");
             const normalizedPhone = digits.slice(-9);
             const withZero = "0" + normalizedPhone;
             const with972 = "972" + normalizedPhone;
-            const { data: userRow } = await supabaseAdmin
+            const { data: userRow, error: phoneLookupErr } = await supabaseAdmin
               .from("User")
               .select("id, email, name, image, role, phone, employerDoctorId, doctorStaffRole")
               .or(`phone.eq.${normalizedPhone},phone.eq.${withZero},phone.eq.${with972},phone.eq.${login}`)
               .limit(1)
               .maybeSingle();
+            if (phoneLookupErr) {
+              console.error("[auth] phone lookup failed:", phoneLookupErr.code, phoneLookupErr.message, phoneLookupErr.details);
+              return null;
+            }
             if (!userRow?.email) return null;
             emailToUse = userRow.email;
           }
@@ -52,13 +56,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             password,
           });
 
-          if (error || !data.user) return null;
+          if (error || !data.user) {
+            if (error) console.error("[auth] supabase signInWithPassword failed:", error.message);
+            return null;
+          }
 
-          const { data: userRow } = await supabaseAdmin
+          const { data: userRow, error: userLookupErr } = await supabaseAdmin
             .from("User")
             .select("id, email, name, image, role, phone, employerDoctorId, doctorStaffRole")
             .eq("id", data.user.id)
             .maybeSingle();
+          if (userLookupErr) {
+            console.error("[auth] user lookup failed:", userLookupErr.code, userLookupErr.message, userLookupErr.details);
+            return null;
+          }
 
           const meta = data.user.user_metadata as {
             name?: string;

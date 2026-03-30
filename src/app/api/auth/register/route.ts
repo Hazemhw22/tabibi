@@ -28,6 +28,12 @@ const registerSchema = z
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: "إعدادات الخادم ناقصة: SUPABASE_SERVICE_ROLE_KEY غير موجودة. لا يمكن حفظ User/Doctor بسبب RLS." },
+        { status: 500 },
+      );
+    }
     const body = await req.json();
     const data = registerSchema.parse(body);
 
