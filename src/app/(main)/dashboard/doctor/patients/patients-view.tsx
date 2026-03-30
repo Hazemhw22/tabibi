@@ -42,6 +42,15 @@ import { amountSignedColorClass, formatSignedShekel } from "@/lib/money-display"
 import { transactionSignedDelta } from "@/lib/patient-transaction-math";
 import { buildFinancialReportPrintHtml } from "@/lib/financial-report-print-html";
 import { printHtmlDocument } from "@/lib/print-html";
+import { buildMedicalReportPrintHtml } from "@/lib/medical-report-print-html";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 /* ─── Tab definitions ────────────────────────────────────────────── */
 const BASE_TABS = [
@@ -177,6 +186,14 @@ export default function PatientsView({
   const onCarePlanSummaryLoaded = useCallback((has: boolean) => {
     setHasCarePlanSummary(has);
   }, []);
+  const [imagingOpen, setImagingOpen] = useState(false);
+  const [imagingSubmitting, setImagingSubmitting] = useState(false);
+  const [imagingReloadKey, setImagingReloadKey] = useState(0);
+  const [imagingForm, setImagingForm] = useState({
+    title: "أشعة",
+    notes: "",
+    file: null as File | null,
+  });
 
   const printPatientTransactionsPdf = useCallback(() => {
     if (!selectedPatient?.transactions.length) return;
@@ -198,6 +215,35 @@ export default function PatientsView({
       })),
     });
     printHtmlDocument(html, `معاملات — ${selectedPatient.name}`);
+  }, [selectedPatient, doctorDisplayName]);
+
+  const printMedicalReportPdf = useCallback(() => {
+    if (!selectedPatient) return;
+    const notes = selectedPatient.medicalNotes ?? [];
+    const latest = notes
+      .slice()
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    const issuedAtLabel = new Date().toLocaleString("ar", { dateStyle: "medium", timeStyle: "short" });
+    const html = buildMedicalReportPrintHtml({
+      doctorName: doctorDisplayName || "—",
+      issuedAtLabel,
+      reportTitle: "تقرير طبي للمريض",
+      patient: {
+        name: selectedPatient.name,
+        fileNumber: selectedPatient.fileNumber ?? null,
+        gender: selectedPatient.gender ?? null,
+        dateOfBirth: selectedPatient.dateOfBirth ?? null,
+        phone: selectedPatient.whatsapp ?? null,
+      },
+      note: {
+        allergies: latest?.allergies ?? null,
+        diagnosis: latest?.diagnosis ?? null,
+        treatment: latest?.treatment ?? null,
+        createdAt: latest?.createdAt ?? null,
+      },
+    });
+    printHtmlDocument(html, `تقرير طبي — ${selectedPatient.name}`);
   }, [selectedPatient, doctorDisplayName]);
 
   /* reset tab when patient changes */
@@ -1256,7 +1302,21 @@ export default function PatientsView({
               {/* ── الملفات الطبية ────────────────────────────── */}
               {activeTab === "medical" && (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">الملفات الطبية</h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">الملفات الطبية</h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-950/30"
+                      onClick={() => {
+                        setImagingForm({ title: "أشعة", notes: "", file: null });
+                        setImagingOpen(true);
+                      }}
+                    >
+                      <IconPlus className="h-3.5 w-3.5" />
+                      إضافة صور أشعة
+                    </Button>
+                  </div>
 
                   <MedicalFilesCarePlanTable
                     patientId={selectedPatient.id}
@@ -1271,6 +1331,7 @@ export default function PatientsView({
                       guardian: null,
                     }}
                     onPlanLoaded={onCarePlanSummaryLoaded}
+                    reloadKey={imagingReloadKey}
                   />
 
                   <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50 dark:border-slate-700 dark:bg-slate-900/90 dark:divide-slate-700/80">
@@ -1281,21 +1342,34 @@ export default function PatientsView({
                           <div className="text-sm font-semibold text-gray-900">
                             ملاحظات  طبية جديدة
                           </div>
-                          {!addingMedical && (
+                          <div className="flex items-center gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                setAddingMedical(true);
-                                setMedicalAllergies("");
-                                setMedicalDiagnosis("");
-                                setMedicalTreatment("");
-                              }}
-                              className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                              onClick={printMedicalReportPdf}
+                              className="gap-1 border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                              disabled={!selectedPatient.medicalNotes || selectedPatient.medicalNotes.length === 0}
+                              title="يُنشئ تقريراً PDF من آخر ملاحظة طبية محفوظة"
                             >
-                              <IconPlus className="h-3.5 w-3.5" /> إضافة تفاصيل
+                              <IconPrinter className="h-3.5 w-3.5" />
+                              تقرير طبي PDF
                             </Button>
-                          )}
+                            {!addingMedical && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setAddingMedical(true);
+                                  setMedicalAllergies("");
+                                  setMedicalDiagnosis("");
+                                  setMedicalTreatment("");
+                                }}
+                                className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                              >
+                                <IconPlus className="h-3.5 w-3.5" /> إضافة تفاصيل
+                              </Button>
+                            )}
+                          </div>
                         </div>
 
                         {addingMedical && (
@@ -1686,6 +1760,109 @@ export default function PatientsView({
         </div>
       </div>
 
+      <Dialog
+        open={imagingOpen}
+        onOpenChange={(o) => {
+          setImagingOpen(o);
+          if (!o) setImagingSubmitting(false);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>إضافة صور أشعة</DialogTitle>
+            <DialogDescription>
+              ارفع صورة/ملف أشعة (JPG/PNG/PDF/DICOM). سيتم ربطه تلقائياً بملف المريض ويظهر ضمن “الملفات الطبية”.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">العنوان</label>
+              <input
+                value={imagingForm.title}
+                onChange={(e) => setImagingForm((p) => ({ ...p, title: e.target.value }))}
+                className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                placeholder="مثال: أشعة أسنان — قبل/بعد"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">ملاحظات (اختياري)</label>
+              <input
+                value={imagingForm.notes}
+                onChange={(e) => setImagingForm((p) => ({ ...p, notes: e.target.value }))}
+                className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                placeholder="مثل: تقرير مختصر، جهة التصوير…"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">الملف</label>
+              <input
+                type="file"
+                accept="image/*,application/pdf,.dcm,application/dicom,application/octet-stream"
+                onChange={(e) => setImagingForm((p) => ({ ...p, file: e.target.files?.[0] ?? null }))}
+                className="block w-full text-sm text-gray-700 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200 dark:text-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                ملاحظة: عرض ملفات DICOM داخل المتصفح يحتاج عارض خاص — حالياً سيتم حفظها وفتحها كرابط.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setImagingOpen(false)}
+              disabled={imagingSubmitting}
+            >
+              إلغاء
+            </Button>
+            <Button
+              type="button"
+              disabled={imagingSubmitting || !selectedPatient || !imagingForm.file || !imagingForm.title.trim()}
+              onClick={async () => {
+                if (!selectedPatient) return;
+                if (!imagingForm.file?.size) {
+                  toast.error("اختر ملفاً");
+                  return;
+                }
+                if (!imagingForm.title.trim()) {
+                  toast.error("العنوان مطلوب");
+                  return;
+                }
+                setImagingSubmitting(true);
+                try {
+                  const fd = new FormData();
+                  fd.append("patientSource", selectedPatient.source);
+                  fd.append("patientId", selectedPatient.id);
+                  fd.append("planType", carePlanType);
+                  fd.append("title", imagingForm.title.trim());
+                  if (imagingForm.notes.trim()) fd.append("notes", imagingForm.notes.trim());
+                  fd.append("file", imagingForm.file);
+                  const res = await fetch("/api/doctor/patient-imaging", { method: "POST", body: fd });
+                  const j = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                    toast.error(j.error || "فشل رفع الملف");
+                    return;
+                  }
+                  toast.success("تم رفع ملف الأشعة");
+                  setImagingOpen(false);
+                  setImagingReloadKey((k) => k + 1);
+                } catch {
+                  toast.error("تعذر الاتصال بالخادم");
+                } finally {
+                  setImagingSubmitting(false);
+                }
+              }}
+              className="gap-2"
+            >
+              {imagingSubmitting ? <IconLoader className="h-4 w-4 animate-spin" /> : null}
+              رفع وربط بالملف
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ══ ADD PATIENT MODAL ════════════════════════════════════ */}
       {addOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -1849,3 +2026,4 @@ export default function PatientsView({
     </div>
   );
 }
+

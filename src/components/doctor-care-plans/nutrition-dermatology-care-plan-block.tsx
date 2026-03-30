@@ -63,12 +63,26 @@ type DermatologySlice = {
   contraindications?: string;
   /** صور نصية — جلسات ليزر، تقشير، إلخ */
   otherProcedures?: string;
+  // زراعة الشعر / فروة الرأس
+  hairDiagnosis?: string;
+  hairLossPattern?: string;
+  plannedTechnique?: string; // FUE / DHI / FUT ...
+  graftsTarget?: number | null;
+  donorArea?: string;
+  preOpPlan?: string;
+  postOpPlan?: string;
 };
 
-export type NutritionDermatologyVariant = "NUTRITION" | "DERMATOLOGY_LASER" | "NUTRITION_DERMATOLOGY";
+export type NutritionDermatologyVariant =
+  | "NUTRITION"
+  | "DERMATOLOGY_LASER"
+  | "DERMATOLOGY_HAIR_TRANSPLANT"
+  | "NUTRITION_DERMATOLOGY";
 
 /** للتخصص المدمج: خطة تغذية أو خطة بشرة/ليزر — لا يُعرضان معاً */
 type CombinedPlanFocus = "nutrition" | "dermatology";
+/** للتجميل وزراعة الشعر: خطة بشرة أو خطة شعر/زراعة — لا يُعرضان معاً */
+type HairAestheticPlanFocus = "skin" | "hair";
 
 type Props = {
   variant: NutritionDermatologyVariant;
@@ -89,21 +103,31 @@ export function NutritionDermatologyCarePlanBlock({ variant, data, setData }: Pr
     return null;
   }, [variant, rawPlanFocus]);
 
+  const hairFocus: HairAestheticPlanFocus | null = useMemo(() => {
+    if (variant !== "DERMATOLOGY_HAIR_TRANSPLANT") return null;
+    if (rawPlanFocus === "skin" || rawPlanFocus === "hair") return rawPlanFocus;
+    return null;
+  }, [variant, rawPlanFocus]);
+
   const heightCm = anth.heightCm ?? null;
   const weightKg = anth.weightKg ?? null;
-  const bmi = useMemo(() => computeBmi(heightCm, weightKg), [heightCm, weightKg]);
+  const bmi = computeBmi(heightCm, weightKg);
 
   const showNutrition =
     variant === "NUTRITION" || (variant === "NUTRITION_DERMATOLOGY" && combinedFocus === "nutrition");
-  const showDerm =
+  const showSkinPlan =
     variant === "DERMATOLOGY_LASER" ||
-    (variant === "NUTRITION_DERMATOLOGY" && combinedFocus === "dermatology");
-  /** تخصص البشرة والليزر فقط — بدون قياسات وزن/طول أو خطة غذائية */
+    (variant === "NUTRITION_DERMATOLOGY" && combinedFocus === "dermatology") ||
+    (variant === "DERMATOLOGY_HAIR_TRANSPLANT" && hairFocus === "skin");
+  const showHairPlan = variant === "DERMATOLOGY_HAIR_TRANSPLANT" && hairFocus === "hair";
+  /** تخصص البشرة/الليزر/زراعة الشعر فقط — بدون قياسات وزن/طول أو خطة غذائية */
   const showAnthropometrics =
     variant === "NUTRITION" || (variant === "NUTRITION_DERMATOLOGY" && combinedFocus === "nutrition");
 
   const showCombinedPicker = variant === "NUTRITION_DERMATOLOGY";
   const combinedNeedsChoice = showCombinedPicker && combinedFocus === null;
+  const showHairPicker = variant === "DERMATOLOGY_HAIR_TRANSPLANT";
+  const hairNeedsChoice = showHairPicker && hairFocus === null;
 
   const setAnth = (patch: Partial<Anthropometrics>) =>
     setData((d) => ({
@@ -200,6 +224,66 @@ export function NutritionDermatologyCarePlanBlock({ variant, data, setData }: Pr
           {rawPlanFocus === "both" && combinedNeedsChoice && (
             <p className="mt-2 text-center text-xs text-amber-800/90 dark:text-amber-300/85">
               كان محفوظاً سابقاً كخطة مدمجة — اختر الآن «تغذية» أو «بشرة وليزر» لعرض البيانات.
+            </p>
+          )}
+        </div>
+      )}
+
+      {showHairPicker && (
+        <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/50 p-4 dark:border-fuchsia-900/40 dark:bg-fuchsia-950/20">
+          <Label className="text-sm font-semibold text-fuchsia-900 dark:text-fuchsia-200">
+            نوع الخطة لهذا المريض
+          </Label>
+          <p className="text-xs text-fuchsia-800/90 dark:text-fuchsia-300/90 mt-1 mb-4">
+            اختر «البشرة» أو «الشعر/زراعة الشعر»؛ تُعرض الحقول أسفل الزر المختار فقط.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setData((d) => ({ ...d, planFocus: "skin" as HairAestheticPlanFocus }))}
+              className={cn(
+                "rounded-xl border-2 p-4 text-right transition-all",
+                hairFocus === "skin"
+                  ? "border-sky-600 bg-sky-600 text-white shadow-md dark:border-sky-500 dark:bg-sky-600"
+                  : "border-sky-200 bg-white text-sky-950 hover:border-sky-400 hover:bg-sky-50/80 dark:border-sky-900/50 dark:bg-slate-900 dark:text-sky-100 dark:hover:bg-sky-950/40",
+              )}
+            >
+              <span className="block text-sm font-bold">خطة البشرة</span>
+              <span
+                className={cn(
+                  "mt-1 block text-xs",
+                  hairFocus === "skin" ? "text-sky-50" : "text-sky-800/85 dark:text-sky-300/90",
+                )}
+              >
+                تقييم، بروتوكول موضعي، جلسات/إجراءات، واقي شمس
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setData((d) => ({ ...d, planFocus: "hair" as HairAestheticPlanFocus }))}
+              className={cn(
+                "rounded-xl border-2 p-4 text-right transition-all",
+                hairFocus === "hair"
+                  ? "border-emerald-600 bg-emerald-600 text-white shadow-md dark:border-emerald-500 dark:bg-emerald-600"
+                  : "border-emerald-200 bg-white text-emerald-950 hover:border-emerald-400 hover:bg-emerald-50/80 dark:border-emerald-900/50 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950/40",
+              )}
+            >
+              <span className="block text-sm font-bold">خطة الشعر / زراعة الشعر</span>
+              <span
+                className={cn(
+                  "mt-1 block text-xs",
+                  hairFocus === "hair"
+                    ? "text-emerald-50"
+                    : "text-emerald-800/85 dark:text-emerald-300/90",
+                )}
+              >
+                تقنية الزراعة، عدد البصيلات، منطقة التبرع، قبل/بعد العملية
+              </span>
+            </button>
+          </div>
+          {hairNeedsChoice && (
+            <p className="mt-4 text-center text-sm text-fuchsia-800/90 dark:text-fuchsia-300/85">
+              اضغط أحد الخيارين أعلاه لعرض الخطة.
             </p>
           )}
         </div>
@@ -396,9 +480,11 @@ export function NutritionDermatologyCarePlanBlock({ variant, data, setData }: Pr
         </section>
       )}
 
-      {showDerm && (
+      {showSkinPlan && (
         <section className="rounded-xl border border-sky-200/90 bg-sky-50/35 p-4 space-y-3 dark:border-sky-900/45 dark:bg-sky-950/20">
-          <h4 className="text-sm font-semibold text-sky-950 dark:text-sky-100">البشرة والليزر</h4>
+          <h4 className="text-sm font-semibold text-sky-950 dark:text-sky-100">
+            {variant === "DERMATOLOGY_HAIR_TRANSPLANT" ? "خطة البشرة" : "البشرة والليزر"}
+          </h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label className="text-xs">فوتوتايب البشرة (اختياري)</Label>
@@ -546,6 +632,82 @@ export function NutritionDermatologyCarePlanBlock({ variant, data, setData }: Pr
               value={derm.otherProcedures || ""}
               onChange={(e) => setDerm({ otherProcedures: e.target.value })}
             />
+          </div>
+        </section>
+      )}
+
+      {showHairPlan && (
+        <section className="rounded-xl border border-emerald-200/90 bg-emerald-50/40 p-4 space-y-3 dark:border-emerald-900/45 dark:bg-emerald-950/20">
+          <h4 className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">
+            خطة الشعر / زراعة الشعر
+          </h4>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label className="text-xs">تشخيص الشعر / سبب التساقط (اختياري)</Label>
+              <Input
+                className="mt-1"
+                value={derm.hairDiagnosis || ""}
+                onChange={(e) => setDerm({ hairDiagnosis: e.target.value })}
+                placeholder="مثال: Androgenetic alopecia، Telogen effluvium…"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">نمط التساقط (Norwood/Ludwig)</Label>
+              <Input
+                className="mt-1"
+                value={derm.hairLossPattern || ""}
+                onChange={(e) => setDerm({ hairLossPattern: e.target.value })}
+                placeholder="مثال: Norwood IV"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">التقنية المخططة</Label>
+              <Input
+                className="mt-1"
+                value={derm.plannedTechnique || ""}
+                onChange={(e) => setDerm({ plannedTechnique: e.target.value })}
+                placeholder="FUE / DHI / FUT"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">عدد البصيلات المستهدف</Label>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                className="mt-1"
+                value={derm.graftsTarget != null ? String(derm.graftsTarget) : ""}
+                onChange={(e) => setDerm({ graftsTarget: parseNum(e.target.value) })}
+                placeholder="مثال: 2500"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">منطقة التبرع</Label>
+              <Input
+                className="mt-1"
+                value={derm.donorArea || ""}
+                onChange={(e) => setDerm({ donorArea: e.target.value })}
+                placeholder="مثال: خلف الرأس / اللحية"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs">خطة قبل العملية</Label>
+              <textarea
+                className="mt-1 w-full min-h-[56px] rounded-lg border border-gray-300 p-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+                value={derm.preOpPlan || ""}
+                onChange={(e) => setDerm({ preOpPlan: e.target.value })}
+                placeholder="تحاليل مطلوبة، إيقاف أدوية، تعليمات…"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs">خطة بعد العملية</Label>
+              <textarea
+                className="mt-1 w-full min-h-[56px] rounded-lg border border-gray-300 p-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+                value={derm.postOpPlan || ""}
+                onChange={(e) => setDerm({ postOpPlan: e.target.value })}
+                placeholder="أدوية، غسيل، مواعيد متابعة، تنبيهات…"
+              />
+            </div>
           </div>
         </section>
       )}

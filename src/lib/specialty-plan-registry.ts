@@ -31,6 +31,8 @@ export type CarePlanType =
   | "NUTRITION"
   /** عناية بالبشرة والليزر */
   | "DERMATOLOGY_LASER"
+  /** تجميل + زراعة شعر (بشرة + تساقط/ترميم/زرع) */
+  | "DERMATOLOGY_HAIR_TRANSPLANT"
   /** تغذية + بشرة وليزر — يختار الطبيب تركيز الخطة */
   | "NUTRITION_DERMATOLOGY"
   | "GENERIC";
@@ -96,11 +98,8 @@ const RULES: { type: CarePlanType; keys: string[] }[] = [
       "زراعة وتجميل الاسنان",
       "زراعة وتجميل الأسنان",
       "زراعه وتجميل الاسنان",
-      "زراعة وتجميل",
-      "زراعه وتجميل",
       "تجميل الاسنان وزراعة",
       "تجميل الأسنان وزراعة",
-      "تجميل وزراعة",
       "زراعة الاسنان وتجميل",
       "زراعة الأسنان وتجميل",
       "تجميل الاسنان",
@@ -164,6 +163,20 @@ const RULES: { type: CarePlanType; keys: string[] }[] = [
       "cosmetic dermatology",
       "laser hair",
       "إزالة شعر بالليزر",
+    ],
+  },
+  {
+    type: "DERMATOLOGY_HAIR_TRANSPLANT",
+    keys: [
+      "التجميل وزراعة الشعر",
+      "تجميل وزراعة الشعر",
+      "زراعة الشعر والتجميل",
+      "زراعة الشعر",
+      "hair transplant",
+      "hair transplantation",
+      "fue",
+      "dhi",
+      "scalp transplant",
     ],
   },
   {
@@ -306,6 +319,7 @@ export const CARE_PLAN_LABELS: Record<CarePlanType, string> = {
   DENTAL: "طب الأسنان",
   NUTRITION: "التغذية العلاجية — وزن، طول، وخطة حمية",
   DERMATOLOGY_LASER: "البشرة والليزر — تقييم وبروتوكول وجلسات",
+  DERMATOLOGY_HAIR_TRANSPLANT: "التجميل وزراعة الشعر — تقييم وخطة (بشرة/شعر/زرع)",
   NUTRITION_DERMATOLOGY: "التغذية والبشرة — اختر لكل مريض: خطة تغذية أو خطة بشرة وليزر",
   GENERIC: "خطة علاج عامة",
 };

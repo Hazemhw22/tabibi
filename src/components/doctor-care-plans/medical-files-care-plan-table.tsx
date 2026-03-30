@@ -53,6 +53,8 @@ type Props = {
   };
   /** لتحديث حالة «لا توجد ملفات» في الأب */
   onPlanLoaded?: (hasPlan: boolean) => void;
+  /** إجبار إعادة تحميل البيانات عند الرفع */
+  reloadKey?: number;
 };
 
 export function MedicalFilesCarePlanTable({
@@ -63,6 +65,7 @@ export function MedicalFilesCarePlanTable({
   doctorDisplayName,
   patientPrintDemographics,
   onPlanLoaded,
+  reloadKey,
 }: Props) {
   const onPlanLoadedRef = useRef(onPlanLoaded);
   onPlanLoadedRef.current = onPlanLoaded;
@@ -116,7 +119,7 @@ export function MedicalFilesCarePlanTable({
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadKey]);
 
   const label = CARE_PLAN_LABELS[carePlanType] ?? "خطة العلاج";
   const effectiveType = (plan?.planType as CarePlanType) ?? carePlanType;
@@ -194,6 +197,23 @@ export function MedicalFilesCarePlanTable({
   const notesPreview = (plan?.doctorNotes ?? "").trim();
   const notesShort =
     notesPreview.length > 72 ? `${notesPreview.slice(0, 72)}…` : notesPreview || "—";
+
+  const imagingFiles = useMemo(() => {
+    const raw = (plan?.data as Record<string, unknown> | undefined)?.imagingFiles as unknown;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((x) => x as Record<string, unknown>)
+      .map((x) => ({
+        id: String(x.id ?? ""),
+        title: String(x.title ?? ""),
+        fileUrl: String(x.fileUrl ?? ""),
+        fileName: typeof x.fileName === "string" ? x.fileName : null,
+        mimeType: typeof x.mimeType === "string" ? x.mimeType : null,
+        notes: typeof x.notes === "string" ? x.notes : null,
+        createdAt: typeof x.createdAt === "string" ? x.createdAt : null,
+      }))
+      .filter((x) => x.title.trim() && x.fileUrl.trim());
+  }, [plan?.data]);
 
   return (
     <div
@@ -292,6 +312,50 @@ export function MedicalFilesCarePlanTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="border-t border-slate-100 px-4 py-4 dark:border-slate-700/80 sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">صور الأشعة</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              تُرفع من زر “إضافة صور أشعة” في ملف المريض.
+            </p>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{imagingFiles.length} ملف</span>
+        </div>
+
+        {imagingFiles.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-400 dark:text-slate-500">لا توجد صور أشعة بعد.</p>
+        ) : (
+          <div className="mt-3 grid gap-2">
+            {imagingFiles.map((f) => (
+              <a
+                key={f.id}
+                href={f.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm transition-colors",
+                  "border-slate-200 bg-white hover:bg-slate-50",
+                  "dark:border-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-800/50",
+                )}
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-slate-900 dark:text-slate-100">{f.title}</div>
+                  <div className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                    {f.createdAt ? format(new Date(f.createdAt), "d MMM yyyy — HH:mm", { locale: ar }) : "—"}
+                    {f.fileName ? ` • ${f.fileName}` : ""}
+                  </div>
+                  {f.notes ? (
+                    <div className="mt-1 truncate text-xs text-slate-600 dark:text-slate-300">{f.notes}</div>
+                  ) : null}
+                </div>
+                <span className="shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400">فتح</span>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       {carePlanUsesDentalToothTableData(effectiveType) && (

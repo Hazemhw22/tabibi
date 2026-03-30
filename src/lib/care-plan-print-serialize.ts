@@ -179,6 +179,29 @@ export function serializeCarePlanSectionsForPrint(
       });
       break;
     }
+    case "DERMATOLOGY_HAIR_TRANSPLANT": {
+      const dp = data.dermatologyPlan as Record<string, unknown> | undefined;
+      const focus = (data.planFocus as string) || "";
+      const lines: string[] = [];
+      if (focus === "skin") {
+        lines.push(`<p><strong>نوع الخطة:</strong> البشرة</p>`);
+      } else if (focus === "hair") {
+        lines.push(`<p><strong>نوع الخطة:</strong> الشعر / زراعة الشعر</p>`);
+      } else {
+        lines.push(`<p><strong>نوع الخطة:</strong> لم يُحدَّد</p>`);
+      }
+      if (dp && Object.keys(dp).length) {
+        lines.push(
+          `<pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(dp, null, 2))}</pre>`,
+        );
+      }
+      sections.push({
+        titleAr: CARE_PLAN_LABELS[carePlanType],
+        titleEn: "Dermatology & hair transplant plan",
+        bodyHtml: lines.length > 1 ? lines.join("") : lines[0] || `<p class="muted">—</p>`,
+      });
+      break;
+    }
     case "NUTRITION_DERMATOLOGY": {
       const anth = data.anthropometrics as
         | { heightCm?: number; weightKg?: number; history?: unknown[] }

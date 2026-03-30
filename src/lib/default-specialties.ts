@@ -26,4 +26,10 @@ export const DEFAULT_SPECIALTY_SEEDS: {
     nameAr: "التغذية العلاجية والعناية بالبشرة والليزر",
     icon: null,
   },
+  {
+    id: "cm_spec_cosmetic_hair_transplant",
+    name: "cosmetic-hair-transplant",
+    nameAr: "التجميل وزراعة الشعر",
+    icon: null,
+  },
 ];

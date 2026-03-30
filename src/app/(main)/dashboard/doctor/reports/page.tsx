@@ -232,6 +232,53 @@ export default async function DoctorReportsPage() {
         doctorName={session.user.name ?? ""}
       />
 
+      <Card className="mt-8 overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-l from-indigo-50 to-white shadow-lg shadow-indigo-100/60 dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-slate-950 dark:shadow-slate-950/50">
+        <CardHeader className="border-b border-indigo-100/80 bg-white/70 px-6 py-5 backdrop-blur dark:border-indigo-900/40 dark:bg-slate-950/40">
+          <CardTitle className="flex items-center gap-3 text-lg text-indigo-950 dark:text-indigo-100">
+            <div className="rounded-xl bg-indigo-100 p-2 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-200">
+              <IconInfoCircle className="h-5 w-5" />
+            </div>
+            التقارير الطبية — صور الأشعة (DICOM)
+          </CardTitle>
+          <p className="mt-1 text-sm text-indigo-800/80 dark:text-indigo-200/80">
+            تكامل أجهزة الأشعة السينية (X-ray) لالتقاط الصور تلقائياً وربطها بسجلات المرضى، مع دعم DICOM وإدارة الملفات.
+          </p>
+        </CardHeader>
+        <CardContent className="px-6 py-6">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-indigo-200/70 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+              <h3 className="text-sm font-bold text-indigo-950 dark:text-indigo-100">الفوائد الرئيسية</h3>
+              <ul className="mt-3 space-y-2 text-sm text-indigo-900/90 dark:text-indigo-200/90">
+                <li className="flex gap-2">
+                  <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500 dark:bg-indigo-300" />
+                  تكامل سلس مع أجهزة الأشعة السينية
+                </li>
+                <li className="flex gap-2">
+                  <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500 dark:bg-indigo-300" />
+                  تخزين وإدارة صور DICOM
+                </li>
+                <li className="flex gap-2">
+                  <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500 dark:bg-indigo-300" />
+                  ربط تلقائي بسجلات المرضى
+                </li>
+                <li className="flex gap-2">
+                  <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500 dark:bg-indigo-300" />
+                  أدوات عرض الصور والتعليق عليها
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-xl border border-amber-200/70 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+              <h3 className="text-sm font-bold text-amber-950 dark:text-amber-100">ملاحظة تنفيذ</h3>
+              <p className="mt-2 text-sm text-amber-900/90 dark:text-amber-200/85">
+                هذا القسم يوضح الميزة المطلوبة. عند تفعيل التكامل فعلياً سنضيف: رفع/استقبال ملفات DICOM، وربطها بالمريض،
+                وعارض صور داخل التقارير الطبية.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="mt-8 overflow-hidden rounded-2xl border-0 shadow-lg shadow-gray-200/50 dark:border dark:border-slate-700/80 dark:shadow-slate-950/50">
         <CardHeader className="border-b border-gray-100 bg-gradient-to-l from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
           <CardTitle className="text-lg dark:text-slate-100">ملخص المواعيد حسب الحالة</CardTitle>

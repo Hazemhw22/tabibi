@@ -269,6 +269,7 @@ export function CarePlanPanel({
       )}
       {(carePlanType === "NUTRITION" ||
         carePlanType === "DERMATOLOGY_LASER" ||
+        carePlanType === "DERMATOLOGY_HAIR_TRANSPLANT" ||
         carePlanType === "NUTRITION_DERMATOLOGY") && (
         <NutritionDermatologyCarePlanBlock variant={carePlanType} data={data} setData={setData} />
       )}
@@ -318,6 +319,7 @@ export function CarePlanPanel({
         "DENTAL_IMPLANT_COSMETIC",
         "NUTRITION",
         "DERMATOLOGY_LASER",
+        "DERMATOLOGY_HAIR_TRANSPLANT",
         "NUTRITION_DERMATOLOGY",
       ].includes(carePlanType) && <GenericBlock data={data} setData={setData} />}
 
@@ -500,11 +502,11 @@ function PediatricsBlock({
     () => rows.filter((r) => r.problem?.trim() || (r.cost ?? 0) > 0).map((r) => r.organId),
     [rows],
   );
-
-  useEffect(() => {
-    if (!rows.length) return;
-    const withData = rows.find((r) => r.problem?.trim() || (r.cost ?? 0) > 0);
-    if (withData && selected !== withData.organId) setSelected(withData.organId);
+  const effectiveSelected = useMemo<PediatricOrganId | null>(() => {
+    const explicit = selected;
+    const withData = rows.find((r) => r.problem?.trim() || (r.cost ?? 0) > 0)?.organId ?? null;
+    const fallback = rows[0]?.organId ?? null;
+    return explicit ?? withData ?? fallback;
   }, [rows, selected]);
 
   const upsertRow = (organId: PediatricOrganId, patch: Partial<PedRow>) => {
@@ -525,7 +527,11 @@ function PediatricsBlock({
         اختر عضواً من المخطط، ثم سجّل المشكلة والتكلفة المقترحة (اختياري).
       </p>
       <div className="flex flex-col md:flex-row gap-6">
-        <PediatricsBodySvg selected={selected} onSelect={(id) => setSelected(id)} highlightIds={problemIds} />
+        <PediatricsBodySvg
+          selected={effectiveSelected}
+          onSelect={(id) => setSelected(id)}
+          highlightIds={problemIds}
+        />
         <div className="flex-1 space-y-3">
           <div className="flex flex-wrap gap-1">
             {PEDIATRIC_ORGANS.map((o) => (
@@ -535,7 +541,7 @@ function PediatricsBlock({
                 onClick={() => setSelected(o.id)}
                 className={cn(
                   "text-[11px] px-2 py-1 rounded-full border",
-                  selected === o.id
+                  effectiveSelected === o.id
                     ? "bg-sky-600 text-white border-sky-600"
                     : "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-200",
                 )}
@@ -544,15 +550,15 @@ function PediatricsBlock({
               </button>
             ))}
           </div>
-          {selected && (
+          {effectiveSelected && (
             <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2 dark:border-slate-700 dark:bg-slate-900/60">
               <div className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-                {PEDIATRIC_ORGANS.find((x) => x.id === selected)?.label}
+                {PEDIATRIC_ORGANS.find((x) => x.id === effectiveSelected)?.label}
               </div>
               <Input
                 placeholder="وصف المشكلة"
-                value={rowFor(selected)?.problem || ""}
-                onChange={(e) => upsertRow(selected, { problem: e.target.value })}
+                value={rowFor(effectiveSelected)?.problem || ""}
+                onChange={(e) => upsertRow(effectiveSelected, { problem: e.target.value })}
                 className="text-sm"
               />
               <div className="flex gap-2 items-center">
@@ -561,9 +567,9 @@ function PediatricsBlock({
                   type="number"
                   min={0}
                   className="h-9 w-28 text-sm"
-                  value={rowFor(selected)?.cost ?? ""}
+                  value={rowFor(effectiveSelected)?.cost ?? ""}
                   onChange={(e) =>
-                    upsertRow(selected, { cost: Math.max(0, Number(e.target.value) || 0) })
+                    upsertRow(effectiveSelected, { cost: Math.max(0, Number(e.target.value) || 0) })
                   }
                 />
               </div>
@@ -779,11 +785,11 @@ function CardiologyBlock({
     () => rows.filter((r) => r.problem?.trim() || (r.cost ?? 0) > 0).map((r) => r.zoneId),
     [rows],
   );
-
-  useEffect(() => {
-    if (!rows.length) return;
-    const withData = rows.find((r) => r.problem?.trim() || (r.cost ?? 0) > 0);
-    if (withData && selected !== withData.zoneId) setSelected(withData.zoneId);
+  const effectiveSelected = useMemo<CardiologyZoneId | null>(() => {
+    const explicit = selected;
+    const withData = rows.find((r) => r.problem?.trim() || (r.cost ?? 0) > 0)?.zoneId ?? null;
+    const fallback = rows[0]?.zoneId ?? null;
+    return explicit ?? withData ?? fallback;
   }, [rows, selected]);
 
   const upsert = (zoneId: CardiologyZoneId, patch: Partial<CardioRow>) => {
@@ -802,7 +808,11 @@ function CardiologyBlock({
     <div className="rounded-xl border border-red-100 bg-red-50/20 p-4 space-y-4 dark:border-red-900/40 dark:bg-red-950/20">
       <p className="text-xs text-gray-600 dark:text-gray-400">اختر منطقة من الرسم ثم سجّل التشخيص والتكلفة التقديرية.</p>
       <div className="flex flex-col md:flex-row gap-6">
-        <CardiologyHeartSvg selected={selected} onSelect={(id) => setSelected(id)} problemIds={problemIds} />
+        <CardiologyHeartSvg
+          selected={effectiveSelected}
+          onSelect={(id) => setSelected(id)}
+          problemIds={problemIds}
+        />
         <div className="flex-1 space-y-2">
           <div className="flex flex-wrap gap-1">
             {CARDIO_ZONES.map((z) => (
@@ -812,7 +822,7 @@ function CardiologyBlock({
                 onClick={() => setSelected(z.id)}
                 className={cn(
                   "text-[11px] px-2 py-1 rounded-full border",
-                  selected === z.id
+                  effectiveSelected === z.id
                     ? "bg-red-600 text-white border-red-600"
                     : "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-200",
                 )}
@@ -821,12 +831,12 @@ function CardiologyBlock({
               </button>
             ))}
           </div>
-          {selected && (
+          {effectiveSelected && (
             <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2 dark:border-slate-700 dark:bg-slate-900/60">
               <Input
                 placeholder="مشكلة / تشخيص"
-                value={rowFor(selected)?.problem || ""}
-                onChange={(e) => upsert(selected, { problem: e.target.value })}
+                value={rowFor(effectiveSelected)?.problem || ""}
+                onChange={(e) => upsert(effectiveSelected, { problem: e.target.value })}
                 className="text-sm"
               />
               <div className="flex gap-2 items-center">
@@ -835,8 +845,10 @@ function CardiologyBlock({
                   type="number"
                   min={0}
                   className="w-28 h-9 text-sm"
-                  value={rowFor(selected)?.cost ?? ""}
-                  onChange={(e) => upsert(selected, { cost: Math.max(0, Number(e.target.value) || 0) })}
+                  value={rowFor(effectiveSelected)?.cost ?? ""}
+                  onChange={(e) =>
+                    upsert(effectiveSelected, { cost: Math.max(0, Number(e.target.value) || 0) })
+                  }
                 />
               </div>
             </div>
