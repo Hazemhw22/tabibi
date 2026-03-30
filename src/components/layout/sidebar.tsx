@@ -89,6 +89,7 @@ const adminSections: NavSection[] = [
       { label: "لوحة تحكم", href: "/dashboard/admin", icon: IconMenuDashboard },
       { label: "الأطباء", href: "/dashboard/admin/doctors", icon: IconMenuUsers },
       { label: "المراكز الطبية", href: "/dashboard/admin/medical-centers", icon: IconBuilding },
+      { label: "المستخدمون", href: "/dashboard/admin/users", icon: IconUsersGroup },
     ],
   },
   {

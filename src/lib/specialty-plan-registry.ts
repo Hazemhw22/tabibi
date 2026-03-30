@@ -319,7 +319,7 @@ export const CARE_PLAN_LABELS: Record<CarePlanType, string> = {
   DENTAL: "طب الأسنان",
   NUTRITION: "التغذية العلاجية — وزن، طول، وخطة حمية",
   DERMATOLOGY_LASER: "البشرة والليزر — تقييم وبروتوكول وجلسات",
-  DERMATOLOGY_HAIR_TRANSPLANT: "التجميل وزراعة الشعر — تقييم وخطة (بشرة/شعر/زرع)",
+  DERMATOLOGY_HAIR_TRANSPLANT: "التجميل وزراعة الشعر — اختر: خطة البشرة أو خطة الشعر",
   NUTRITION_DERMATOLOGY: "التغذية والبشرة — اختر لكل مريض: خطة تغذية أو خطة بشرة وليزر",
   GENERIC: "خطة علاج عامة",
 };

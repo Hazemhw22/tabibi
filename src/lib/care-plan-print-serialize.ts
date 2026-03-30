@@ -30,6 +30,19 @@ export function serializeCarePlanSectionsForPrint(
   data: Record<string, unknown>,
 ): CarePlanLetterheadSection[] {
   const sections: CarePlanLetterheadSection[] = [];
+  const row = (label: string, value: string | number | null | undefined) => {
+    const v =
+      value == null || (typeof value === "string" && !value.trim())
+        ? "—"
+        : typeof value === "string"
+          ? escapeHtml(value.trim())
+          : escapeHtml(String(value));
+    return `<tr><td class="l">${escapeHtml(label)}</td><td>${v}</td></tr>`;
+  };
+  const rowMultiline = (label: string, value: string | null | undefined) => {
+    const v = value?.trim() ? nl2brEscaped(value.trim()) : `<span class="muted">—</span>`;
+    return `<tr><td class="l">${escapeHtml(label)}</td><td>${v}</td></tr>`;
+  };
 
   switch (carePlanType) {
     case "OB_GYN": {
@@ -180,25 +193,53 @@ export function serializeCarePlanSectionsForPrint(
       break;
     }
     case "DERMATOLOGY_HAIR_TRANSPLANT": {
-      const dp = data.dermatologyPlan as Record<string, unknown> | undefined;
+      const dp = (data.dermatologyPlan as Record<string, unknown>) || {};
       const focus = (data.planFocus as string) || "";
-      const lines: string[] = [];
-      if (focus === "skin") {
-        lines.push(`<p><strong>نوع الخطة:</strong> البشرة</p>`);
-      } else if (focus === "hair") {
-        lines.push(`<p><strong>نوع الخطة:</strong> الشعر / زراعة الشعر</p>`);
-      } else {
-        lines.push(`<p><strong>نوع الخطة:</strong> لم يُحدَّد</p>`);
-      }
-      if (dp && Object.keys(dp).length) {
-        lines.push(
-          `<pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(dp, null, 2))}</pre>`,
+      const showSkin = focus === "skin" || !focus;
+      const showHair = focus === "hair" || !focus;
+
+      const focusLine =
+        focus === "skin"
+          ? `<p><strong>نوع الخطة:</strong> البشرة</p>`
+          : focus === "hair"
+            ? `<p><strong>نوع الخطة:</strong> الشعر / زراعة الشعر</p>`
+            : `<p><strong>نوع الخطة:</strong> لم يُحدَّد</p>`;
+
+      const tables: string[] = [focusLine];
+
+      if (showSkin) {
+        const skinRows = [
+          row("فوتوتايب البشرة", dp.skinPhototype as string | undefined),
+          rowMultiline("الشكوى / التشخيص المبدئي", (dp.chiefComplaints as string | undefined) ?? ""),
+          rowMultiline("البروتوكول الموضعي", (dp.topicalProtocol as string | undefined) ?? ""),
+          rowMultiline("واقي الشمس", (dp.sunProtection as string | undefined) ?? ""),
+          rowMultiline("موانع / تحذيرات", (dp.contraindications as string | undefined) ?? ""),
+          rowMultiline("إجراءات أخرى", (dp.otherProcedures as string | undefined) ?? ""),
+        ].join("");
+        tables.push(
+          `<p class="mt-2 font-semibold">خطة البشرة</p><table class="print-tbl">${skinRows}</table>`,
         );
       }
+
+      if (showHair) {
+        const hairRows = [
+          rowMultiline("تشخيص الشعر / سبب التساقط", (dp.hairDiagnosis as string | undefined) ?? ""),
+          row("نمط التساقط (Norwood/Ludwig)", dp.hairLossPattern as string | undefined),
+          row("التقنية المخططة", dp.plannedTechnique as string | undefined),
+          row("عدد البصيلات المستهدف", (dp.graftsTarget as number | undefined) ?? null),
+          row("منطقة التبرع", dp.donorArea as string | undefined),
+          rowMultiline("خطة قبل العملية", (dp.preOpPlan as string | undefined) ?? ""),
+          rowMultiline("خطة بعد العملية", (dp.postOpPlan as string | undefined) ?? ""),
+        ].join("");
+        tables.push(
+          `<p class="mt-2 font-semibold">خطة الشعر / زراعة الشعر</p><table class="print-tbl">${hairRows}</table>`,
+        );
+      }
+
       sections.push({
         titleAr: CARE_PLAN_LABELS[carePlanType],
-        titleEn: "Dermatology & hair transplant plan",
-        bodyHtml: lines.length > 1 ? lines.join("") : lines[0] || `<p class="muted">—</p>`,
+        titleEn: "Hair transplant & dermatology",
+        bodyHtml: tables.join(""),
       });
       break;
     }
