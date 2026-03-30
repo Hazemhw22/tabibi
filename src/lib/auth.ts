@@ -166,6 +166,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               if (freshUser.role) u.role = freshUser.role;
               u.employerDoctorId = freshUser.employerDoctorId ?? null;
               u.doctorStaffRole = freshUser.doctorStaffRole ?? null;
+              const r = freshUser.role ?? u.role;
+              if (r === "DOCTOR_RECEPTION" || r === "DOCTOR_ASSISTANT") {
+                u.doctorId = freshUser.employerDoctorId ?? u.doctorId ?? null;
+              }
             }
           } catch (e) {
             console.error("[auth/session] User refresh failed:", e);

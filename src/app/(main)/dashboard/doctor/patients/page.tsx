@@ -1,5 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireDoctorPageContext } from "@/lib/doctor-session-context";
+
+export const dynamic = "force-dynamic";
 import {
   carePlanShowsDentalToothChart,
   resolveCarePlanType,

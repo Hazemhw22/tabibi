@@ -25,7 +25,18 @@ export async function requireDoctorPageContext(): Promise<{
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const role = session.user.role;
-  if (!isDoctorOrStaffRole(role)) redirect("/");
+  if (!isDoctorOrStaffRole(role)) {
+    if (role === "PATIENT") redirect("/dashboard/patient");
+    if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") redirect("/dashboard/admin");
+    if (
+      role === "MEDICAL_CENTER_ADMIN" ||
+      role === "MEDICAL_CENTER_RECEPTIONIST" ||
+      role === "MEDICAL_CENTER_LAB_STAFF"
+    ) {
+      redirect("/dashboard/medical-center");
+    }
+    redirect("/");
+  }
 
   const doctorIdFromSession = (session.user as { doctorId?: string | null }).doctorId;
 
