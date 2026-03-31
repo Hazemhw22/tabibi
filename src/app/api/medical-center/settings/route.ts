@@ -20,6 +20,8 @@ const patchSchema = z.object({
   description: z.string().optional().nullable(),
   locationId: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
+  clinicRequirePrepayment: z.boolean().optional(),
+  emergencyRequirePrepayment: z.boolean().optional(),
   operatingHours: z.array(hoursRow).optional(),
 });
 
@@ -37,7 +39,7 @@ export async function GET() {
     const { data: center, error } = await supabaseAdmin
       .from("MedicalCenter")
       .select(
-        "id, name, nameAr, slug, address, city, phone, locationId, description, imageUrl, operatingHoursJson, isActive, approvalStatus, subscriptionEndDate"
+        "id, name, nameAr, slug, address, city, phone, locationId, description, imageUrl, clinicRequirePrepayment, emergencyRequirePrepayment, operatingHoursJson, isActive, approvalStatus, subscriptionEndDate"
       )
       .eq("id", centerId)
       .single();
@@ -87,6 +89,8 @@ export async function PATCH(req: Request) {
     if (data.description !== undefined) update.description = data.description;
     if (data.locationId !== undefined) update.locationId = data.locationId;
     if (data.imageUrl !== undefined) update.imageUrl = data.imageUrl;
+    if (data.clinicRequirePrepayment !== undefined) update.clinicRequirePrepayment = data.clinicRequirePrepayment;
+    if (data.emergencyRequirePrepayment !== undefined) update.emergencyRequirePrepayment = data.emergencyRequirePrepayment;
     if (data.operatingHours !== undefined) {
       update.operatingHoursJson = JSON.stringify(data.operatingHours);
     }

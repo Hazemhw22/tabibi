@@ -18,6 +18,7 @@ import { DropdownSelect } from "@/components/ui/dropdown-select";
 import { CENTER_ROLES_ADMIN_RECEPTION } from "@/lib/medical-center-roles";
 import { printHtmlDocument } from "@/lib/print-html";
 import { buildEmergencyMedicalReportPrintHtml } from "@/lib/emergency-report-print-html";
+import { normalizePhoneForSms } from "@/lib/sms";
 
 type Visit = {
   id: string;
@@ -513,40 +514,71 @@ export default function EmergencyView() {
                                   </div>
                                 ) : null}
                               </div>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="shrink-0 h-8"
-                                onClick={() => {
-                                  void (async () => {
+                              <div className="shrink-0 flex flex-col gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8"
+                                  onClick={() => {
                                     if (!selected) return;
-                                    let cName = centerInfo.name;
-                                    let cImg = centerInfo.imageUrl;
-                                    if (!cName && !cImg) {
-                                      const rr = await fetch("/api/medical-center/settings").catch(() => null);
-                                      const jj = rr ? await rr.json().catch(() => ({})) : {};
-                                      cName = jj?.center?.nameAr ?? jj?.center?.name ?? null;
-                                      cImg = jj?.center?.imageUrl ?? null;
+                                    const normalized = normalizePhoneForSms(selected.patientPhone ?? null);
+                                    const wa = normalized ? normalized.replace(/\D/g, "") : "";
+                                    if (!wa) {
+                                      toast.error("لا يوجد رقم هاتف للحالة لإرسال واتساب");
+                                      return;
                                     }
-                                    const html = buildEmergencyMedicalReportPrintHtml({
-                                      origin: window.location.origin,
-                                      centerName: cName,
-                                      centerImageUrl: cImg,
-                                      issuedAtLabel: new Date().toLocaleString("ar"),
-                                      patientName: selected.patientName,
-                                      patientPhone: selected.patientPhone ?? null,
-                                      reportTitle: r.title,
-                                      reportBody: r.body,
-                                      reportMedications: r.medications ?? null,
-                                      signerName: session?.user?.name ?? null,
-                                    });
-                                    printHtmlDocument(html, `تقرير طبي — ${selected.patientName}`);
-                                  })();
-                                }}
-                              >
-                                PDF
-                              </Button>
+                                    const cName = centerInfo.name ?? "المركز الطبي";
+                                    const msg =
+                                      `تقرير طبي — طوارئ\n` +
+                                      `المركز: ${cName}\n` +
+                                      `المريض: ${selected.patientName}\n` +
+                                      `العنوان: ${r.title}\n` +
+                                      `\n${r.body}\n` +
+                                      (r.medications ? `\nالعلاج/الدواء:\n${r.medications}\n` : "");
+                                    const href = `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
+                                    window.open(href, "_blank", "noopener,noreferrer");
+                                  }}
+                                  disabled={!selected?.patientPhone}
+                                  title={!selected?.patientPhone ? "أضف رقم الهاتف للحالة أولاً" : undefined}
+                                >
+                                  واتساب
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8"
+                                  onClick={() => {
+                                    void (async () => {
+                                      if (!selected) return;
+                                      let cName = centerInfo.name;
+                                      let cImg = centerInfo.imageUrl;
+                                      if (!cName && !cImg) {
+                                        const rr = await fetch("/api/medical-center/settings").catch(() => null);
+                                        const jj = rr ? await rr.json().catch(() => ({})) : {};
+                                        cName = jj?.center?.nameAr ?? jj?.center?.name ?? null;
+                                        cImg = jj?.center?.imageUrl ?? null;
+                                      }
+                                      const html = buildEmergencyMedicalReportPrintHtml({
+                                        origin: window.location.origin,
+                                        centerName: cName,
+                                        centerImageUrl: cImg,
+                                        issuedAtLabel: new Date().toLocaleString("ar"),
+                                        patientName: selected.patientName,
+                                        patientPhone: selected.patientPhone ?? null,
+                                        reportTitle: r.title,
+                                        reportBody: r.body,
+                                        reportMedications: r.medications ?? null,
+                                        signerName: session?.user?.name ?? null,
+                                      });
+                                      printHtmlDocument(html, `تقرير طبي — ${selected.patientName}`);
+                                    })();
+                                  }}
+                                >
+                                  PDF
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}

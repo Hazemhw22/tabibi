@@ -15,6 +15,7 @@ import { CENTER_ROLES_ADMIN_RECEPTION, CENTER_ROLES_ALL_STAFF } from "@/lib/medi
 import { formatDateMedium } from "@/lib/utils";
 import { printHtmlDocument } from "@/lib/print-html";
 import { buildMedicalCenterReportsPrintHtml } from "@/lib/medical-center-report-print-html";
+import { normalizePhoneForSms } from "@/lib/sms";
 
 type P = { id: string; name?: string; email?: string; phone?: string };
 type A = {
@@ -286,44 +287,72 @@ export default function CenterPatientDetailsPage() {
           <CardContent className="p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="font-semibold">التقارير الطبية (يضيفها المركز)</h2>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-8"
-                onClick={() => {
-                  void (async () => {
-                    let cName = centerInfo.name;
-                    let cImg = centerInfo.imageUrl;
-                    if (!cName && !cImg) {
-                      const r = await fetch("/api/medical-center/settings").catch(() => null);
-                      const j = r ? await r.json().catch(() => ({})) : {};
-                      cName = j?.center?.nameAr ?? j?.center?.name ?? null;
-                      cImg = j?.center?.imageUrl ?? null;
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => {
+                    const normalized = normalizePhoneForSms(patient?.phone ?? null);
+                    const wa = normalized ? normalized.replace(/\D/g, "") : "";
+                    if (!wa) {
+                      toast.error("لا يوجد رقم هاتف للمريض لإرسال واتساب");
+                      return;
                     }
-                    const html = buildMedicalCenterReportsPrintHtml({
-                      origin: window.location.origin,
-                      centerName: cName,
-                      centerImageUrl: cImg,
-                      issuedAtLabel: new Date().toLocaleString("ar"),
-                      patientName: patient?.name ?? "—",
-                      patientPhone: patient?.phone ?? null,
-                      patientEmail: patient?.email ?? null,
-                      reports: reportDocs.map((d) => ({
-                        title: d.title,
-                        createdAt: d.createdAt ?? null,
-                        notes: d.notes ?? null,
-                        fileUrl: d.fileUrl,
-                      })),
-                      heading: "تقارير طبية — المركز",
-                    });
-                    printHtmlDocument(html, `تقارير طبية — ${patient?.name ?? "patient"}`);
-                  })();
-                }}
-                disabled={reportDocs.length === 0}
-              >
-                PDF
-              </Button>
+                    const cName = centerInfo.name ?? "المركز الطبي";
+                    const lines = reportDocs.map((d, idx) => `${idx + 1}) ${d.title} — ${d.fileUrl}`);
+                    const msg =
+                      `تقرير طبي — ${cName}\n` +
+                      `المريض: ${patient?.name ?? "—"}\n` +
+                      (lines.length ? `\nالملفات:\n${lines.join("\n")}\n` : "\nلا يوجد تقارير مرفوعة.\n");
+                    const href = `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
+                    window.open(href, "_blank", "noopener,noreferrer");
+                  }}
+                  disabled={reportDocs.length === 0 || !patient?.phone}
+                  title={!patient?.phone ? "أضف رقم هاتف للمريض أولاً" : undefined}
+                >
+                  واتساب
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => {
+                    void (async () => {
+                      let cName = centerInfo.name;
+                      let cImg = centerInfo.imageUrl;
+                      if (!cName && !cImg) {
+                        const r = await fetch("/api/medical-center/settings").catch(() => null);
+                        const j = r ? await r.json().catch(() => ({})) : {};
+                        cName = j?.center?.nameAr ?? j?.center?.name ?? null;
+                        cImg = j?.center?.imageUrl ?? null;
+                      }
+                      const html = buildMedicalCenterReportsPrintHtml({
+                        origin: window.location.origin,
+                        centerName: cName,
+                        centerImageUrl: cImg,
+                        issuedAtLabel: new Date().toLocaleString("ar"),
+                        patientName: patient?.name ?? "—",
+                        patientPhone: patient?.phone ?? null,
+                        patientEmail: patient?.email ?? null,
+                        reports: reportDocs.map((d) => ({
+                          title: d.title,
+                          createdAt: d.createdAt ?? null,
+                          notes: d.notes ?? null,
+                          fileUrl: d.fileUrl,
+                        })),
+                        heading: "تقارير طبية — المركز",
+                      });
+                      printHtmlDocument(html, `تقارير طبية — ${patient?.name ?? "patient"}`);
+                    })();
+                  }}
+                  disabled={reportDocs.length === 0}
+                >
+                  PDF
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               {reportDocs.length === 0 && <p className="text-sm text-gray-500">لا يوجد تقارير حتى الآن.</p>}
@@ -334,7 +363,36 @@ export default function CenterPatientDetailsPage() {
                     <p className="text-gray-500">{d.createdAt ? formatDateMedium(d.createdAt) : ""}</p>
                     {d.notes ? <p className="text-gray-600 mt-1">{d.notes}</p> : null}
                   </div>
-                  <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">فتح</a>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                      onClick={() => {
+                        const normalized = normalizePhoneForSms(patient?.phone ?? null);
+                        const wa = normalized ? normalized.replace(/\D/g, "") : "";
+                        if (!wa) {
+                          toast.error("لا يوجد رقم هاتف للمريض لإرسال واتساب");
+                          return;
+                        }
+                        const cName = centerInfo.name ?? "المركز الطبي";
+                        const msg =
+                          `تقرير طبي — ${cName}\n` +
+                          `المريض: ${patient?.name ?? "—"}\n` +
+                          `العنوان: ${d.title}\n` +
+                          (d.notes ? `ملاحظات: ${d.notes}\n` : "") +
+                          `الرابط: ${d.fileUrl}\n`;
+                        const href = `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
+                        window.open(href, "_blank", "noopener,noreferrer");
+                      }}
+                      disabled={!patient?.phone}
+                      title={!patient?.phone ? "أضف رقم هاتف للمريض أولاً" : undefined}
+                    >
+                      واتساب
+                    </Button>
+                    <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">فتح</a>
+                  </div>
                 </div>
               ))}
             </div>

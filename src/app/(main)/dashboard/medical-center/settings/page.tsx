@@ -49,6 +49,8 @@ export default function MedicalCenterSettingsPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hours, setHours] = useState<HoursRow[]>([{ dayOfWeek: 0, startTime: "08:00", endTime: "16:00" }]);
+  const [clinicRequirePrepayment, setClinicRequirePrepayment] = useState(true);
+  const [emergencyRequirePrepayment, setEmergencyRequirePrepayment] = useState(false);
 
   useEffect(() => {
     if (sessionStatus === "loading") return;
@@ -72,6 +74,8 @@ export default function MedicalCenterSettingsPage() {
           description?: string | null;
           locationId?: string | null;
           imageUrl?: string | null;
+          clinicRequirePrepayment?: boolean | null;
+          emergencyRequirePrepayment?: boolean | null;
           operatingHours?: HoursRow[];
         };
         setName(c.name ?? "");
@@ -82,6 +86,8 @@ export default function MedicalCenterSettingsPage() {
         setDescription(c.description ?? "");
         setLocationId(c.locationId ?? "");
         setImageUrl(c.imageUrl ?? "");
+        setClinicRequirePrepayment((c.clinicRequirePrepayment ?? true) as boolean);
+        setEmergencyRequirePrepayment((c.emergencyRequirePrepayment ?? false) as boolean);
         if (c.operatingHours?.length) setHours(c.operatingHours);
       })
       .catch(() => toast.error("تعذر التحميل"))
@@ -114,6 +120,8 @@ export default function MedicalCenterSettingsPage() {
           description: description.trim() || null,
           locationId: locationId || null,
           imageUrl: imageUrl || null,
+          clinicRequirePrepayment,
+          emergencyRequirePrepayment,
           operatingHours: hours.map((h) => ({
             dayOfWeek: h.dayOfWeek,
             startTime: h.startTime.slice(0, 5),
@@ -247,6 +255,48 @@ export default function MedicalCenterSettingsPage() {
               <Label className="text-slate-700">وصف مختصر</Label>
               <Input value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
             </div>
+          </div>
+        </div>
+
+        <div className={panelClass}>
+          <h2 className="mb-1 text-base font-semibold text-slate-900 flex items-center gap-2">
+            <IconSettings className="h-4 w-4 text-indigo-600" />
+            سير العمل والدفع
+          </h2>
+          <p className="text-xs text-slate-500 mb-4">
+            حدّد هل يتطلب الدفع مسبقاً حسب نوع الخدمة (عيادة/طوارئ).
+          </p>
+
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={clinicRequirePrepayment}
+                onChange={(e) => setClinicRequirePrepayment(e.target.checked)}
+              />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-900">خدمة عيادة — دفع مسبق</div>
+                <div className="text-xs text-slate-600">
+                  إذا مفعّل: لا يدخل المريض للطبيب إلا بعد تحويله “مدفوع/جاهز للدخول”.
+                </div>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={emergencyRequirePrepayment}
+                onChange={(e) => setEmergencyRequirePrepayment(e.target.checked)}
+              />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-900">خدمة طوارئ — دفع مسبق</div>
+                <div className="text-xs text-slate-600">
+                  إذا غير مفعّل: تُسجّل الحالة وتُقدّم الخدمة فوراً ثم يُغلق الملف مالياً قبل المغادرة.
+                </div>
+              </div>
+            </label>
           </div>
         </div>
 
