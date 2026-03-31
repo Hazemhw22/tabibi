@@ -115,7 +115,8 @@ export function DentalToothChartBlock({
   }, [loadFromServer]);
 
   const handleToothClick = (id: string) => {
-    setSelectedTeeth((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [id]));
+    // السماح بتحديد أكثر من سن لنفس المشكلة (مثلاً التقويم)
+    setSelectedTeeth((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
   };
 
   const getToothColors = (id: string) => {
@@ -573,10 +574,21 @@ export function DentalToothChartBlock({
               </button>
             ))}
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={toggleToothDone} disabled={selectedTeeth.length === 0} className="gap-1.5">
-            <IconCircleCheck className="h-3.5 w-3.5" />
-            {selectedTeeth.some((id) => toothDone[id]) ? "إزالة إشارة الإنجاز" : "تم ✓ إنجاز العلاج"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedTeeth([])}
+              disabled={selectedTeeth.length === 0}
+            >
+              مسح التحديد
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={toggleToothDone} disabled={selectedTeeth.length === 0} className="gap-1.5">
+              <IconCircleCheck className="h-3.5 w-3.5" />
+              {selectedTeeth.some((id) => toothDone[id]) ? "إزالة إشارة الإنجاز" : "تم ✓ إنجاز العلاج"}
+            </Button>
+          </div>
           {Object.keys(toothProblems).filter((id) => toothProblems[id]).length > 0 && (
             <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-2 max-h-48 overflow-auto dark:border-slate-600 dark:bg-slate-900/50">
               <p className="text-[11px] font-semibold text-gray-600 dark:text-slate-400 mb-1">
