@@ -28,6 +28,16 @@ async function ensureBucket() {
 }
 
 async function patientHasCenterRelationship(patientUserId: string, centerId: string): Promise<boolean> {
+  // 0) Added explicitly in center patients list
+  const { data: manual } = await supabaseAdmin
+    .from("MedicalCenterPatient")
+    .select("id")
+    .eq("medicalCenterId", centerId)
+    .eq("patientUserId", patientUserId)
+    .limit(1)
+    .maybeSingle();
+  if (manual) return true;
+
   const { data: row } = await supabaseAdmin
     .from("Appointment")
     .select("id")
@@ -36,6 +46,16 @@ async function patientHasCenterRelationship(patientUserId: string, centerId: str
     .limit(1)
     .maybeSingle();
   if (row) return true;
+
+  // Emergency visit linked to patient
+  const { data: ev } = await supabaseAdmin
+    .from("EmergencyVisit")
+    .select("id")
+    .eq("medicalCenterId", centerId)
+    .eq("patientUserId", patientUserId)
+    .limit(1)
+    .maybeSingle();
+  if (ev) return true;
 
   const ids = await getLinkedDoctorIdsForCenter(centerId);
   if (!ids.length) return false;

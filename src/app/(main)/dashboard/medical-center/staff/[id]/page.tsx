@@ -22,7 +22,40 @@ type Staff = {
   educationLevel?: string | null;
   staffType?: string | null;
   attendanceNotes?: string | null;
+  attendanceScheduleJson?: string | null;
 };
+
+type DayId = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type Schedule = { days: DayId[]; start: string; end: string };
+
+const DAYS: { id: DayId; label: string }[] = [
+  { id: 0, label: "الأحد" },
+  { id: 1, label: "الاثنين" },
+  { id: 2, label: "الثلاثاء" },
+  { id: 3, label: "الأربعاء" },
+  { id: 4, label: "الخميس" },
+  { id: 5, label: "الجمعة" },
+  { id: 6, label: "السبت" },
+];
+
+function parseSchedule(raw: string | null | undefined): Schedule {
+  try {
+    if (!raw) return { days: [], start: "09:00", end: "17:00" };
+    const j = JSON.parse(raw) as Partial<Schedule>;
+    const days = Array.isArray(j.days)
+      ? (j.days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) as DayId[])
+      : [];
+    const start = typeof j.start === "string" && /^\d\d:\d\d$/.test(j.start) ? j.start : "09:00";
+    const end = typeof j.end === "string" && /^\d\d:\d\d$/.test(j.end) ? j.end : "17:00";
+    return { days, start, end };
+  } catch {
+    return { days: [], start: "09:00", end: "17:00" };
+  }
+}
+
+function scheduleToJson(s: Schedule): string {
+  return JSON.stringify({ days: [...new Set(s.days)].sort(), start: s.start, end: s.end });
+}
 
 export default function StaffDetailsPage() {
   const { data: session, status } = useSession();
@@ -41,6 +74,7 @@ export default function StaffDetailsPage() {
     staffType: "",
     attendanceNotes: "",
   });
+  const [schedule, setSchedule] = useState<Schedule>({ days: [], start: "09:00", end: "17:00" });
 
   const load = () => {
     if (!staffId) return;
@@ -61,6 +95,7 @@ export default function StaffDetailsPage() {
           staffType: s.staffType ?? "",
           attendanceNotes: s.attendanceNotes ?? "",
         });
+        setSchedule(parseSchedule(s.attendanceScheduleJson ?? null));
       })
       .catch(() => toast.error("تعذر التحميل"))
       .finally(() => setLoading(false));
@@ -87,6 +122,7 @@ export default function StaffDetailsPage() {
         educationLevel: form.educationLevel.trim() || null,
         staffType: form.staffType.trim() || null,
         attendanceNotes: form.attendanceNotes.trim() || null,
+        attendanceScheduleJson: scheduleToJson(schedule),
       };
       const res = await fetch(`/api/medical-center/staff/${staffId}`, {
         method: "PATCH",
@@ -145,8 +181,65 @@ export default function StaffDetailsPage() {
               </div>
             </div>
             <div>
-              <Label>قسم الدوام (ملاحظات)</Label>
-              <Input className="mt-1" value={form.attendanceNotes} onChange={(e) => setForm((f) => ({ ...f, attendanceNotes: e.target.value }))} placeholder="أيام الدوام، الساعات، ملاحظات الحضور..." />
+              <Label>قسم الدوام</Label>
+              <div className="mt-2 space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">أيام الدوام</div>
+                  <div className="flex flex-wrap gap-2">
+                    {DAYS.map((d) => {
+                      const checked = schedule.days.includes(d.id);
+                      return (
+                        <label key={d.id} className="inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setSchedule((s) => {
+                                const nextDays = e.target.checked
+                                  ? [...s.days, d.id]
+                                  : s.days.filter((x) => x !== d.id);
+                                return { ...s, days: nextDays };
+                              });
+                            }}
+                          />
+                          {d.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>بداية الدوام</Label>
+                    <Input
+                      className="mt-1"
+                      type="time"
+                      value={schedule.start}
+                      onChange={(e) => setSchedule((s) => ({ ...s, start: e.target.value }))}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <Label>نهاية الدوام</Label>
+                    <Input
+                      className="mt-1"
+                      type="time"
+                      value={schedule.end}
+                      onChange={(e) => setSchedule((s) => ({ ...s, end: e.target.value }))}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>ملاحظات (اختياري)</Label>
+                  <Input
+                    className="mt-1"
+                    value={form.attendanceNotes}
+                    onChange={(e) => setForm((f) => ({ ...f, attendanceNotes: e.target.value }))}
+                    placeholder="مثال: مناوبة مسائية أيام الخميس"
+                  />
+                </div>
+              </div>
             </div>
             <Button type="submit" disabled={saving}>{saving ? "جاري الحفظ..." : "حفظ البيانات"}</Button>
           </form>

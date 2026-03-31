@@ -13,14 +13,25 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const centerId = gate.centerId;
     const { id } = await params;
 
-    const { data: rel } = await supabaseAdmin
-      .from("Appointment")
-      .select("id")
-      .eq("medicalCenterId", centerId)
-      .eq("patientId", id)
-      .limit(1)
-      .maybeSingle();
-    if (!rel) return NextResponse.json({ error: "المريض غير مرتبط بالمركز" }, { status: 404 });
+    const [{ data: relAppt }, { data: relManual }] = await Promise.all([
+      supabaseAdmin
+        .from("Appointment")
+        .select("id")
+        .eq("medicalCenterId", centerId)
+        .eq("patientId", id)
+        .limit(1)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("MedicalCenterPatient")
+        .select("id")
+        .eq("medicalCenterId", centerId)
+        .eq("patientUserId", id)
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (!relAppt && !relManual) {
+      return NextResponse.json({ error: "المريض غير مرتبط بالمركز" }, { status: 404 });
+    }
 
     const { data: patient } = await supabaseAdmin
       .from("User")

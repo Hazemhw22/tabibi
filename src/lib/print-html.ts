@@ -34,7 +34,30 @@ export function printHtmlDocument(html: string, documentTitle = "document"): voi
     }
   };
 
-  const runPrint = () => {
+  const waitForImages = async () => {
+    try {
+      const images = Array.from(doc.images ?? []);
+      if (images.length === 0) return;
+      await Promise.race([
+        Promise.all(
+          images.map(
+            (img) =>
+              new Promise<void>((resolve) => {
+                if (img.complete) return resolve();
+                img.addEventListener("load", () => resolve(), { once: true });
+                img.addEventListener("error", () => resolve(), { once: true });
+              }),
+          ),
+        ),
+        new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+      ]);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const runPrint = async () => {
+    await waitForImages();
     try {
       win.focus();
       win.print();
@@ -46,8 +69,8 @@ export function printHtmlDocument(html: string, documentTitle = "document"): voi
 
   // انتظر رسم المستند داخل الـ iframe
   if (doc.readyState === "complete") {
-    requestAnimationFrame(() => setTimeout(runPrint, 50));
+    requestAnimationFrame(() => setTimeout(() => void runPrint(), 50));
   } else {
-    win.addEventListener("load", () => setTimeout(runPrint, 50), { once: true });
+    win.addEventListener("load", () => setTimeout(() => void runPrint(), 50), { once: true });
   }
 }

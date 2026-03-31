@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import IconCalendar from "@/components/icon/icon-calendar";
 import IconPlusCircle from "@/components/icon/icon-plus-circle";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import QuickBookingModal from "@/components/medical-center/quick-booking-modal";
 import { formatDateNumeric, formatNumber } from "@/lib/utils";
+import { CENTER_ROLES_ADMIN_RECEPTION } from "@/lib/medical-center-roles";
 import {
   DataTableShell,
   DataTable,
@@ -21,6 +23,11 @@ import {
 } from "@/components/ui/data-table-shell";
 
 export default function CenterAppointmentsPage() {
+  const { data: session } = useSession();
+  const canManage = useMemo(
+    () => CENTER_ROLES_ADMIN_RECEPTION.includes((session?.user?.role ?? "") as never),
+    [session?.user?.role]
+  );
   const [list, setList] = useState<unknown[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [quickOpen, setQuickOpen] = useState(false);
@@ -63,6 +70,39 @@ export default function CenterAppointmentsPage() {
       return p.toLowerCase().includes(q) || ph.includes(q) || d.toLowerCase().includes(q);
     });
   }, [list, search]);
+
+  const togglePaid = async (a: A) => {
+    if (!canManage) return;
+    const prev = a.paymentStatus;
+    const next = String(prev ?? "UNPAID").toUpperCase() === "PAID" ? "UNPAID" : "PAID";
+    setList((p) => (p as A[]).map((x) => (x.id === a.id ? { ...x, paymentStatus: next } : x)));
+    const res = await fetch(`/api/medical-center/appointments/${a.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentStatus: next }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setList((p) => (p as A[]).map((x) => (x.id === a.id ? { ...x, paymentStatus: prev } : x)));
+      throw new Error(j.error || "فشل تحديث الدفع");
+    }
+  };
+
+  const markAttendance = async (a: A, status: string) => {
+    if (!canManage) return;
+    const prev = a.status;
+    setList((p) => (p as A[]).map((x) => (x.id === a.id ? { ...x, status } : x)));
+    const res = await fetch(`/api/appointments/${a.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setList((p) => (p as A[]).map((x) => (x.id === a.id ? { ...x, status: prev } : x)));
+      throw new Error(j.error || "فشل تحديث الحضور");
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
@@ -122,6 +162,7 @@ export default function CenterAppointmentsPage() {
                 <DataTableHeaderCell>الحالة</DataTableHeaderCell>
                 <DataTableHeaderCell>الدفع</DataTableHeaderCell>
                 <DataTableHeaderCell>السعر</DataTableHeaderCell>
+                {canManage ? <DataTableHeaderCell className="w-[240px]">إجراء</DataTableHeaderCell> : null}
               </DataTableHead>
               <DataTableBody>
                 {filtered.map((a, i) => (
@@ -141,6 +182,36 @@ export default function CenterAppointmentsPage() {
                     <DataTableCell><Badge variant="secondary">{a.status}</Badge></DataTableCell>
                     <DataTableCell>{a.paymentStatus}</DataTableCell>
                     <DataTableCell className="whitespace-nowrap">₪{a.fee ?? "—"}</DataTableCell>
+                    {canManage ? (
+                      <DataTableCell>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void togglePaid(a).catch((e) => setErr(e instanceof Error ? e.message : String(e)))}
+                          >
+                            {String(a.paymentStatus ?? "UNPAID").toUpperCase() === "PAID" ? "غير مدفوع" : "مدفوع"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void markAttendance(a, "COMPLETED").catch((e) => setErr(e instanceof Error ? e.message : String(e)))}
+                          >
+                            حضر
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void markAttendance(a, "NO_SHOW").catch((e) => setErr(e instanceof Error ? e.message : String(e)))}
+                          >
+                            لم يحضر
+                          </Button>
+                        </div>
+                      </DataTableCell>
+                    ) : null}
                   </DataTableRow>
                 ))}
               </DataTableBody>

@@ -117,16 +117,32 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: "تعذر ربط العيادة الرئيسية" }, { status: 500 });
       }
 
-      const { data: slotsToRemove } = await supabaseAdmin
+      const { data: slotsToDisable, error: slotsErr } = await supabaseAdmin
         .from("TimeSlot")
         .select("id")
         .eq("doctorId", id)
         .or(`clinicId.eq.${mainClinic.id},clinicId.is.null`);
 
-      const slotIds = (slotsToRemove ?? []).map((s) => s.id);
+      if (slotsErr) {
+        console.error(slotsErr);
+        return NextResponse.json(
+          { error: "فشل تحميل أوقات العمل الحالية", details: slotsErr.message },
+          { status: 500 },
+        );
+      }
+
+      // لا نحذف الأوقات القديمة لتجنب مشاكل FK مع Appointment.timeSlotId.
+      // بدلاً من ذلك: نعطّلها فقط، ثم نضيف الأوقات الجديدة.
+      const slotIds = (slotsToDisable ?? []).map((s: { id: string }) => s.id);
       if (slotIds.length) {
-        await supabaseAdmin.from("Appointment").update({ timeSlotId: null }).in("timeSlotId", slotIds);
-        await supabaseAdmin.from("TimeSlot").delete().in("id", slotIds);
+        const { error: disErr } = await supabaseAdmin.from("TimeSlot").update({ isActive: false }).in("id", slotIds);
+        if (disErr) {
+          console.error(disErr);
+          return NextResponse.json(
+            { error: "فشل تعطيل أوقات العمل القديمة", details: disErr.message },
+            { status: 500 },
+          );
+        }
       }
 
       if (data.timeSlots.length > 0) {
@@ -142,7 +158,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const { error: insErr } = await supabaseAdmin.from("TimeSlot").insert(slotRows);
         if (insErr) {
           console.error(insErr);
-          return NextResponse.json({ error: "فشل تحديث أوقات العمل" }, { status: 500 });
+          const msg = String(insErr.message ?? "");
+          // شائع عند إنشاء الجداول بدون اقتباس: slotCapacity تصبح slotcapacity
+          if ((insErr as { code?: string }).code === "42703" || msg.toLowerCase().includes("slotcapacity")) {
+            return NextResponse.json(
+              {
+                error: "فشل تحديث أوقات العمل بسبب عدم تطابق أسماء أعمدة TimeSlot (slotCapacity).",
+                hint: "تأكد أن عمود TimeSlot اسمه \"slotCapacity\" وليس slotcapacity (قد تحتاج rename في SQL).",
+              },
+              { status: 500 },
+            );
+          }
+          return NextResponse.json({ error: "فشل تحديث أوقات العمل", details: insErr.message }, { status: 500 });
         }
       }
     }

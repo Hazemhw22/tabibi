@@ -39,7 +39,7 @@ export type PatientListItem = {
   whatsapp?: string | null;
   email?: string | null;
   fileNumber?: string | null;
-  source: "clinic" | "platform";
+  source: "clinic" | "platform" | "emergency";
   ownership: "LOCAL" | "CENTER";
   appointmentCount: number;
 };
@@ -65,12 +65,23 @@ export type SelectedPatient = {
   bloodType?: string | null;
   allergies?: string | null;
   notes?: string | null;
-  source: "clinic" | "platform";
+  source: "clinic" | "platform" | "emergency";
   ownership: "LOCAL" | "CENTER";
   appointments: AppointmentRow[];
   transactions: TransactionRow[];
   balance: number;
   medicalNotes?: MedicalNote[];
+  /** emergency only */
+  emergencyReport?: {
+    complaint?: string | null;
+    notes?: string | null;
+    amount?: number | null;
+    paymentStatus?: string | null;
+    paymentMethod?: string | null;
+    createdAt?: string | null;
+    registeredByUserId?: string | null;
+    medicalCenterId?: string | null;
+  } | null;
 };
 
 export default async function DoctorPatientsPage({
@@ -142,12 +153,64 @@ export default async function DoctorPatientsPage({
     appointmentCount: p.count,
   }));
 
-  const allPatients: PatientListItem[] = [...clinicPatients, ...platformPatients];
+  /* ── Emergency visits (medical center only) ─────────────────────── */
+  const centerId = (doctor as { medicalCenterId?: string | null }).medicalCenterId ?? null;
+  const { data: emergencyRaw } = centerId
+    ? await supabaseAdmin
+        .from("EmergencyVisit")
+        .select("id, patientName, createdAt")
+        .eq("medicalCenterId", centerId)
+        .order("createdAt", { ascending: false })
+        .limit(200)
+    : { data: [] as unknown[] };
+
+  const emergencyPatients: PatientListItem[] = (emergencyRaw ?? []).map((v) => ({
+    id: (v as { id: string }).id,
+    name: (v as { patientName?: string | null }).patientName ?? "—",
+    source: "emergency",
+    ownership: "CENTER",
+    appointmentCount: 0,
+  }));
+
+  const allPatients: PatientListItem[] = [...clinicPatients, ...platformPatients, ...emergencyPatients];
 
   /* ── Selected patient details ────────────────────────────────── */
   let selectedPatient: SelectedPatient | null = null;
 
   if (selectedId) {
+    if (selectedSource === "emergency") {
+      if (centerId) {
+        const { data: ev } = await supabaseAdmin
+          .from("EmergencyVisit")
+          .select("*")
+          .eq("id", selectedId)
+          .eq("medicalCenterId", centerId)
+          .maybeSingle();
+
+        if (ev) {
+          selectedPatient = {
+            id: ev.id as string,
+            name: (ev as { patientName?: string | null }).patientName ?? "—",
+            source: "emergency",
+            ownership: "CENTER",
+            appointments: [],
+            transactions: [],
+            balance: 0,
+            medicalNotes: [],
+            emergencyReport: {
+              complaint: (ev as { complaint?: string | null }).complaint ?? null,
+              notes: (ev as { notes?: string | null }).notes ?? null,
+              amount: (ev as { amount?: number | null }).amount ?? null,
+              paymentStatus: (ev as { paymentStatus?: string | null }).paymentStatus ?? null,
+              paymentMethod: (ev as { paymentMethod?: string | null }).paymentMethod ?? null,
+              createdAt: (ev as { createdAt?: string | null }).createdAt ?? null,
+              registeredByUserId: (ev as { registeredByUserId?: string | null }).registeredByUserId ?? null,
+              medicalCenterId: (ev as { medicalCenterId?: string | null }).medicalCenterId ?? null,
+            },
+          };
+        }
+      }
+    } else {
     /* Try clinic patient first */
     if (selectedSource !== "platform") {
       const { data: cp } = await supabaseAdmin
@@ -274,6 +337,7 @@ export default async function DoctorPatientsPage({
           ownership,
         };
       }
+    }
     }
   }
 

@@ -9,6 +9,7 @@ export type DoctorRowForPage = {
   consultationFee?: number | null;
   status?: string | null;
   userId?: string | null;
+  medicalCenterId?: string | null;
   specialty?: { nameAr?: string | null } | null;
   medicalCenter?: { name?: string | null; nameAr?: string | null } | null;
 };
@@ -43,7 +44,9 @@ export async function requireDoctorPageContext(): Promise<{
   if (role === "DOCTOR") {
     const { data: doctor } = await supabaseAdmin
       .from("Doctor")
-      .select("id, consultationFee, status, userId, specialty:Specialty(nameAr), medicalCenter:MedicalCenter(name, nameAr)")
+      .select(
+        "id, consultationFee, status, userId, medicalCenterId, specialty:Specialty(nameAr), medicalCenter:MedicalCenter(name, nameAr)",
+      )
       .eq("userId", session.user.id)
       .single();
     if (!doctor) redirect("/dashboard/doctor/setup");
@@ -60,7 +63,9 @@ export async function requireDoctorPageContext(): Promise<{
 
   const { data: doctor } = await supabaseAdmin
     .from("Doctor")
-    .select("id, consultationFee, status, userId, specialty:Specialty(nameAr), medicalCenter:MedicalCenter(name, nameAr)")
+    .select(
+      "id, consultationFee, status, userId, medicalCenterId, specialty:Specialty(nameAr), medicalCenter:MedicalCenter(name, nameAr)",
+    )
     .eq("id", targetDoctorId)
     .single();
   if (!doctor) redirect("/login");

@@ -60,6 +60,11 @@ const BASE_TABS = [
   { id: "medical",      label: "الملفات الطبية", icon: IconDocument },
 ];
 
+const EMERGENCY_TABS = [
+  { id: "info", label: "البيانات", icon: IconUser },
+  { id: "report", label: "التقرير الطبي", icon: IconClipboardText },
+];
+
 const APT_STATUS: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   SCHEDULED:  { label: "مجدول",   color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50 dark:text-blue-300",    icon: IconClock },
   DRAFT:      { label: "مسودة",   color: "text-gray-600 bg-gray-100 dark:bg-slate-700 dark:text-slate-200",   icon: IconClock },
@@ -120,6 +125,12 @@ export default function PatientsView({
     const allowed = new Set(["info", "visits", "transactions"]);
     if (!allowed.has(activeTab)) setActiveTab("info");
   }, [isStaff, activeTab]);
+
+  useEffect(() => {
+    if (!selectedPatient || selectedPatient.source !== "emergency") return;
+    const allowed = new Set(["info", "report"]);
+    if (!allowed.has(activeTab)) setActiveTab("info");
+  }, [selectedPatient, activeTab]);
 
   /* add-patient modal */
   const [addOpen,    setAddOpen]    = useState(false);
@@ -201,7 +212,8 @@ export default function PatientsView({
       mode: "single-patient",
       doctorName: doctorDisplayName || "—",
       patientLine: selectedPatient.name,
-      patientChannelLabel: selectedPatient.source === "clinic" ? "عيادة" : "منصة",
+      patientChannelLabel:
+        selectedPatient.source === "clinic" ? "عيادة" : selectedPatient.source === "emergency" ? "طوارئ" : "منصة",
       issuedAtLabel: new Date().toLocaleString("ar", {
         dateStyle: "medium",
         timeStyle: "short",
@@ -268,6 +280,9 @@ export default function PatientsView({
   }, []);
 
   const tabs = useMemo(() => {
+    if (selectedPatient?.source === "emergency") {
+      return EMERGENCY_TABS;
+    }
     if (isStaff) {
       return [
         { id: "info", label: "البيانات", icon: IconUser },
@@ -291,7 +306,7 @@ export default function PatientsView({
       t.push({ id: "dental", label: "خطة علاج الأسنان", icon: IconDocument });
     }
     return t;
-  }, [isStaff, isDentist, showDentalToothChart, carePlanType]);
+  }, [selectedPatient?.source, isStaff, isDentist, showDentalToothChart, carePlanType]);
 
   const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }));
   const setEdit = (k: string, v: string) => setEditForm((p) => ({ ...p, [k]: v }));
@@ -946,6 +961,55 @@ export default function PatientsView({
                 </div>
               )}
 
+              {/* ── التقرير الطبي (طوارئ) ─────────────────────── */}
+              {activeTab === "report" && selectedPatient.source === "emergency" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-700">التقرير الطبي</h3>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50">
+                    {(
+                      [
+                        { label: "الشكوى", value: selectedPatient.emergencyReport?.complaint ?? null },
+                        { label: "ملاحظات", value: selectedPatient.emergencyReport?.notes ?? null },
+                        {
+                          label: "تاريخ التسجيل",
+                          value: selectedPatient.emergencyReport?.createdAt
+                            ? format(new Date(selectedPatient.emergencyReport.createdAt), "dd/MM/yyyy HH:mm")
+                            : null,
+                        },
+                        {
+                          label: "المبلغ",
+                          value:
+                            selectedPatient.emergencyReport?.amount != null
+                              ? `₪${Number(selectedPatient.emergencyReport.amount).toFixed(0)}`
+                              : null,
+                        },
+                        { label: "حالة الدفع", value: selectedPatient.emergencyReport?.paymentStatus ?? null },
+                        { label: "طريقة الدفع", value: selectedPatient.emergencyReport?.paymentMethod ?? null },
+                      ] as { label: string; value: string | null | undefined }[]
+                    )
+                      .filter((f) => f.value)
+                      .map((field) => (
+                        <div key={field.label} className="flex items-start justify-between gap-4 px-5 py-3 text-sm">
+                          <span className="text-gray-400 shrink-0">{field.label}</span>
+                          <span className="font-medium text-gray-900 whitespace-pre-line text-right">{field.value}</span>
+                        </div>
+                      ))}
+
+                    {!selectedPatient.emergencyReport?.complaint &&
+                      !selectedPatient.emergencyReport?.notes &&
+                      !selectedPatient.emergencyReport?.createdAt &&
+                      selectedPatient.emergencyReport?.amount == null &&
+                      !selectedPatient.emergencyReport?.paymentStatus &&
+                      !selectedPatient.emergencyReport?.paymentMethod && (
+                        <div className="px-5 py-8 text-center text-sm text-gray-400">لا يوجد تقرير محفوظ</div>
+                      )}
+                  </div>
+                </div>
+              )}
+
               {/* ── سجل الزيارات ──────────────────────────────── */}
               {activeTab === "visits" && (
                 <div className="space-y-4">
@@ -1300,7 +1364,7 @@ export default function PatientsView({
               )}
 
               {/* ── الملفات الطبية ────────────────────────────── */}
-              {activeTab === "medical" && (
+              {activeTab === "medical" && selectedPatient.source !== "emergency" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">الملفات الطبية</h3>
@@ -1320,7 +1384,7 @@ export default function PatientsView({
 
                   <MedicalFilesCarePlanTable
                     patientId={selectedPatient.id}
-                    patientSource={selectedPatient.source}
+                    patientSource={selectedPatient.source === "clinic" ? "clinic" : "platform"}
                     carePlanType={carePlanType}
                     patientName={selectedPatient.name}
                     doctorDisplayName={doctorDisplayName}
@@ -1694,11 +1758,11 @@ export default function PatientsView({
               )}
 
               {/* ── خطة العلاج حسب التخصص (عيادة + منصة؛ أطباء الأسنان العامون يستخدمون تبويب مخطط الأسنان فقط) ─ */}
-              {activeTab === "careplan" && !isDentist && (
+              {activeTab === "careplan" && !isDentist && selectedPatient.source !== "emergency" && (
                 <div className="space-y-4">
                   <CarePlanPanel
                     patientId={selectedPatient.id}
-                    patientSource={selectedPatient.source}
+                    patientSource={selectedPatient.source === "clinic" ? "clinic" : "platform"}
                     carePlanType={carePlanType}
                     patientName={selectedPatient.name}
                     doctorDisplayName={doctorDisplayName}
@@ -1713,10 +1777,10 @@ export default function PatientsView({
               )}
 
               {/* ── مخطط الأسنان (طبيب أسنان عام — تبويب منفصل) ───────── */}
-              {activeTab === "dental" && showDentalToothChart && selectedPatient && (
+              {activeTab === "dental" && showDentalToothChart && selectedPatient && selectedPatient.source !== "emergency" && (
                 <DentalToothChartBlock
                   clinicPatientId={selectedPatient.id}
-                  patientSource={selectedPatient.source}
+                  patientSource={selectedPatient.source === "clinic" ? "clinic" : "platform"}
                   heading="خطة علاج الأسنان"
                 />
               )}

@@ -4,14 +4,14 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { assertApprovedMedicalCenter } from "@/lib/medical-center-auth";
 import { CENTER_ROLES_ADMIN_RECEPTION } from "@/lib/medical-center-roles";
+import { findOrCreatePatientByPhone } from "@/lib/patient-account";
 
 const postSchema = z.object({
   patientName: z.string().min(2),
+  patientPhone: z.string().min(6).optional(),
   complaint: z.string().optional(),
   amount: z.number().nonnegative(),
-  paymentMethod: z.string().optional(),
   notes: z.string().optional(),
-  paymentStatus: z.enum(["UNPAID", "PAID"]).optional(),
 });
 
 export async function GET() {
@@ -56,16 +56,30 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = postSchema.parse(body);
 
+    let patientUserId: string | null = null;
+    let patientPhone: string | null = null;
+    if (data.patientPhone?.trim()) {
+      patientPhone = data.patientPhone.trim();
+      const pRes = await findOrCreatePatientByPhone(data.patientName.trim(), patientPhone);
+      if ("error" in pRes) {
+        return NextResponse.json({ error: pRes.error }, { status: 400 });
+      }
+      patientUserId = pRes.id;
+      // ملاحظة: لا نضيفه إلى "مرضى المركز" هنا؛ قسم الطوارئ مستقل.
+    }
+
     const { data: row, error } = await supabaseAdmin
       .from("EmergencyVisit")
       .insert({
         medicalCenterId: centerId,
         patientName: data.patientName,
+        patientUserId,
+        patientPhone,
         complaint: data.complaint ?? null,
         amount: data.amount,
-        paymentMethod: data.paymentMethod ?? null,
         notes: data.notes ?? null,
-        paymentStatus: data.paymentStatus === "PAID" ? "PAID" : "UNPAID",
+        paymentMethod: null,
+        paymentStatus: "UNPAID",
         registeredByUserId: session.user.id,
       })
       .select("id")
@@ -76,7 +90,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "فشل الحفظ" }, { status: 500 });
     }
 
-    return NextResponse.json({ id: row.id, message: "تم تسجيل الزيارة" }, { status: 201 });
+    return NextResponse.json({ id: row.id, patientUserId, message: "تم تسجيل الزيارة" }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "بيانات غير صالحة", details: error.issues }, { status: 400 });

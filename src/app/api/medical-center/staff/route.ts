@@ -15,6 +15,7 @@ const createSchema = z.object({
   educationLevel: z.string().optional(),
   staffType: z.string().optional(),
   attendanceNotes: z.string().optional(),
+  attendanceScheduleJson: z.string().optional(),
 });
 
 const STAFF_ROLES_LIST = [CENTER_ROLE_RECEPTIONIST, CENTER_ROLE_LAB];
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
       educationLevel: data.educationLevel?.trim() || null,
       staffType: data.staffType?.trim() || null,
       attendanceNotes: data.attendanceNotes?.trim() || null,
+      attendanceScheduleJson: data.attendanceScheduleJson?.trim() || null,
     });
 
     if (uErr) {

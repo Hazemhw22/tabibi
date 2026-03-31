@@ -14,6 +14,7 @@ const patchSchema = z.object({
   educationLevel: z.string().optional().nullable(),
   staffType: z.string().optional().nullable(),
   attendanceNotes: z.string().optional().nullable(),
+  attendanceScheduleJson: z.string().optional().nullable(),
 });
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -26,13 +27,35 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     const { data, error } = await supabaseAdmin
       .from("User")
-      .select("id, name, email, phone, role, salaryMonthly, educationLevel, staffType, attendanceNotes, createdAt")
+      .select("id, name, email, phone, role, salaryMonthly, educationLevel, staffType, attendanceNotes, attendanceScheduleJson, createdAt")
       .eq("id", id)
       .eq("medicalCenterId", gate.centerId)
       .in("role", STAFF_ROLES_LIST)
       .maybeSingle();
 
-    if (error) return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+    if (error) {
+      // Backward compat: column may not exist yet on Supabase (migration not applied).
+      const msg = String((error as { message?: string }).message ?? "");
+      if (msg.toLowerCase().includes("attendanceschedulejson") || (error as { code?: string }).code === "42703") {
+        const { data: fallback, error: fallbackErr } = await supabaseAdmin
+          .from("User")
+          .select("id, name, email, phone, role, salaryMonthly, educationLevel, staffType, attendanceNotes, createdAt")
+          .eq("id", id)
+          .eq("medicalCenterId", gate.centerId)
+          .in("role", STAFF_ROLES_LIST)
+          .maybeSingle();
+        if (fallbackErr) {
+          console.error("[medical-center/staff/:id] GET fallback:", fallbackErr);
+          return NextResponse.json({ error: "تعذر التحميل", details: fallbackErr.message }, { status: 500 });
+        }
+        return NextResponse.json({
+          staff: { ...(fallback as object), attendanceScheduleJson: null },
+          warning: "حقل دوام الموظف غير مفعّل بعد. نفّذ: sql/medical_center_staff_schedule.sql",
+        });
+      }
+      console.error("[medical-center/staff/:id] GET:", error);
+      return NextResponse.json({ error: "تعذر التحميل", details: (error as { message?: string }).message }, { status: 500 });
+    }
     if (!data) return NextResponse.json({ error: "الموظف غير موجود" }, { status: 404 });
     return NextResponse.json({ staff: data });
   } catch (e) {
@@ -70,12 +93,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (data.educationLevel !== undefined) update.educationLevel = data.educationLevel;
     if (data.staffType !== undefined) update.staffType = data.staffType;
     if (data.attendanceNotes !== undefined) update.attendanceNotes = data.attendanceNotes;
+    if (data.attendanceScheduleJson !== undefined) update.attendanceScheduleJson = data.attendanceScheduleJson;
     if (!Object.keys(update).length) {
       return NextResponse.json({ error: "لا توجد بيانات للتحديث" }, { status: 400 });
     }
 
     const { error } = await supabaseAdmin.from("User").update(update).eq("id", id);
-    if (error) return NextResponse.json({ error: "فشل الحفظ" }, { status: 500 });
+    if (error) {
+      const msg = String((error as { message?: string }).message ?? "");
+      if (msg.toLowerCase().includes("attendanceschedulejson") || (error as { code?: string }).code === "42703") {
+        return NextResponse.json(
+          { error: "حقل دوام الموظف غير مفعّل بعد. نفّذ: sql/medical_center_staff_schedule.sql" },
+          { status: 400 }
+        );
+      }
+      console.error("[medical-center/staff/:id] PATCH:", error);
+      return NextResponse.json({ error: "فشل الحفظ", details: (error as { message?: string }).message }, { status: 500 });
+    }
     return NextResponse.json({ message: "تم حفظ بيانات الموظف" });
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "بيانات غير صالحة", details: e.issues }, { status: 400 });
