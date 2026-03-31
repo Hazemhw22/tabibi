@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
+import crypto from "crypto";
 
 const registerSchema = z
   .object({
@@ -142,10 +143,9 @@ export async function POST(req: Request) {
       const whatsappDigits = whatsappRaw.replace(/\D/g, "").slice(-9);
       const whatsappValue = whatsappDigits ? `972${whatsappDigits}` : null;
 
-      const { error: doctorInsertErr } = await supabaseAdmin
-        .from("Doctor")
-        .upsert(
-          {
+      // Create/ensure Doctor row exists.
+      // بعض قواعد البيانات قد لا تملك default لـ Doctor.id (uuid) → نُنشئ id بأنفسنا عند insert.
+      const baseDoctor = {
         userId,
         specialtyId,
         whatsapp: whatsappValue,
@@ -154,17 +154,31 @@ export async function POST(req: Request) {
         consultationFee: 0,
         rating: 0,
         totalReviews: 0,
-          },
-          { onConflict: "userId" },
-        );
-      if (doctorInsertErr) {
-        console.error("[register] Doctor insert failed:", doctorInsertErr.code, doctorInsertErr.message, doctorInsertErr.details);
+      };
+
+      const { data: existingDoc, error: existingDocErr } = await supabaseAdmin
+        .from("Doctor")
+        .select("id")
+        .eq("userId", userId)
+        .maybeSingle();
+      if (existingDocErr) {
+        console.error("[register] Doctor lookup failed:", existingDocErr.code, existingDocErr.message, existingDocErr.details);
+      }
+
+      const doctorOp = existingDoc?.id
+        ? supabaseAdmin.from("Doctor").update(baseDoctor).eq("userId", userId)
+        : supabaseAdmin.from("Doctor").insert({ id: crypto.randomUUID(), ...baseDoctor });
+
+      const { error: doctorErr } = await doctorOp;
+      if (doctorErr) {
+        console.error("[register] Doctor write failed:", doctorErr.code, doctorErr.message, doctorErr.details);
         await supabaseAdmin.from("User").delete().eq("id", userId);
         await supabaseAdmin.auth.admin.deleteUser(userId);
         return NextResponse.json(
           {
             error:
-              "تعذر إنشاء ملف الطبيب. تحقق من اتصال قاعدة البيانات أو أن جدول Doctor متوافق مع المخطط. إن استمرت المشكلة، راجع سجلات الخادم.",
+              `تعذر إنشاء ملف الطبيب في جدول Doctor: ${doctorErr.message}` +
+              (doctorErr.details ? ` (${doctorErr.details})` : ""),
           },
           { status: 500 },
         );
