@@ -192,6 +192,22 @@ export default function PatientsView({
   const [editMedicalAllergies, setEditMedicalAllergies] = useState("");
   const [editMedicalDiagnosis, setEditMedicalDiagnosis] = useState("");
   const [editMedicalTreatment, setEditMedicalTreatment] = useState("");
+  // Structured Report Fields
+  const [medicalReport, setMedicalReport] = useState({
+    presentingComplaints: "",
+    medicalHistory: "",
+    bp: "",
+    temp: "",
+    pulse: "",
+    physicalExamination: "",
+    investigations: "",
+    diagnosis: "",
+    icd10: "",
+    recommendations: "",
+    sickLeaveDays: "",
+    sickLeaveNotes: "",
+  });
+  const [editMedicalReport, setEditMedicalReport] = useState<any>(null);
   const [savingMedicalEdit, setSavingMedicalEdit] = useState(false);
   const [hasCarePlanSummary, setHasCarePlanSummary] = useState(false);
   const onCarePlanSummaryLoaded = useCallback((has: boolean) => {
@@ -1363,394 +1379,353 @@ export default function PatientsView({
                 </div>
               )}
 
-              {/* ── الملفات الطبية ────────────────────────────── */}
-              {activeTab === "medical" && selectedPatient.source !== "emergency" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">الملفات الطبية</h3>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-950/30"
-                      onClick={() => {
-                        setImagingForm({ title: "أشعة", notes: "", file: null });
-                        setImagingOpen(true);
-                      }}
-                    >
-                      <IconPlus className="h-3.5 w-3.5" />
-                      إضافة صور أشعة
-                    </Button>
-                  </div>
+              {activeTab === "medical" && selectedPatient && (
+                <div className="space-y-6">
+                  <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="border-b border-gray-50 bg-gray-50/30 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <IconClipboardText className="h-4 w-4 text-blue-600" />
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">السجل الطبي والتقارير</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setImagingOpen(true);
+                              setImagingForm({ title: "أشعة جديدة", notes: "", file: null });
+                            }}
+                            className="gap-1 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+                            title="إرفاق صور أشعة أو مستندات طبية (JPG, PNG, PDF, DICOM)"
+                          >
+                            <IconPlus className="h-3.5 w-3.5" />
+                            إضافة صور أشعة
+                          </Button>
 
-                  <MedicalFilesCarePlanTable
-                    patientId={selectedPatient.id}
-                    patientSource={selectedPatient.source === "clinic" ? "clinic" : "platform"}
-                    carePlanType={carePlanType}
-                    patientName={selectedPatient.name}
-                    doctorDisplayName={doctorDisplayName}
-                    patientPrintDemographics={{
-                      fileNumber: selectedPatient.fileNumber,
-                      gender: selectedPatient.gender,
-                      dateOfBirth: selectedPatient.dateOfBirth,
-                      guardian: null,
-                    }}
-                    onPlanLoaded={onCarePlanSummaryLoaded}
-                    reloadKey={imagingReloadKey}
-                  />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              printMedicalReportPdf();
+                            }}
+                            className="gap-1 border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                            disabled={!selectedPatient.medicalNotes || selectedPatient.medicalNotes.length === 0}
+                            title="يُنشئ تقريراً PDF من آخر ملاحظة طبية محفوظة"
+                          >
+                            <IconPrinter className="h-3.5 w-3.5" />
+                            تقرير طبي PDF
+                          </Button>
 
-                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-50 dark:border-slate-700 dark:bg-slate-900/90 dark:divide-slate-700/80">
-                    {/* ملاحظات طبية يضيفها الطبيب يدوياً (ClinicMedicalNote) — عيادة فقط */}
-                    {selectedPatient.source === "clinic" && (
-                      <div className="px-5 py-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm font-semibold text-gray-900">
-                            ملاحظات  طبية جديدة
-                          </div>
-                          <div className="flex items-center gap-2">
+                          {!addingMedical && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={printMedicalReportPdf}
-                              className="gap-1 border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                              disabled={!selectedPatient.medicalNotes || selectedPatient.medicalNotes.length === 0}
-                              title="يُنشئ تقريراً PDF من آخر ملاحظة طبية محفوظة"
+                              onClick={() => {
+                                setAddingMedical(true);
+                                setMedicalAllergies("");
+                                setMedicalDiagnosis("");
+                                setMedicalTreatment("");
+                                setMedicalReport({
+                                  presentingComplaints: "",
+                                  medicalHistory: "",
+                                  bp: "",
+                                  temp: "",
+                                  pulse: "",
+                                  physicalExamination: "",
+                                  investigations: "",
+                                  diagnosis: "",
+                                  icd10: "",
+                                  recommendations: "",
+                                  sickLeaveDays: "",
+                                  sickLeaveNotes: "",
+                                });
+                              }}
+                              className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
                             >
-                              <IconPrinter className="h-3.5 w-3.5" />
-                              تقرير طبي PDF
+                              <IconPlus className="h-3.5 w-3.5" /> إضافة تقرير طبي / ملاحظات
                             </Button>
-                            {!addingMedical && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setAddingMedical(true);
-                                  setMedicalAllergies("");
-                                  setMedicalDiagnosis("");
-                                  setMedicalTreatment("");
-                                }}
-                                className="gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
-                              >
-                                <IconPlus className="h-3.5 w-3.5" /> إضافة تفاصيل
-                              </Button>
-                            )}
-                          </div>
+                          )}
                         </div>
+                      </div>
+                    </div>
 
-                        {addingMedical && (
-                          <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
-                        <div>
-                              <label className="mb-1 block text-xs font-medium text-gray-700">
-                                الحساسيات / التنبيهات
-                              </label>
+                    <div className="px-5 py-4 space-y-4">
+                      {/* Care Plan & Imaging Grid Section */}
+                      <div className="mb-6">
+                        <MedicalFilesCarePlanTable
+                          patientId={selectedPatient.id}
+                          patientSource={selectedPatient.source === "clinic" ? "clinic" : "platform"}
+                          carePlanType={carePlanType}
+                          patientName={selectedPatient.name}
+                          doctorDisplayName={doctorDisplayName || ""}
+                          reloadKey={imagingReloadKey}
+                          onPlanLoaded={onCarePlanSummaryLoaded}
+                          patientPrintDemographics={{
+                            fileNumber: selectedPatient.fileNumber,
+                            gender: selectedPatient.gender,
+                            dateOfBirth: selectedPatient.dateOfBirth,
+                          }}
+                        />
+                      </div>
+
+                      {addingMedical && (
+                        <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-4 text-right" dir="rtl">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                               <label className="mb-1 block text-[11px] font-bold text-gray-600">الحساسيات / التنبيهات</label>
+                               <input
+                                 value={medicalAllergies}
+                                 onChange={(e) => setMedicalAllergies(e.target.value)}
+                                 placeholder="مثل: حساسية من البنسلين..."
+                                 className="h-9 w-full rounded-lg border border-red-200 bg-red-50/20 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
+                               />
+                            </div>
+                            <div>
+                               <label className="mb-1 block text-[11px] font-bold text-gray-600">الشكوى الرئيسية (Complaints)</label>
+                               <input
+                                 value={medicalReport.presentingComplaints}
+                                 onChange={(e) => setMedicalReport(p => ({...p, presentingComplaints: e.target.value}))}
+                                 placeholder="ما الذي يشتكي منه المريض حالياً؟"
+                                 className="h-9 w-full rounded-lg border border-gray-300 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                               />
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-indigo-100 bg-indigo-50/20 p-3 space-y-3">
+                            <div className="flex items-center gap-2 mb-1 text-[11px] font-bold text-indigo-800">العلامات الحيوية (Vitals) والفحص السريري</div>
+                            <div className="grid grid-cols-3 gap-3">
+                              <input placeholder="الضغط (BP)" value={medicalReport.bp} onChange={e => setMedicalReport(p => ({...p, bp: e.target.value}))} className="h-8 rounded-lg border border-indigo-200 px-2 text-[11px] text-center" />
+                              <input placeholder="الحرارة (T)" value={medicalReport.temp} onChange={e => setMedicalReport(p => ({...p, temp: e.target.value}))} className="h-8 rounded-lg border border-indigo-200 px-2 text-[11px] text-center" />
+                              <input placeholder="النبض (P)" value={medicalReport.pulse} onChange={e => setMedicalReport(p => ({...p, pulse: e.target.value}))} className="h-8 rounded-lg border border-indigo-200 px-2 text-[11px] text-center" />
+                            </div>
+                            <textarea
+                              value={medicalReport.physicalExamination}
+                              onChange={(e) => setMedicalReport(p => ({...p, physicalExamination: e.target.value}))}
+                              rows={2}
+                              placeholder="نتائج الفحص السريري المفصل..."
+                              className="w-full resize-none rounded-lg border border-indigo-200 p-2 text-xs"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="mb-1 block text-[11px] font-bold text-gray-600">الفحوصات (Investigations)</label>
+                              <textarea
+                                value={medicalReport.investigations}
+                                onChange={(e) => setMedicalReport(p => ({...p, investigations: e.target.value}))}
+                                rows={2}
+                                placeholder="نتائج المختبر أو الأشعة..."
+                                className="w-full resize-none rounded-lg border border-gray-300 p-2 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[11px] font-bold text-gray-600">التشخيص (Diagnosis)</label>
+                              <textarea
+                                value={medicalReport.diagnosis}
+                                onChange={(e) => setMedicalReport(p => ({...p, diagnosis: e.target.value}))}
+                                rows={2}
+                                placeholder="التشخيص النهائي..."
+                                className="w-full resize-none rounded-lg border border-emerald-300 p-2 text-xs"
+                              />
                               <input
-                                value={medicalAllergies}
-                                onChange={(e) => setMedicalAllergies(e.target.value)}
-                                placeholder="مثل: حساسية من البنسلين..."
-                                className="h-9 w-full rounded-lg border border-gray-300 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              />
-                        </div>
-                            <div>
-                              <label className="mb-1 block text-xs font-medium text-gray-700">
-                                الحالة المرضية الأساسية
-                              </label>
-                              <textarea
-                                value={medicalDiagnosis}
-                                onChange={(e) => setMedicalDiagnosis(e.target.value)}
-                                rows={2}
-                                placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
-                                className="w-full resize-none rounded-lg border border-gray-300 p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              />
-                      </div>
-                            <div>
-                              <label className="mb-1 block text-xs font-medium text-gray-700">
-                                ما قام به الطبيب / العلاج
-                              </label>
-                              <textarea
-                                value={medicalTreatment}
-                                onChange={(e) => setMedicalTreatment(e.target.value)}
-                                rows={2}
-                                placeholder="ما الذي قمت به للمريض؟ ما العلاج أو الأدوية التي وصِفت له؟"
-                                className="w-full resize-none rounded-lg border border-gray-300 p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                value={medicalReport.icd10}
+                                onChange={(e) => setMedicalReport(p => ({...p, icd10: e.target.value}))}
+                                placeholder="ICD-10 Code"
+                                className="h-7 w-full mt-1.5 rounded-lg border border-gray-200 px-3 text-[10px] text-left"
                               />
                             </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={async () => {
-                                  if (!selectedPatient) return;
-                                  if (!medicalDiagnosis.trim() && !medicalTreatment.trim() && !medicalAllergies.trim()) {
-                                    toast.error("أضف على الأقل الحاله أو العلاج أو الحساسية");
-                                    return;
-                                  }
-                                  setSavingMedical(true);
-                                  try {
-                                    const res = await fetch(`/api/clinic/patients/${selectedPatient.id}/medical-notes`, {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                        allergies: medicalAllergies,
-                                        diagnosis: medicalDiagnosis,
-                                        treatment: medicalTreatment,
-                                      }),
-                                    });
-                                    const data = await res.json();
-                                    if (!res.ok) {
-                                      toast.error(data.error || "فشل حفظ التفاصيل الطبية");
-                                    } else {
-                                      toast.success("تم إضافة التفاصيل الطبية ✓");
-                                      setAddingMedical(false);
-                                      setMedicalAllergies("");
-                                      setMedicalDiagnosis("");
-                                      setMedicalTreatment("");
-                                      router.refresh();
-                                    }
-                                  } catch {
-                                    toast.error("خطأ في الاتصال");
-                                  } finally {
-                                    setSavingMedical(false);
-                                  }
-                                }}
-                                disabled={savingMedical}
-                              >
-                                {savingMedical ? (
-                                  <IconLoader className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  "حفظ"
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setAddingMedical(false)}
-                              >
-                                إلغاء
-                              </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="mb-1 block text-[11px] font-bold text-gray-600">العلاج والتوصيات (Treatment)</label>
+                              <textarea
+                                value={medicalReport.recommendations}
+                                onChange={(e) => setMedicalReport(p => ({...p, recommendations: e.target.value}))}
+                                rows={3}
+                                placeholder="الأدوية الموصوفة والخطوات القادمة..."
+                                className="w-full resize-none rounded-lg border border-amber-300 p-2 text-xs bg-amber-50/30"
+                              />
                             </div>
-                          </div>
-                        )}
-
-                        {selectedPatient.medicalNotes && selectedPatient.medicalNotes.length > 0 && (
-                          <div className="space-y-3">
-                            {selectedPatient.medicalNotes.map((note) => {
-                              const isEditing = editingMedicalId === note.id;
-                              return (
-                                <div
-                                  key={note.id}
-                                  className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-700"
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="text-[11px] text-gray-400">
-                                      أضيفت في{" "}
-                                      {format(new Date(note.createdAt), "dd/MM/yyyy HH:mm")}
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                      {!isEditing && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setEditingMedicalId(note.id);
-                                            setEditMedicalAllergies(note.allergies ?? "");
-                                            setEditMedicalDiagnosis(note.diagnosis ?? "");
-                                            setEditMedicalTreatment(note.treatment ?? "");
-                                          }}
-                                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-100"
-                                        >
-                                          <IconPencil className="h-3 w-3" /> تعديل
-                                        </button>
-                                      )}
-                                      <button
-                                        type="button"
-                                        onClick={() => setConfirmDeleteId(`note_${note.id}`)}
-                                        className="inline-flex items_center gap-1 rounded-lg border border-red-100 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
-                                      >
-                                        <IconTrash className="h-3 w-3" /> حذف
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {isEditing ? (
-                                    <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3 space-y-2">
-                        <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-700">
-                                          الحساسيات / التنبيهات
-                                        </label>
-                                        <input
-                                          value={editMedicalAllergies}
-                                          onChange={(e) => setEditMedicalAllergies(e.target.value)}
-                                          placeholder="مثل: حساسية من البنسلين..."
-                                          className="h-8 w-full rounded-lg border border-gray-300 px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                        </div>
-                                      <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-700">
-                                          الحالة المرضية الأساسية
-                                        </label>
-                                        <textarea
-                                          value={editMedicalDiagnosis}
-                                          onChange={(e) => setEditMedicalDiagnosis(e.target.value)}
-                                          rows={2}
-                                          placeholder="ما هو المرض أو الحالة المزمنة الأساسية للمريض؟"
-                                          className="w-full resize-none rounded-lg border border-gray-300 p-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                      </div>
-                                      <div>
-                                        <label className="mb-1 block text-xs font-medium text-gray-700">
-                                          ما قام به الطبيب / العلاج
-                                        </label>
-                                        <textarea
-                                          value={editMedicalTreatment}
-                                          onChange={(e) => setEditMedicalTreatment(e.target.value)}
-                                          rows={2}
-                                          placeholder="ما الذي قمت به للمريض؟ ما العلاج أو الأدوية التي وصِفت له؟"
-                                          className="w-full resize-none rounded-lg border border-gray-300 p-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <Button
-                                          size="sm"
-                                          onClick={async () => {
-                                            setSavingMedicalEdit(true);
-                                            try {
-                                              const res = await fetch(`/api/clinic/medical-notes/${note.id}`, {
-                                                method: "PATCH",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({
-                                                  allergies: editMedicalAllergies,
-                                                  diagnosis: editMedicalDiagnosis,
-                                                  treatment: editMedicalTreatment,
-                                                }),
-                                              });
-                                              const data = await res.json();
-                                              if (!res.ok) {
-                                                toast.error(data.error || "فشل تحديث الملاحظة");
-                                              } else {
-                                                toast.success("تم تحديث الملاحظة الطبية ✓");
-                                                setEditingMedicalId(null);
-                                                router.refresh();
-                                              }
-                                            } catch {
-                                              toast.error("خطأ في الاتصال");
-                                            } finally {
-                                              setSavingMedicalEdit(false);
-                                            }
-                                          }}
-                                          disabled={savingMedicalEdit}
-                                        >
-                                          {savingMedicalEdit ? (
-                                            <IconLoader className="h-3.5 w-3.5 animate-spin" />
-                                          ) : (
-                                            "حفظ"
-                                          )}
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setEditingMedicalId(null)}
-                                        >
-                                          إلغاء
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col gap-2 md:flex-row md:gap-3 text-xs sm:text-sm">
-                                      {note.allergies && (
-                                        <div className="flex-1 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 flex items-start gap-2">
-                                          <IconExclamationTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                          <div>
-                                            <div className="text-xs font-semibold text-amber-900 mb-0.5">
-                                              الحساسيات / التنبيهات
-                                            </div>
-                                            <div className="text-xs sm:text-sm text-amber-900/80">
-                                              {note.allergies}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                      {note.diagnosis && (
-                                        <div className="flex-1 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 flex items-start gap-2">
-                                          <IconHeart className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                                          <div>
-                                            <div className="text-xs font-semibold text-blue-900 mb-0.5">
-                                              الحالة المرضية الأساسية
-                                            </div>
-                                            <div className="text-xs sm:text-sm text-blue-900/80 whitespace-pre-line">
-                                              {note.diagnosis}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                      {note.treatment && (
-                                        <div className="flex-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 flex items-start gap-2">
-                                          <IconDocument className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                                          <div>
-                                            <div className="text-xs font-semibold text-emerald-900 mb-0.5">
-                                              ما قام به الطبيب / العلاج
-                                            </div>
-                                            <div className="text-xs sm:text-sm text-emerald-900/80 whitespace-pre-line">
-                                              {note.treatment}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                      {!note.allergies && !note.diagnosis && !note.treatment && (
-                                        <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-center text-gray-400 flex-1">
-                                          لا توجد تفاصيل في هذه الملاحظة.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ملخص زيارات مع ملاحظات طبية (إن وُجدت) */}
-                    {selectedPatient.appointments.some((a) => a.notes) && (
-                      <div className="px-5 py-4">
-                        <div className="text-sm font-semibold text-gray-900 mb-2">
-                          سجل الزيارات الطبية
-                        </div>
-                        <div className="space-y-3">
-                          {selectedPatient.appointments
-                            .filter((a) => a.notes)
-                            .map((apt) => (
-                              <div
-                                key={apt.id}
-                                className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-700"
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold">
-                                    {format(new Date(apt.appointmentDate), "dd/MM/yyyy")}
-                                  </span>
-                                  {apt.startTime && (
-                                    <span className="text-gray-400">
-                                      {apt.startTime.slice(0, 5)}
-                                    </span>
-                                  )}
-                                </div>
-                                {apt.title && (
-                                  <div className="text-[11px] text-gray-500 mb-1">
-                                    {apt.title}
-                                  </div>
-                                )}
-                                <div className="whitespace-pre-line">
-                                  {apt.notes}
-                                </div>
+                            <div className="rounded-xl border border-rose-100 bg-rose-50/20 p-3">
+                              <label className="mb-1 block text-[11px] font-bold text-rose-800">الإجازة المرضية (Sick Leave)</label>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-[10px]">الأيام:</span>
+                                <input type="number" min={0} value={medicalReport.sickLeaveDays} onChange={(e) => setMedicalReport(p => ({...p, sickLeaveDays: e.target.value}))} className="h-7 w-12 rounded border border-rose-200 text-center text-xs" />
                               </div>
-                            ))}
+                              <textarea value={medicalReport.sickLeaveNotes} onChange={(e) => setMedicalReport(p => ({...p, sickLeaveNotes: e.target.value}))} rows={1} placeholder="ملاحظات..." className="w-full resize-none rounded-lg border border-rose-200 p-2 text-[10px]" />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pt-2 border-t border-gray-100">
+                            <Button size="sm" onClick={async () => {
+                              setSavingMedical(true);
+                              try {
+                                const reportTag = "STRUCTURED_REPORT_V1:";
+                                const reportJson = JSON.stringify(medicalReport);
+                                const res = await fetch(`/api/clinic/patients/${selectedPatient.id}/medical-notes`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    allergies: medicalAllergies,
+                                    diagnosis: reportTag + reportJson,
+                                    treatment: medicalReport.recommendations,
+                                  }),
+                                });
+                                if (res.ok) {
+                                  toast.success("تم الحفظ ✓");
+                                  setAddingMedical(false);
+                                  router.refresh();
+                                }
+                              } finally { setSavingMedical(false); }
+                            }} disabled={savingMedical}>
+                              {savingMedical ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : "حفظ"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setAddingMedical(false)}>إلغاء</Button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {!selectedPatient.allergies &&
-                      !selectedPatient.notes &&
-                      !selectedPatient.appointments.some((a) => a.notes) &&
-                      !hasCarePlanSummary && (
-                      <div className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">
-                        <IconHeart className="mx-auto mb-3 h-10 w-10 text-gray-200 dark:text-slate-600" />
-                        لا توجد ملفات طبية
+                      )}
+
+                      {selectedPatient.medicalNotes && selectedPatient.medicalNotes.length > 0 && (
+                        <div className="space-y-3">
+                          {selectedPatient.medicalNotes.map((note) => {
+                            const isEditing = editingMedicalId === note.id;
+                            const isStructured = note.diagnosis?.startsWith("STRUCTURED_REPORT_V1:");
+                            let structuredData: any = null;
+                            if (isStructured && note.diagnosis) {
+                              try { structuredData = JSON.parse(note.diagnosis.replace("STRUCTURED_REPORT_V1:", "")); } catch(e) {}
+                            }
+                            return (
+                              <div key={note.id} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-right" dir="rtl">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-[11px] text-gray-400">
+                                    {format(new Date(note.createdAt), "dd/MM/yyyy HH:mm")}
+                                    {isStructured && <span className="mr-2 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-600">تقرير طبي رسمي</span>}
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {!isEditing && (
+                                      <button onClick={() => {
+                                        setEditingMedicalId(note.id);
+                                        setEditMedicalAllergies(note.allergies ?? "");
+                                        if (isStructured) { setEditMedicalReport(structuredData); }
+                                        else { setEditMedicalReport(null); setEditMedicalDiagnosis(note.diagnosis ?? ""); setEditMedicalTreatment(note.treatment ?? ""); }
+                                      }} className="text-gray-600 hover:text-blue-600"><IconPencil className="h-3 w-3" /></button>
+                                    )}
+                                    <button onClick={() => setConfirmDeleteId(`note_${note.id}`)} className="text-red-400 hover:text-red-600"><IconTrash className="h-3 w-3" /></button>
+                                  </div>
+                                </div>
+
+                                {isEditing ? (
+                                  <div className="space-y-3">
+                                    {editMedicalReport ? (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border border-blue-100 bg-blue-50/20">
+                                        <div className="space-y-2">
+                                          <label className="text-[10px] font-bold text-blue-700">الحساسيات</label>
+                                          <input value={editMedicalAllergies} onChange={e => setEditMedicalAllergies(e.target.value)} className="h-8 w-full rounded border px-2 text-xs"/>
+                                          <label className="text-[10px] font-bold text-blue-700">الشكوى</label>
+                                          <textarea value={editMedicalReport.presentingComplaints} onChange={e => setEditMedicalReport({...editMedicalReport, presentingComplaints: e.target.value})} rows={2} className="w-full rounded border p-1.5 text-xs"/>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <label className="text-[10px] font-bold text-blue-700">التشخيص</label>
+                                          <textarea value={editMedicalReport.diagnosis} onChange={e => setEditMedicalReport({...editMedicalReport, diagnosis: e.target.value})} rows={2} className="w-full rounded border p-1.5 text-xs"/>
+                                          <label className="text-[10px] font-bold text-blue-700">العلاج</label>
+                                          <textarea value={editMedicalReport.recommendations} onChange={e => setEditMedicalReport({...editMedicalReport, recommendations: e.target.value})} rows={2} className="w-full rounded border p-1.5 text-xs"/>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <input value={editMedicalAllergies} onChange={e => setEditMedicalAllergies(e.target.value)} className="h-8 w-full rounded border px-2"/>
+                                        <textarea value={editMedicalDiagnosis} onChange={e => setEditMedicalDiagnosis(e.target.value)} rows={2} className="w-full rounded border p-2"/>
+                                      </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                      <Button size="sm" onClick={async () => {
+                                        setSavingMedicalEdit(true);
+                                        try {
+                                          const finalDiag = editMedicalReport ? "STRUCTURED_REPORT_V1:" + JSON.stringify(editMedicalReport) : editMedicalDiagnosis;
+                                          const res = await fetch(`/api/clinic/medical-notes/${note.id}`, {
+                                            method: "PATCH",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ allergies: editMedicalAllergies, diagnosis: finalDiag }),
+                                          });
+                                          if (res.ok) { setEditingMedicalId(null); router.refresh(); }
+                                        } finally { setSavingMedicalEdit(false); }
+                                      }}>حفظ التعديلات</Button>
+                                      <Button size="sm" variant="outline" onClick={() => setEditingMedicalId(null)}>إلغاء</Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {isStructured && structuredData ? (
+                                      <div className="space-y-3">
+                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-right" dir="rtl">
+                                           <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-2.5">
+                                             <div className="font-bold text-blue-700 text-[11px] mb-1.5 border-b border-blue-100 pb-1">الشكوى الرئيسية</div>
+                                             <div className="text-[11px] leading-relaxed">{structuredData.presentingComplaints || "—"}</div>
+                                           </div>
+                                           
+                                           <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-2.5">
+                                             <div className="font-bold text-indigo-700 text-[11px] mb-1.5 border-b border-indigo-100 pb-1">العلامات الحيوية</div>
+                                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                                               {structuredData.bp && <div><span className="text-gray-400">الضغط:</span> <span className="font-bold">{structuredData.bp}</span></div>}
+                                               {structuredData.temp && <div><span className="text-gray-400">الحرارة:</span> <span className="font-bold text-red-600">{structuredData.temp}°C</span></div>}
+                                               {structuredData.pulse && <div><span className="text-gray-400">النبض:</span> <span className="font-bold text-blue-600">{structuredData.pulse}</span></div>}
+                                             </div>
+                                             <div className="mt-2 pt-2 border-t border-indigo-50 text-[10px] italic text-gray-500 line-clamp-2">{structuredData.physicalExamination}</div>
+                                           </div>
+
+                                           <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2.5 border-r-4 border-r-emerald-500">
+                                             <div className="font-bold text-emerald-700 text-[11px] mb-1.5 border-b border-emerald-100 pb-1">التشخيص والرمز</div>
+                                             <div className="text-[11px] font-bold text-gray-900">{structuredData.diagnosis || "—"}</div>
+                                             {structuredData.icd10 && <div className="mt-1 text-[9px] bg-emerald-100 w-fit px-1.5 py-0.5 rounded font-mono">ICD: {structuredData.icd10}</div>}
+                                           </div>
+                                         </div>
+
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-right" dir="rtl">
+                                           <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-2.5">
+                                             <div className="font-bold text-amber-700 text-[11px] mb-1 border-b border-amber-100 pb-1">العلاج والتوصيات</div>
+                                             <div className="text-[11px] whitespace-pre-line leading-relaxed">{structuredData.recommendations || "—"}</div>
+                                           </div>
+                                           
+                                           {(structuredData.sickLeaveDays || structuredData.investigations) && (
+                                             <div className="rounded-lg border border-gray-100 bg-white p-2.5">
+                                               {structuredData.investigations && (
+                                                 <div className="mb-2">
+                                                   <div className="font-bold text-gray-600 text-[11px] mb-1">الفحوصات:</div>
+                                                   <div className="text-[11px] text-gray-500">{structuredData.investigations}</div>
+                                                 </div>
+                                               )}
+                                               {structuredData.sickLeaveDays && (
+                                                 <div className="flex items-center gap-2 bg-rose-50 text-rose-700 px-2 py-1 rounded-md w-fit">
+                                                   <IconClock className="h-3 w-3" />
+                                                   <span className="text-[10px] font-bold">إجازة مرضية: {structuredData.sickLeaveDays} أيام</span>
+                                                 </div>
+                                               )}
+                                             </div>
+                                           )}
+                                         </div>
+                                      </div>
+                                    ) : (
+                                      <div className="whitespace-pre-line bg-white/50 p-3 rounded-lg border border-gray-200">{note.diagnosis}</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedPatient.appointments.some((a) => a.notes) && (
+                      <div className="px-5 py-4 border-t border-gray-50">
+                        <div className="text-sm font-semibold text-gray-900 mb-2">سجل الزيارات الطبية</div>
+                        <div className="space-y-3">
+                          {selectedPatient.appointments.filter((a) => a.notes).map((apt) => (
+                            <div key={apt.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                              <div className="font-semibold mb-1">{format(new Date(apt.appointmentDate), "dd/MM/yyyy")}</div>
+                              <div className="whitespace-pre-line">{apt.notes}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -11,13 +11,15 @@ export async function GET(req: NextRequest) {
   const { data } = await supabaseAdmin
     .from("Doctor")
     .select(`
-      id, rating, consultationFee, experienceYears, locationId, totalReviews,
-      user:User!Doctor_userId_fkey(name, phone),
+      id, rating, consultationFee, experienceYears, locationId, totalReviews, visibleToPatients,
+      user:User!Doctor_userId_fkey(id, name, phone, image),
       specialty:Specialty(nameAr),
-      clinics:Clinic(address, phone)
+      clinics:Clinic(id, name, address, phone),
+      timeSlots:TimeSlot(*)
     `)
     .in("id", idList)
-    .eq("status", "APPROVED");
+    .eq("status", "APPROVED")
+    .eq("visibleToPatients", true);
 
   return NextResponse.json(data ?? []);
 }

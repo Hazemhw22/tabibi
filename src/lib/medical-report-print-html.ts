@@ -23,7 +23,7 @@ export function buildMedicalReportPrintHtml(opts: {
   patient: MedicalReportPrintPatient;
   note: MedicalReportPrintNote;
 }): string {
-  const title = (opts.reportTitle ?? "تقرير طبي").trim() || "تقرير طبي";
+  const title = (opts.reportTitle ?? "تقرير طبي رسمي").trim() || "تقرير طبي رسمي";
   const issuedAt = opts.issuedAtLabel?.trim() || "—";
   const clinic = (opts.clinicName ?? "").trim();
 
@@ -35,22 +35,81 @@ export function buildMedicalReportPrintHtml(opts: {
   const pPhone = pat.phone?.trim() || "—";
 
   const note = opts.note;
-  const allergies = (note.allergies ?? "").trim();
-  const diagnosis = (note.diagnosis ?? "").trim();
-  const treatment = (note.treatment ?? "").trim();
-  const createdAt = (note.createdAt ?? "").trim();
+  const rawDiagnosis = (note.diagnosis ?? "").trim();
+  const isStructured = rawDiagnosis.startsWith("STRUCTURED_REPORT_V1:");
 
-  const section = (label: string, value: string) => `
+  let structuredData: any = null;
+  if (isStructured) {
+    try {
+      structuredData = JSON.parse(rawDiagnosis.replace("STRUCTURED_REPORT_V1:", ""));
+    } catch (e) {
+      console.error("Failed to parse structured report JSON", e);
+    }
+  }
+
+  const section = (label: string, value: string, iconHtml?: string) => {
+    if (!value?.trim()) return "";
+    return `
+      <div class="sec">
+        <div class="sec-h">
+          ${iconHtml ? `<span class="sec-icon">${iconHtml}</span>` : ""}
+          ${escapeHtml(label)}
+        </div>
+        <div class="sec-b">${nl2brEscaped(value)}</div>
+      </div>
+    `;
+  };
+
+  const vitalsSection = (data: any) => {
+    const parts = [];
+    if (data.bp) parts.push(`<div class="v-item"><span class="v-lbl">الضغط:</span> <span class="v-val">${escapeHtml(data.bp)}</span></div>`);
+    if (data.temp) parts.push(`<div class="v-item"><span class="v-lbl">الحرارة:</span> <span class="v-val">${escapeHtml(data.temp)}°C</span></div>`);
+    if (data.pulse) parts.push(`<div class="v-item"><span class="v-lbl">النبض:</span> <span class="v-val">${escapeHtml(data.pulse)} bpm</span></div>`);
+    
+    if (parts.length === 0 && !data.physicalExamination) return "";
+    
+    return `
+      <div class="sec">
+        <div class="sec-h">العلامات الحيوية والفحص السريري</div>
+        <div class="sec-b">
+          ${parts.length > 0 ? `<div class="v-grid">${parts.join("")}</div>` : ""}
+          ${data.physicalExamination ? `<div class="p-exam">${nl2brEscaped(data.physicalExamination)}</div>` : ""}
+        </div>
+      </div>
+    `;
+  };
+
+  const reportBody = isStructured && structuredData ? `
+    ${section("الحساسيات / التنبيهات", note.allergies || "")}
+    ${section("الشكوى الرئيسية", structuredData.presentingComplaints)}
+    ${vitalsSection(structuredData)}
+    ${section("الفحوصات الطبية", structuredData.investigations)}
     <div class="sec">
-      <div class="sec-h">${escapeHtml(label)}</div>
-      <div class="sec-b">${value ? nl2brEscaped(value) : `<span class="muted">—</span>`}</div>
+      <div class="sec-h">التشخيص الطبي</div>
+      <div class="sec-b">
+        <div class="diag-val">${nl2brEscaped(structuredData.diagnosis || "")}</div>
+        ${structuredData.icd10 ? `<div class="icd">ICD-10 Code: ${escapeHtml(structuredData.icd10)}</div>` : ""}
+      </div>
     </div>
+    ${section("العلاج والتوصيات", structuredData.recommendations)}
+    ${structuredData.sickLeaveDays ? `
+      <div class="sec sick-sec">
+        <div class="sec-h">تقرير الإجازة المرضية</div>
+        <div class="sec-b">
+          يُنصح المريض بإجازة مرضية لمدة <b>${escapeHtml(structuredData.sickLeaveDays)}</b> أيام.
+          ${structuredData.sickLeaveNotes ? `<div class="mt-2">${nl2brEscaped(structuredData.sickLeaveNotes)}</div>` : ""}
+        </div>
+      </div>
+    ` : ""}
+  ` : `
+    ${section("الحساسيات / التنبيهات", note.allergies || "")}
+    ${section("التشخيص / الحالة المرضية", note.diagnosis || "")}
+    ${section("العلاج / ما قام به الطبيب", note.treatment || "")}
   `;
 
   const metaClinic = clinic ? `<div class="meta-line"><span class="k">العيادة:</span> ${escapeHtml(clinic)}</div>` : "";
-  const metaNoteTime = createdAt
-    ? `<div class="meta-line"><span class="k">تاريخ الملاحظة:</span> ${escapeHtml(createdAt)}</div>`
-    : "";
+  const createdAt = (note.createdAt ?? "").trim();
+  const metaNoteTimeLabel = createdAt ? `تاريخ الكشف: ${escapeHtml(createdAt)}` : "";
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -62,7 +121,7 @@ export function buildMedicalReportPrintHtml(opts: {
     body{
       font-family: 'Segoe UI', Tahoma, 'Arial Unicode MS', Arial, sans-serif;
       color:#111827;
-      line-height:1.55;
+      line-height:1.5;
       margin:0;
       padding:22px 24px 30px;
       background:#fff;
@@ -72,93 +131,65 @@ export function buildMedicalReportPrintHtml(opts: {
       border-bottom: 2px solid #1d4ed8;
       padding-bottom: 14px;
       margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
     }
-    .title{
-      font-size: 1.25rem;
-      font-weight: 800;
-      margin: 0;
-    }
-    .sub{
-      margin-top: 6px;
-      color:#475569;
-      font-size: 0.9rem;
-    }
+    .title{ font-size: 1.5rem; font-weight: 800; margin: 0; color: #1e3a8a; }
+    .sub{ color:#475569; font-size: 0.85rem; margin-top: 4px; }
     .meta{
       margin-top: 10px;
-      padding: 12px 12px;
+      padding: 12px 14px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #f8fafc;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px 12px;
-      font-size: 0.88rem;
+      gap: 6px 12px;
+      font-size: 0.85rem;
     }
-    .meta-line{ min-width: 0; }
-    .k{ color:#64748b; font-weight: 700; }
-    .sec{
-      margin-top: 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      overflow: hidden;
-      page-break-inside: avoid;
-    }
-    .sec-h{
-      padding: 10px 12px;
-      background: #eff6ff;
-      border-bottom: 1px solid #e5e7eb;
-      color:#1e3a8a;
-      font-weight: 800;
-      font-size: 0.95rem;
-    }
-    .sec-b{
-      padding: 12px 12px;
-      font-size: 0.95rem;
-      white-space: pre-wrap;
-    }
-    .muted{ color:#94a3b8; }
-    .foot{
-      margin-top: 16px;
-      color:#64748b;
-      font-size: 0.82rem;
-      display:flex;
-      justify-content: space-between;
-      gap: 12px;
-      border-top: 1px dashed #e5e7eb;
-      padding-top: 10px;
-    }
-    @media print{
-      body{ padding: 0; }
-      .sheet{ max-width: none; padding: 18px 18px 24px; }
-    }
+    .k{ color:#64748b; font-weight: 700; margin-left: 4px; }
+    .sec{ margin-top: 12px; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; page-break-inside: avoid; }
+    .sec-h{ padding: 8px 12px; background: #f1f5f9; border-bottom: 1px solid #e5e7eb; color:#334155; font-weight: 800; font-size: 0.85rem; }
+    .sec-b{ padding: 10px 12px; font-size: 0.9rem; }
+    .v-grid{ display: flex; gap: 20px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
+    .v-item{ font-size: 0.85rem; }
+    .v-lbl{ color: #64748b; font-weight: 600; }
+    .v-val{ font-weight: 700; color: #1e3a8a; }
+    .icd{ margin-top: 6px; font-size: 0.75rem; font-family: monospace; color: #64748b; background: #f8fafc; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+    .sick-sec{ border-color: #fecdd3; }
+    .sick-sec .sec-h{ background: #fff1f2; color: #9f1239; }
+    .foot{ margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; }
+    .mt-2{ margin-top: 8px; }
+    @media print{ body{ padding: 0; } .sheet{ max-width: none; padding: 10mm 12mm; } }
   </style>
 </head>
 <body>
   <div class="sheet">
     <div class="head">
-      <h1 class="title">${escapeHtml(title)}</h1>
-      <div class="sub">الطبيب: ${escapeHtml(opts.doctorName?.trim() || "—")} — تاريخ الإصدار: ${escapeHtml(issuedAt)}</div>
-      ${metaClinic ? `<div class="sub">${metaClinic.replace(/<[^>]+>/g, "")}</div>` : ""}
+      <div>
+        <h1 class="title">${escapeHtml(title)}</h1>
+        <div class="sub">${metaNoteTimeLabel}</div>
+      </div>
+      <div style="text-align: left;">
+        <div class="sub" style="font-weight: 700;">د. ${escapeHtml(opts.doctorName)}</div>
+        ${clinic ? `<div class="sub">${escapeHtml(clinic)}</div>` : ""}
+      </div>
     </div>
 
     <div class="meta">
-      <div class="meta-line"><span class="k">اسم المريض:</span> ${escapeHtml(pName)}</div>
-      <div class="meta-line"><span class="k">رقم الملف:</span> ${escapeHtml(pFn)}</div>
-      <div class="meta-line"><span class="k">تاريخ الميلاد:</span> ${escapeHtml(pDob)}</div>
-      <div class="meta-line"><span class="k">الجنس:</span> ${escapeHtml(pGen)}</div>
-      <div class="meta-line"><span class="k">الهاتف:</span> <span dir="ltr">${escapeHtml(pPhone)}</span></div>
-      <div class="meta-line"><span class="k">المصدر:</span> Tabibi</div>
+      <div><span class="k">المريض:</span> ${escapeHtml(pName)}</div>
+      <div><span class="k">رقم الملف:</span> ${escapeHtml(pFn)}</div>
+      <div><span class="k">تاريخ الميلاد:</span> ${escapeHtml(pDob)}</div>
+      <div><span class="k">الجنس:</span> ${escapeHtml(pGen)}</div>
+      <div style="grid-column: span 2;"><span class="k">تاريخ الطباعة:</span> ${escapeHtml(issuedAt)}</div>
     </div>
 
-    ${metaNoteTime ? `<div class="sub" style="margin-top:10px">${metaNoteTime.replace(/<[^>]+>/g, "")}</div>` : ""}
-
-    ${section("الحساسيات / التنبيهات", allergies)}
-    ${section("الحالة المرضية الأساسية", diagnosis)}
-    ${section("العلاج / ما قام به الطبيب", treatment)}
+    ${reportBody}
 
     <div class="foot">
-      <div>هذا التقرير مُولد من منصة Tabibi.</div>
-      <div>يُستخدم لأغراض طبية داخلية.</div>
+      <div>صُدر عبر منصة تابيبي (Tabibi) — التقرير معتمد بتوقيع الطبيب المرفق.</div>
+      <div style="text-align: center; flex: 1;">توقيع الطبيب: ................................</div>
     </div>
   </div>
 </body>

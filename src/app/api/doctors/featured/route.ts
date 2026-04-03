@@ -12,8 +12,9 @@ type DoctorRow = {
   consultationFee?: number;
   experienceYears?: number;
   whatsapp?: string | null;
-  user?: { name?: string; phone?: string } | { name?: string; phone?: string }[];
-  specialty?: { nameAr?: string } | { nameAr?: string }[];
+  user?: { name?: string; phone?: string; image?: string | null } | { name?: string; phone?: string; image?: string | null }[];
+  specialtyId?: string;
+  specialty?: { id?: string; nameAr?: string } | { id?: string; nameAr?: string }[];
   clinics?: { address?: string; phone?: string }[];
 };
 
@@ -27,7 +28,12 @@ function normalizeDoctor(d: DoctorRow) {
     consultationFee: d.consultationFee,
     experienceYears: d.experienceYears,
     whatsapp: d.whatsapp,
-    user,
+    user: {
+      name: user?.name,
+      phone: user?.phone,
+      image: user?.image
+    },
+    specialtyId: d.specialtyId,
     specialty,
     clinics: d.clinics ?? [],
   };
@@ -38,32 +44,24 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const regionId = searchParams.get("regionId")?.trim() || null;
 
-  if (!regionId) {
-    return NextResponse.json(
-      { error: "regionId مطلوب", doctors: [] },
-      { status: 200 }
-    );
-  }
+  // We no longer require regionId to facilitate the mobile app's global doctor list
 
   const { data } = await supabaseAdmin
     .from("Doctor")
     .select(
       `id, locationId, rating, totalReviews, consultationFee, experienceYears, whatsapp,
-      user:User!Doctor_userId_fkey(name, phone),
-      specialty:Specialty(nameAr),
+      user:User!Doctor_userId_fkey(name, phone, image),
+      specialtyId,
+      specialty:Specialty(id, nameAr),
       clinics:Clinic(address, phone)`
     )
     .eq("status", "APPROVED")
     .eq("visibleToPatients", true)
-    .not("locationId", "is", null)
     .order("rating", { ascending: false })
-    .limit(12);
+    .limit(30);
 
   const raw = (data ?? []) as DoctorRow[];
-  const filtered = raw.filter((d) =>
-    doctorServesLocation(d.locationId ?? null, regionId)
-  );
-  const doctors = filtered.slice(0, 6).map(normalizeDoctor);
+  const doctors = raw.map(normalizeDoctor);
 
   return NextResponse.json({ doctors });
 }

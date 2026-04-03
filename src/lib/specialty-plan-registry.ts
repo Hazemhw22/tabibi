@@ -35,6 +35,8 @@ export type CarePlanType =
   | "DERMATOLOGY_HAIR_TRANSPLANT"
   /** تغذية + بشرة وليزر — يختار الطبيب تركيز الخطة */
   | "NUTRITION_DERMATOLOGY"
+  | "GENERAL_MEDICINE"
+  | "MEDICAL_REPORT"
   | "GENERIC";
 
 /** خطط بنموذج سريري منظم (أقسام عربية مع عناوين إنجليزية مساعدة) */
@@ -194,6 +196,7 @@ const RULES: { type: CarePlanType; keys: string[] }[] = [
     ],
   },
   { type: "OB_GYN", keys: ["نساء", "توليد", "ولاده", "obst", "gyn", "امراض النساء"] },
+  { type: "GENERAL_MEDICINE", keys: ["طب عام", "طبيب عام", "ممارس عام", "general medicine", "gp", "general practitioner"] },
   { type: "PEDIATRICS", keys: ["اطفال", "أطفال", "طفل", "pediat"] },
   { type: "ORTHOPEDICS", keys: ["عظام", "مفاصل", "ortho"] },
   /** طب الكلى الباطني — قبل المسالك لتفادي ابتلاع «كلى» من جراحة المسالك */
@@ -282,6 +285,7 @@ const RULES: { type: CarePlanType; keys: string[] }[] = [
     type: "PULMONOLOGY",
     keys: ["صدرية", "pulmon", "تنفس", "ربو", "تليف رئوي", "copd", "جهاز تنفس"],
   },
+  { type: "MEDICAL_REPORT", keys: ["تقرير طبي", "medical report", "sick leave", "اجازه مرضيه", "اجازة مرضية"] },
 ];
 
 export function resolveCarePlanType(specialtyNameAr: string | null | undefined): CarePlanType {
@@ -321,6 +325,8 @@ export const CARE_PLAN_LABELS: Record<CarePlanType, string> = {
   DERMATOLOGY_LASER: "البشرة والليزر — تقييم وبروتوكول وجلسات",
   DERMATOLOGY_HAIR_TRANSPLANT: "التجميل وزراعة الشعر — اختر: خطة البشرة أو خطة الشعر",
   NUTRITION_DERMATOLOGY: "التغذية والبشرة — اختر لكل مريض: خطة تغذية أو خطة بشرة وليزر",
+  GENERAL_MEDICINE: "الطب العام — خطة علاج متكاملة",
+  MEDICAL_REPORT: "تقرير طبي رسمي (Medical Report)",
   GENERIC: "خطة علاج عامة",
 };
 

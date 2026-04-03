@@ -3,16 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const ids = req.nextUrl.searchParams.get("ids");
-  if (!ids) return NextResponse.json([]);
-
-  const idList = ids.split(",").filter(Boolean).slice(0, 50);
-  if (!idList.length) return NextResponse.json([]);
-
-  const { data } = await supabaseAdmin
+  
+  let query = supabaseAdmin
     .from("MedicalCenter")
     .select("id, name, nameAr, address, city, phone")
-    .in("id", idList)
     .eq("isActive", true);
 
+  if (ids) {
+    const idList = ids.split(",").filter(Boolean).slice(0, 50);
+    if (idList.length) {
+      query = query.in("id", idList);
+    }
+  }
+
+  const { data } = await query;
   return NextResponse.json(data ?? []);
 }

@@ -337,16 +337,20 @@ export function buildCarePlanLetterheadHtml(opts: {
 
     ${sectionsHtml}
 
+    ${opts.recommendationsText?.trim() ? `
     <div class="sec">
       <div class="sec-title">التوصيات وملاحظات الطبيب <span class="sec-title-en">Recommendations</span></div>
-      ${rec}
+      <div class="sec-box rec-box">${nl2brEscaped(opts.recommendationsText.trim())}</div>
     </div>
+    ` : ""}
 
     <div class="foot">
+      ${opts.followUpVisits.length > 0 ? `
       <div class="next-visits">
         <div class="lbl">الزيارة القادمة</div>
         ${nextBlock}
       </div>
+      ` : ""}
       <div class="sig">
         <div class="lbl">توقيع الطبيب</div>
         <div class="line"></div>

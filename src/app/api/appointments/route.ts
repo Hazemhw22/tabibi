@@ -265,7 +265,7 @@ export async function GET(req: Request) {
       .select(`
         *,
         patient:User(name, email, phone),
-        doctor:Doctor(user:User!Doctor_userId_fkey(name), specialty:Specialty(nameAr)),
+        doctor:Doctor(user:User!Doctor_userId_fkey(name, image), specialty:Specialty(nameAr)),
         clinic:Clinic(*),
         payment:Payment(*)
       `)

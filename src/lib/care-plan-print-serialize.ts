@@ -48,8 +48,9 @@ export function serializeCarePlanSectionsForPrint(
     case "OB_GYN": {
       const lmp = (data.lmpDate as string) || "";
       const reviewVisits = (data.reviewVisits as { id: string; date: string; note?: string }[]) || [];
-      let bodyPregnancy = "";
+      
       if (lmp) {
+        let bodyPregnancy = "";
         const start = new Date(`${lmp}T12:00:00`);
         if (!Number.isNaN(start.getTime())) {
           const today = new Date();
@@ -63,26 +64,28 @@ export function serializeCarePlanSectionsForPrint(
             );
           }
         }
+        if (bodyPregnancy) {
+          sections.push({
+            titleAr: "متابعة الحمل",
+            titleEn: "Pregnancy follow-up",
+            bodyHtml: bodyPregnancy,
+          });
+        }
       }
-      sections.push({
-        titleAr: "متابعة الحمل",
-        titleEn: "Pregnancy follow-up",
-        bodyHtml: bodyPregnancy || `<p class="muted">—</p>`,
-      });
-      const visitsList =
-        reviewVisits.length > 0 ?
-          `<ul style="margin:0;padding-right:18px">${reviewVisits
-            .map(
-              (v) =>
-                `<li>${escapeHtml(v.date)}${v.note?.trim() ? ` — ${escapeHtml(v.note)}` : ""}</li>`,
-            )
-            .join("")}</ul>`
-        : `<p class="muted">—</p>`;
-      sections.push({
-        titleAr: "مراجعات المواعيد",
-        titleEn: "Review visits",
-        bodyHtml: visitsList,
-      });
+
+      if (reviewVisits.length > 0) {
+        const visitsList = `<ul style="margin:0;padding-right:18px">${reviewVisits
+          .map(
+            (v) =>
+              `<li>${escapeHtml(v.date)}${v.note?.trim() ? ` — ${escapeHtml(v.note)}` : ""}</li>`,
+          )
+          .join("")}</ul>`;
+        sections.push({
+          titleAr: "مراجعات المواعيد",
+          titleEn: "Review visits",
+          bodyHtml: visitsList,
+        });
+      }
       break;
     }
     case "PEDIATRICS": {
@@ -94,11 +97,13 @@ export function serializeCarePlanSectionsForPrint(
             `<tr><td class="l">${escapeHtml(r.organId)}</td><td>${escapeHtml(r.problem)}${r.cost ? ` <span dir="ltr">(${r.cost} ₪)</span>` : ""}</td></tr>`,
         )
         .join("");
-      sections.push({
-        titleAr: "الأعضاء والمشكلات",
-        titleEn: "Organs & issues",
-        bodyHtml: rows ? `<table class="print-tbl">${rows}</table>` : `<p class="muted">—</p>`,
-      });
+      if (rows) {
+        sections.push({
+          titleAr: "الأعضاء والمشكلات",
+          titleEn: "Organs & issues",
+          bodyHtml: `<table class="print-tbl">${rows}</table>`,
+        });
+      }
       break;
     }
     case "ORTHOPEDICS": {
@@ -110,11 +115,13 @@ export function serializeCarePlanSectionsForPrint(
             `<tr><td class="l">${escapeHtml(r.injuryType)}</td><td>المدة: ${r.durationDays} يوماً${r.cost ? ` — <span dir="ltr">${r.cost} ₪</span>` : ""}</td></tr>`,
         )
         .join("");
-      sections.push({
-        titleAr: "الإصابات والعلاج",
-        titleEn: "Injuries",
-        bodyHtml: rows ? `<table class="print-tbl">${rows}</table>` : `<p class="muted">—</p>`,
-      });
+      if (rows) {
+        sections.push({
+          titleAr: "الإصابات والعلاج",
+          titleEn: "Injuries",
+          bodyHtml: `<table class="print-tbl">${rows}</table>`,
+        });
+      }
       break;
     }
     case "UROLOGY_NEPHROLOGY": {
@@ -126,11 +133,13 @@ export function serializeCarePlanSectionsForPrint(
             `<tr><td class="l">${escapeHtml(r.problem)}</td><td>${r.cost ? `<span dir="ltr">${r.cost} ₪</span>` : "—"}</td></tr>`,
         )
         .join("");
-      sections.push({
-        titleAr: "المسالك والكلى",
-        titleEn: "Urology",
-        bodyHtml: rows ? `<table class="print-tbl">${rows}</table>` : `<p class="muted">—</p>`,
-      });
+      if (rows) {
+        sections.push({
+          titleAr: "المسالك والكلى",
+          titleEn: "Urology",
+          bodyHtml: `<table class="print-tbl">${rows}</table>`,
+        });
+      }
       break;
     }
     case "CARDIOLOGY": {
@@ -142,11 +151,13 @@ export function serializeCarePlanSectionsForPrint(
             `<tr><td class="l">${escapeHtml(r.zoneId)}</td><td>${escapeHtml(r.problem)}${r.cost ? ` — <span dir="ltr">${r.cost} ₪</span>` : ""}</td></tr>`,
         )
         .join("");
-      sections.push({
-        titleAr: "مناطق القلب والتشخيص",
-        titleEn: "Cardiac zones",
-        bodyHtml: rows ? `<table class="print-tbl">${rows}</table>` : `<p class="muted">—</p>`,
-      });
+      if (rows) {
+        sections.push({
+          titleAr: "مناطق القلب والتشخيص",
+          titleEn: "Cardiac zones",
+          bodyHtml: `<table class="print-tbl">${rows}</table>`,
+        });
+      }
       break;
     }
     case "DENTAL_IMPLANT_IMMEDIATE_SURGICAL":
@@ -172,11 +183,13 @@ export function serializeCarePlanSectionsForPrint(
       if (np && Object.keys(np).length) {
         lines.push(`<p class="mt-2 font-semibold">التغذية</p><pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(np, null, 2))}</pre>`);
       }
-      sections.push({
-        titleAr: CARE_PLAN_LABELS[carePlanType],
-        titleEn: "Nutrition plan",
-        bodyHtml: lines.length ? lines.join("") : `<p class="muted">—</p>`,
-      });
+      if (lines.length > 0) {
+        sections.push({
+          titleAr: CARE_PLAN_LABELS[carePlanType],
+          titleEn: "Nutrition plan",
+          bodyHtml: lines.join(""),
+        });
+      }
       break;
     }
     case "DERMATOLOGY_LASER": {
@@ -185,11 +198,13 @@ export function serializeCarePlanSectionsForPrint(
       if (dp && Object.keys(dp).length) {
         lines.push(`<pre style="white-space:pre-wrap;font-size:0.78rem">${escapeHtml(JSON.stringify(dp, null, 2))}</pre>`);
       }
-      sections.push({
-        titleAr: CARE_PLAN_LABELS[carePlanType],
-        titleEn: "Dermatology & laser plan",
-        bodyHtml: lines.length ? lines.join("") : `<p class="muted">—</p>`,
-      });
+      if (lines.length > 0) {
+        sections.push({
+          titleAr: CARE_PLAN_LABELS[carePlanType],
+          titleEn: "Dermatology & laser plan",
+          bodyHtml: lines.join(""),
+        });
+      }
       break;
     }
     case "DERMATOLOGY_HAIR_TRANSPLANT": {
@@ -203,44 +218,61 @@ export function serializeCarePlanSectionsForPrint(
           ? `<p><strong>نوع الخطة:</strong> البشرة</p>`
           : focus === "hair"
             ? `<p><strong>نوع الخطة:</strong> الشعر / زراعة الشعر</p>`
-            : `<p><strong>نوع الخطة:</strong> لم يُحدَّد</p>`;
+            : ``;
 
-      const tables: string[] = [focusLine];
+      const tables: string[] = [];
+      if (focusLine) tables.push(focusLine);
 
       if (showSkin) {
-        const skinRows = [
-          row("فوتوتايب البشرة", dp.skinPhototype as string | undefined),
-          rowMultiline("الشكوى / التشخيص المبدئي", (dp.chiefComplaints as string | undefined) ?? ""),
-          rowMultiline("البروتوكول الموضعي", (dp.topicalProtocol as string | undefined) ?? ""),
-          rowMultiline("واقي الشمس", (dp.sunProtection as string | undefined) ?? ""),
-          rowMultiline("موانع / تحذيرات", (dp.contraindications as string | undefined) ?? ""),
-          rowMultiline("إجراءات أخرى", (dp.otherProcedures as string | undefined) ?? ""),
-        ].join("");
-        tables.push(
-          `<p class="mt-2 font-semibold">خطة البشرة</p><table class="print-tbl">${skinRows}</table>`,
-        );
+        const rowsArr = [
+          [data.skinPhototype as string | undefined, "فوتوتايب البشرة"],
+          [(dp.chiefComplaints as string | undefined) ?? "", "الشكوى / التشخيص المبدئي"],
+          [(dp.topicalProtocol as string | undefined) ?? "", "البروتوكول الموضعي"],
+          [(dp.sunProtection as string | undefined) ?? "", "واقي الشمس"],
+          [(dp.contraindications as string | undefined) ?? "", "موانع / تحذيرات"],
+          [(dp.otherProcedures as string | undefined) ?? "", "إجراءات أخرى"],
+        ].filter(([val]) => (typeof val === "string" ? val.trim() : val != null));
+
+        if (rowsArr.length > 0) {
+          const skinRows = rowsArr.map(([v, l]) => {
+            const labelStr = String(l);
+            return (labelStr.includes("الشكوى") || labelStr.includes("البروتوكول") || labelStr.includes("موانع") || labelStr.includes("إجراءات")) 
+              ? rowMultiline(labelStr, String(v)) 
+              : row(labelStr, String(v));
+          }).join("");
+          tables.push(`<p class="mt-2 font-semibold">خطة البشرة</p><table class="print-tbl">${skinRows}</table>`);
+        }
       }
 
       if (showHair) {
-        const hairRows = [
-          rowMultiline("تشخيص الشعر / سبب التساقط", (dp.hairDiagnosis as string | undefined) ?? ""),
-          row("نمط التساقط (Norwood/Ludwig)", dp.hairLossPattern as string | undefined),
-          row("التقنية المخططة", dp.plannedTechnique as string | undefined),
-          row("عدد البصيلات المستهدف", (dp.graftsTarget as number | undefined) ?? null),
-          row("منطقة التبرع", dp.donorArea as string | undefined),
-          rowMultiline("خطة قبل العملية", (dp.preOpPlan as string | undefined) ?? ""),
-          rowMultiline("خطة بعد العملية", (dp.postOpPlan as string | undefined) ?? ""),
-        ].join("");
-        tables.push(
-          `<p class="mt-2 font-semibold">خطة الشعر / زراعة الشعر</p><table class="print-tbl">${hairRows}</table>`,
-        );
+        const rowsArr = [
+          [(dp.hairDiagnosis as string | undefined) ?? "", "تشخيص الشعر / سبب التساقط"],
+          [dp.hairLossPattern as string | undefined, "نمط التساقط (Norwood/Ludwig)"],
+          [dp.plannedTechnique as string | undefined, "التقنية المخططة"],
+          [(dp.graftsTarget as number | undefined) ?? null, "عدد البصيلات المستهدف"],
+          [dp.donorArea as string | undefined, "منطقة التبرع"],
+          [(dp.preOpPlan as string | undefined) ?? "", "خطة قبل العملية"],
+          [(dp.postOpPlan as string | undefined) ?? "", "خطة بعد العملية"],
+        ].filter(([val]) => (typeof val === "string" ? val.trim() : val != null));
+
+        if (rowsArr.length > 0) {
+          const hairRows = rowsArr.map(([v, l]) => {
+            const labelStr = String(l);
+            return (labelStr.includes("تشخيص") || labelStr.includes("قبل") || labelStr.includes("بعد")) 
+              ? rowMultiline(labelStr, String(v)) 
+              : row(labelStr, String(v));
+          }).join("");
+          tables.push(`<p class="mt-2 font-semibold">خطة الشعر / زراعة الشعر</p><table class="print-tbl">${hairRows}</table>`);
+        }
       }
 
-      sections.push({
-        titleAr: CARE_PLAN_LABELS[carePlanType],
-        titleEn: "Hair transplant & dermatology",
-        bodyHtml: tables.join(""),
-      });
+      if (tables.length > 0) {
+        sections.push({
+          titleAr: CARE_PLAN_LABELS[carePlanType],
+          titleEn: "Hair transplant & dermatology",
+          bodyHtml: tables.join(""),
+        });
+      }
       break;
     }
     case "NUTRITION_DERMATOLOGY": {
@@ -257,13 +289,13 @@ export function serializeCarePlanSectionsForPrint(
         lines.push(`<p><strong>نوع الخطة:</strong> البشرة والليزر</p>`);
       } else if (focus === "both") {
         lines.push(`<p><strong>نوع الخطة (قديم):</strong> مدمج</p>`);
-      } else {
-        lines.push(`<p><strong>نوع الخطة:</strong> لم يُحدَّد — تُطبع أي بيانات متوفرة</p>`);
       }
+
       const showNutSide = focus === "nutrition" || focus === "both";
       const showDermSide = focus === "dermatology" || focus === "both";
       const showFallbackSides =
         focus !== "nutrition" && focus !== "dermatology" && focus !== "both";
+
       if (showNutSide || showFallbackSides) {
         if (anth && (anth.heightCm || anth.weightKg)) {
           lines.push(
@@ -283,11 +315,198 @@ export function serializeCarePlanSectionsForPrint(
           );
         }
       }
-      sections.push({
-        titleAr: CARE_PLAN_LABELS[carePlanType],
-        titleEn: "Nutrition / dermatology plan",
-        bodyHtml: lines.length > 1 ? lines.join("") : lines[0] || `<p class="muted">—</p>`,
-      });
+      if (lines.length > 0) {
+        sections.push({
+          titleAr: CARE_PLAN_LABELS[carePlanType],
+          titleEn: "Nutrition / dermatology plan",
+          bodyHtml: lines.join(""),
+        });
+      }
+      break;
+    }
+    case "GENERAL_MEDICINE": {
+      const items = (data.items as any[]) || [];
+      const totalCost = items.reduce((sum, it) => sum + (Number(it.cost) || 0), 0);
+      const rows = items.length > 0 ? items.map(it => `
+        <tr>
+          <td>${escapeHtml(String(it.label || "—"))}</td>
+          <td style="text-align:center">${it.cost != null ? `${escapeHtml(String(it.cost))} ₪` : "—"}</td>
+        </tr>
+      `).join("") : "";
+
+      const itemsTable = rows ? `
+        <table class="print-tbl">
+          <thead>
+            <tr style="background:#f9fafb">
+              <th style="padding:8px;font-size:0.75rem;text-align:right">البند / وصف العلاج</th>
+              <th style="padding:8px;font-size:0.75rem;text-align:center">التكلفة (₪)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+          <tfoot>
+            <tr style="background:#f0f9ff;font-weight:bold">
+              <td style="padding:8px;text-align:left">الإجمالي (Total Cost):</td>
+              <td style="padding:8px;text-align:center;font-size:1rem;color:#0369a1">₪${totalCost.toLocaleString()}</td>
+            </tr>
+          </tfoot>
+        </table>
+      ` : "";
+
+      const diagRows = [
+        data.icd10Code && row("ICD-10 Code", data.icd10Code as string),
+        data.severity && row("حالة المرض", data.severity as string),
+      ].filter(Boolean).join("");
+
+      if (diagRows) {
+        sections.push({
+          titleAr: "التشخيص والحدة",
+          titleEn: "Diagnosis & Severity",
+          bodyHtml: `<table class="print-tbl">${diagRows}</table>`
+        });
+      }
+
+      const prescriptions = (data.prescriptions as any[]) || [];
+      const prRows = prescriptions.length > 0 ? prescriptions.map(pr => `
+        <tr>
+          <td>${escapeHtml(String(pr.drug || "—"))}</td>
+          <td>${escapeHtml(String(pr.dosage || "—"))}</td>
+          <td>${escapeHtml(String(pr.freq || "—"))}</td>
+          <td>${escapeHtml(String(pr.duration || "—"))}</td>
+        </tr>
+      `).join("") : "";
+
+      if (prRows) {
+        sections.push({
+          titleAr: "الوصفة الطبية",
+          titleEn: "Prescription (Rx)",
+          bodyHtml: `
+            <table class="print-tbl">
+              <thead>
+                <tr style="background:#f0f9ff">
+                  <th style="padding:8px;font-size:0.75rem;text-align:right">الدواء</th>
+                  <th style="padding:8px;font-size:0.75rem;text-align:right">الجرعة</th>
+                  <th style="padding:8px;font-size:0.75rem;text-align:right">التكرار</th>
+                  <th style="padding:8px;font-size:0.75rem;text-align:right">المدة</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${prRows}
+              </tbody>
+            </table>
+          `
+        });
+      }
+
+      if (itemsTable) {
+        sections.push({
+          titleAr: "بنود العلاج والتكلفة",
+          titleEn: "Treatment & Costs",
+          bodyHtml: itemsTable
+        });
+      }
+
+      const labTests = (data.labTests as string) || "";
+      if (labTests.trim()) {
+        sections.push({
+          titleAr: "الفحوصات المطلوبة",
+          titleEn: "Diagnostics",
+          bodyHtml: `<table class="print-tbl">${rowMultiline("الفحوصات المخبرية", labTests)}</table>`
+        });
+      }
+
+      if (data.lifestyleAdvice) {
+        sections.push({
+          titleAr: "نصائح نمط الحياة",
+          titleEn: "Lifestyle Advice",
+          bodyHtml: nl2brEscaped(data.lifestyleAdvice as string)
+        });
+      }
+
+      if (data.redFlags) {
+        sections.push({
+          titleAr: "علامات الخطر",
+          titleEn: "Red Flags",
+          bodyHtml: `<div style="color:#e11d48;font-weight:600">${nl2brEscaped(data.redFlags as string)}</div>`
+        });
+      }
+      break;
+    }
+    case "MEDICAL_REPORT": {
+      const historyRows = [
+        data.presentingComplaints && rowMultiline("الشكوى الرئيسية (Complaints)", data.presentingComplaints as string),
+        data.medicalHistory && rowMultiline("التاريخ الطبي (Medical History)", data.medicalHistory as string),
+      ].filter(Boolean).join("");
+
+      if (historyRows) {
+        sections.push({
+          titleAr: "التاريخ المرضي",
+          titleEn: "Clinical History",
+          bodyHtml: `<table class="print-tbl">${historyRows}</table>`
+        });
+      }
+
+      const examParts = [
+        data.bp && `ضغط الدم: ${data.bp}`,
+        data.temp && `الحرارة: ${data.temp}`,
+        data.pulse && `النبض: ${data.pulse}`,
+      ].filter(Boolean).join(" | ");
+
+      if (examParts || data.physicalExamination) {
+        sections.push({
+          titleAr: "الفحص السريري",
+          titleEn: "Physical Examination",
+          bodyHtml: `
+            ${examParts ? `<p style="margin-bottom:8px;font-weight:bold">${escapeHtml(examParts)}</p>` : ""}
+            ${data.physicalExamination ? nl2brEscaped(data.physicalExamination as string) : ""}
+          `
+        });
+      }
+
+      if (data.investigations) {
+        sections.push({
+          titleAr: "النتائج المخبرية والشعاعية",
+          titleEn: "Investigations",
+          bodyHtml: nl2brEscaped(data.investigations as string)
+        });
+      }
+
+      const diagnosisRows = [
+        data.diagnosis && row("التشخيص (Diagnosis)", data.diagnosis as string),
+        data.icd10 && row("ICD-10 Code", data.icd10 as string),
+      ].filter(Boolean).join("");
+
+      if (diagnosisRows) {
+        sections.push({
+          titleAr: "الاستنتاج الطبي والتشخيص",
+          titleEn: "Clinical Impression & Diagnosis",
+          bodyHtml: `<table class="print-tbl">${diagnosisRows}</table>`
+        });
+      }
+
+      const recommendations = data.recommendations ? nl2brEscaped(data.recommendations as string) : "";
+      const sickLeaveDays = Number(data.sickLeaveDays) || 0;
+      const sickLeaveNotes = data.sickLeaveNotes as string;
+
+      let recHtml = recommendations;
+      if (sickLeaveDays > 0) {
+        recHtml += `
+          <div style="margin-top:12px;padding:10px;border:1px solid #fda4af;background:#fff1f2;border-radius:6px">
+            <p style="margin:0;font-weight:bold;color:#be123c">الإجازة المرضية (Sick Leave):</p>
+            <p style="margin:4px 0 0;font-size:1rem">يُنصح براحة لمدة <b>${sickLeaveDays}</b> أيام.</p>
+            ${sickLeaveNotes ? `<p style="margin:4px 0 0;font-size:0.8rem;color:#475569">${escapeHtml(sickLeaveNotes)}</p>` : ""}
+          </div>
+        `;
+      }
+
+      if (recHtml) {
+        sections.push({
+          titleAr: "التوصيات الطبية",
+          titleEn: "Recommendations",
+          bodyHtml: recHtml
+        });
+      }
       break;
     }
     case "GENERIC":
@@ -303,23 +522,27 @@ export function serializeCarePlanSectionsForPrint(
           return `<tr><td class="l">${escapeHtml(r.label || "—")}</td><td>${detail}${r.cost ? ` — <span dir="ltr">${r.cost} ₪</span>` : ""}</td></tr>`;
         })
         .join("");
-      const titleEn = carePlanType === "GENERIC" ? "General plan" : "Dental plan";
-      sections.push({
-        titleAr: CARE_PLAN_LABELS[carePlanType],
-        titleEn,
-        bodyHtml: rows ? `<table class="print-tbl">${rows}</table>` : `<p class="muted">—</p>`,
-      });
+      
+      if (rows) {
+        const titleEn = carePlanType === "GENERIC" ? "General plan" : "Dental plan";
+        sections.push({
+          titleAr: CARE_PLAN_LABELS[carePlanType],
+          titleEn,
+          bodyHtml: `<table class="print-tbl">${rows}</table>`,
+        });
+      }
       break;
     }
     default: {
       const label = CARE_PLAN_LABELS[carePlanType] ?? "خطة العلاج";
-      sections.push({
-        titleAr: label,
-        titleEn: "Care plan data",
-        bodyHtml: `<pre style="white-space:pre-wrap;font-size:0.78rem;font-family:inherit;margin:0">${escapeHtml(
-          JSON.stringify(stripForJson(data), null, 2),
-        )}</pre>`,
-      });
+      const jsonBody = JSON.stringify(stripForJson(data), null, 2);
+      if (jsonBody !== "{}") {
+        sections.push({
+          titleAr: label,
+          titleEn: "Care plan data",
+          bodyHtml: `<pre style="white-space:pre-wrap;font-size:0.78rem;font-family:inherit;margin:0">${escapeHtml(jsonBody)}</pre>`,
+        });
+      }
     }
   }
 
