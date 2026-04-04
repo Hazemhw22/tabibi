@@ -20,12 +20,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useTabibiThemeToggle } from "@/lib/tabibi-theme";
+import { useTranslation } from "@/lib/i18n-context";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { theme, toggle: toggleTheme } = useTabibiThemeToggle();
+  const { t } = useTranslation();
 
   const role = session?.user?.role;
 
@@ -68,10 +70,10 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
             {[
-              { href: "/medical-centers", label: "المراكز الطبية" },
-              { href: "/doctors", label: "الأطباء" },
-              { href: "/specialties", label: "التخصصات" },
-              { href: "/about", label: "عن المنصة" },
+              { href: "/medical-centers", label: t("navbar.medical_centers") },
+              { href: "/doctors", label: t("navbar.doctors") },
+              { href: "/specialties", label: t("navbar.specialties") },
+              { href: "/about", label: t("navbar.about") },
             ].map((l) => (
               <Link
                 key={l.href}
@@ -88,7 +90,7 @@ export default function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="تبديل الوضع الليلي"
+              aria-label={t("navbar.theme_toggle")}
               onClick={toggleTheme}
             >
               {theme === "dark" ? (
@@ -117,16 +119,16 @@ export default function Navbar() {
                       </p>
                       <p className={cn("text-xs mt-0.5", theme === "dark" ? "text-slate-400" : "text-gray-500")}>
                         {role === "DOCTOR"
-                          ? "طبيب"
+                          ? t("roles.doctor")
                           : role === "PLATFORM_ADMIN"
-                            ? "مشرف"
+                            ? t("roles.admin")
                             : role === "MEDICAL_CENTER_ADMIN"
-                              ? "مركز طبي"
+                              ? t("roles.medical_center")
                               : role === "MEDICAL_CENTER_RECEPTIONIST"
-                                ? "استقبال"
+                                ? t("roles.receptionist")
                                 : role === "MEDICAL_CENTER_LAB_STAFF"
-                                  ? "مختبر / أشعة"
-                                  : "مريض"}
+                                  ? t("roles.lab_staff")
+                                  : t("roles.patient")}
                       </p>
                     </div>
                     <IconCaretDown className="h-4 w-4 text-gray-400" />
@@ -147,7 +149,7 @@ export default function Navbar() {
                             onClick={() => setDropdownOpen(false)}
                           >
                             <IconUser className="h-4 w-4" />
-                            صفحتي
+                            {t("navbar.my_page")}
                           </Link>
                           <Link
                             href="/dashboard/patient/appointments"
@@ -155,7 +157,7 @@ export default function Navbar() {
                             onClick={() => setDropdownOpen(false)}
                           >
                             <IconCalendar className="h-4 w-4" />
-                            مواعيدي
+                            {t("navbar.my_appointments")}
                           </Link>
                           <Link
                             href="/dashboard/patient/transactions"
@@ -163,7 +165,7 @@ export default function Navbar() {
                             onClick={() => setDropdownOpen(false)}
                           >
                             <IconHeart className="h-4 w-4" />
-                            معاملاتي
+                            {t("navbar.my_transactions")}
                           </Link>
                           <hr className={cn("my-1", theme === "dark" ? "border-slate-700" : "border-gray-100")} />
                         </>
@@ -175,7 +177,7 @@ export default function Navbar() {
                           onClick={() => setDropdownOpen(false)}
                         >
                           <IconSettings className="h-4 w-4" />
-                          الإعدادات
+                          {t("common.settings")}
                         </Link>
                       ) : (
                         <Link
@@ -184,7 +186,7 @@ export default function Navbar() {
                           onClick={() => setDropdownOpen(false)}
                         >
                           <IconCalendar className="h-4 w-4" />
-                          لوحة التحكم
+                          {t("navbar.dashboard")}
                         </Link>
                       )}
                       <Link
@@ -193,7 +195,7 @@ export default function Navbar() {
                         onClick={() => setDropdownOpen(false)}
                       >
                         <IconUser className="h-4 w-4" />
-                        الملف الشخصي
+                        {t("navbar.profile")}
                       </Link>
                       <hr className={cn("my-1", theme === "dark" ? "border-slate-700" : "border-gray-100")} />
                       <button
@@ -201,7 +203,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 w-full text-right"
                       >
                         <IconLogout className="h-4 w-4" />
-                        تسجيل الخروج
+                        {t("navbar.logout")}
                       </button>
                     </div>
                   )}
@@ -210,10 +212,10 @@ export default function Navbar() {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">تسجيل الدخول</Button>
+                  <Button variant="ghost" size="sm">{t("navbar.login")}</Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">إنشاء حساب</Button>
+                  <Button size="sm">{t("navbar.register")}</Button>
                 </Link>
               </>
             )}
@@ -224,7 +226,7 @@ export default function Navbar() {
             <button
               onClick={toggleTheme}
               className={cn("p-2 rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-600 hover:bg-gray-100")}
-              aria-label="تبديل الوضع الليلي"
+              aria-label={t("navbar.theme_toggle")}
             >
               {theme === "dark" ? (
                 <IconSun className="h-5 w-5" />
@@ -236,7 +238,7 @@ export default function Navbar() {
             <button
               className={cn("p-2 rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-600 hover:bg-gray-100")}
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="فتح القائمة"
+              aria-label={menuOpen ? t("navbar.menu_close") : t("navbar.menu_open")}
             >
               {menuOpen ? <IconXCircle className="h-5 w-5" /> : <IconMenuWidgets className="h-5 w-5" />}
             </button>
@@ -254,9 +256,9 @@ export default function Navbar() {
       >
         <div className="px-4 py-3 space-y-1">
           {[
-            { href: "/medical-centers", label: "المراكز الطبية" },
-            { href: "/doctors", label: "الأطباء" },
-            { href: "/specialties", label: "التخصصات" },
+            { href: "/medical-centers", label: t("navbar.medical_centers") },
+            { href: "/doctors", label: t("navbar.doctors") },
+            { href: "/specialties", label: t("navbar.specialties") },
           ].map((l) => (
             <Link
               key={l.href}
@@ -272,10 +274,10 @@ export default function Navbar() {
               {role === "PATIENT" && (
                 <>
                   {[
-                    { href: "/dashboard/patient", label: "صفحتي" },
-                    { href: "/dashboard/patient/appointments", label: "مواعيدي" },
-                    { href: "/dashboard/patient/transactions", label: "معاملاتي" },
-                    { href: "/dashboard/patient/settings", label: "الإعدادات" },
+                    { href: "/dashboard/patient", label: t("navbar.my_page") },
+                    { href: "/dashboard/patient/appointments", label: t("navbar.my_appointments") },
+                    { href: "/dashboard/patient/transactions", label: t("navbar.my_transactions") },
+                    { href: "/dashboard/patient/settings", label: t("common.settings") },
                   ].map((l) => (
                     <Link
                       key={l.href}
@@ -294,23 +296,23 @@ export default function Navbar() {
                   className={cn("block px-3 py-2 text-sm font-medium rounded-lg transition-colors", theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-gray-700 hover:bg-gray-100")}
                   onClick={() => setMenuOpen(false)}
                 >
-                  لوحة التحكم
+                  {t("navbar.dashboard")}
                 </Link>
               )}
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="block w-full text-right px-3 py-2 text-sm font-medium text-red-500 rounded-lg hover:bg-red-500/10"
               >
-                تسجيل الخروج
+                {t("navbar.logout")}
               </button>
             </>
           ) : (
             <div className="flex gap-2 pt-2">
               <Link href="/login" className="flex-1">
-                <Button variant="outline" className="w-full" size="sm">دخول</Button>
+                <Button variant="outline" className="w-full" size="sm">{t("navbar.login")}</Button>
               </Link>
               <Link href="/register" className="flex-1">
-                <Button className="w-full" size="sm">تسجيل</Button>
+                <Button className="w-full" size="sm">{t("navbar.register")}</Button>
               </Link>
             </div>
           )}

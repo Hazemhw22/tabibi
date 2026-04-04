@@ -10,9 +10,12 @@ import IconRefresh from "@/components/icon/icon-refresh";
 import DashboardGlobalSearch from "@/components/dashboard/dashboard-global-search";
 import { useTabibiThemeToggle } from "@/lib/tabibi-theme";
 import { DashboardUserMenu } from "@/components/layout/dashboard-user-menu";
+import { LanguageToggle } from "@/components/layout/language-toggle";
+import { useTranslation } from "@/lib/i18n-context";
 
 export default function DashboardHeader() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const { isDark, toggle: toggleTheme } = useTabibiThemeToggle();
 
@@ -41,11 +44,13 @@ export default function DashboardHeader() {
             "rounded-lg p-2.5 transition-colors",
             isDark ? "text-gray-400 hover:bg-gray-800 hover:text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           )}
-          title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
-          aria-label={isDark ? "التبديل إلى الوضع النهاري" : "التبديل إلى الوضع الليلي"}
+          title={isDark ? t("header.day_mode") : t("header.night_mode")}
+          aria-label={isDark ? t("header.day_mode") : t("header.night_mode")}
         >
           {isDark ? <IconSun className="h-[18px] w-[18px]" /> : <IconMoon className="h-[18px] w-[18px]" />}
         </button>
+
+        <LanguageToggle isDark={isDark} />
 
         <NotificationBell theme={isDark ? "dark" : "light"} />
 
@@ -56,7 +61,7 @@ export default function DashboardHeader() {
             "rounded-lg p-2.5 transition-colors",
             isDark ? "text-gray-400 hover:bg-gray-800 hover:text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           )}
-          title="تحديث"
+          title={t("header.refresh")}
         >
           <IconRefresh className={cn("h-[18px] w-[18px]", refreshing && "animate-spin")} />
         </button>

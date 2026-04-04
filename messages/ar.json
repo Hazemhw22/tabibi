@@ -1,0 +1,593 @@
+{
+  "common": {
+    "dashboard": "لوحة التحكم",
+    "patients": "المرضى",
+    "appointments": "المواعيد",
+    "reports": "التقارير",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "search": "بحث...",
+    "add": "إضافة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "print": "طباعة",
+    "language": "اللغة",
+    "arabic": "العربية",
+    "hebrew": "العبرية",
+    "english": "الإنجليزية",
+    "year": "سنة",
+    "minutes": "دقيقة",
+    "print_pdf": "طباعة / PDF",
+    "confirm_delete": "تأكيد الحذف",
+    "irreversible_action": "هذه العملية لا يمكن التراجع عنها",
+    "yes_delete": "نعم، احذف",
+    "save_changes": "حفظ التعديلات",
+    "date": "التاريخ",
+    "start": "بداية",
+    "end": "نهاية",
+    "appointment": "موعد",
+    "gender": "الجنس"
+  },
+  "sidebar": {
+    "sections": {
+      "main": "الرئيسية",
+      "messages": "الرسائل",
+      "clinic": "العيادة",
+      "store": "المتجر",
+      "admin": "الإدارة",
+      "services": "الخدمات",
+      "settings": "الإعدادات"
+    },
+    "items": {
+      "dashboard": "الرئيسية",
+      "patients": "المرضى",
+      "appointments": "المواعيد",
+      "my_appointments": "مواعيدي",
+      "send": "إرسال",
+      "history": "سجل الرسائل",
+      "reports": "التقارير",
+      "clinics_and_schedules": "العيادات والمواعيد",
+      "staff": "موظفين العيادة",
+      "suppliers": "مزوّدون المستلزمات",
+      "expenses": "مصروفات العيادة",
+      "offers": "العروضات",
+      "products": "المنتجات",
+      "settings": "الإعدادات",
+      "doctors": "الأطباء",
+      "medical_centers": "المراكز الطبية",
+      "users": "المستخدمون",
+      "subscriptions": "الاشتراكات",
+      "employees": "الموظفون",
+      "bookings": "الحجوزات",
+      "lab_imaging": "التحاليل والأشعة",
+      "finance": "الحسابات",
+      "emergency": "الطوارئ",
+      "center_settings": "إعدادات المركز",
+      "reviews": "التقييمات"
+    }
+  },
+  "roles": {
+    "doctor": "طبيب",
+    "patient": "مريض",
+    "medical_center": "مركز طبي",
+    "receptionist": "استقبال",
+    "lab_staff": "مختبر / أشعة",
+    "clinic_staff": "موظف عيادة",
+    "admin": "مشرف",
+    "platform_admin": "مشرف المنصة",
+    "clinic_admin": "مشرف عيادة"
+  },
+  "dashboard": {
+    "welcome": "أهلاً بك،",
+    "total_patients": "إجمالي المرضى",
+    "today_appointments": "مواعيد اليوم",
+    "total_earnings": "إجمالي الأرباح"
+  },
+  "header": {
+    "day_mode": "الوضع النهاري",
+    "night_mode": "الوضع الليلي",
+    "refresh": "تحديث"
+  },
+  "user_menu": {
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "navbar": {
+    "medical_centers": "المراكز الطبية",
+    "doctors": "الأطباء",
+    "specialties": "التخصصات",
+    "about": "عن المنصة",
+    "profile": "الملف الشخصي",
+    "my_page": "صفحتي",
+    "my_appointments": "مواعيدي",
+    "my_transactions": "معاملاتي",
+    "dashboard": "لوحة التحكم",
+    "logout": "تسجيل الخروج",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "theme_toggle": "تبديل الوضع الليلي",
+    "menu_open": "فتح القائمة",
+    "menu_close": "إغلاق القائمة"
+  },
+  "doctor_dashboard": {
+    "status": {
+      "pending_title": "حسابك قيد المراجعة",
+      "pending_desc": "شكراً لتسجيلك في منصة Tabibi. سيتم مراجعة طلبك من قِبل فريقنا وإشعارك بالقبول قريباً.",
+      "pending_duration": "مدة المراجعة: 24-48 ساعة عمل",
+      "rejected_title": "لوحة التحكم",
+      "rejected_desc": "تم رفض طلب تسجيلك كطبيب. يرجى مراجعة مسؤول النظام للاستفسار عن السبب.",
+      "rejected_admin": "يجب مراجعة مسؤول النظام"
+    },
+    "stats": {
+      "patients": "المرضى",
+      "total_earnings": "اجمالي الربح",
+      "earnings_platform": "من المنصة",
+      "total_appointments": "إجمالي المواعيد",
+      "treatments": "المعالجات"
+    },
+    "sections": {
+      "booking_requests": "طلبات الحجز",
+      "view_all": "عرض الكل",
+      "no_pending_requests": "لا توجد طلبات حجز معلقة",
+      "financial_summary": "آخر 5 معاملات مالية",
+      "reports_link": "التقارير"
+    },
+    "table": {
+      "date": "التاريخ",
+      "patient": "المريض",
+      "source": "المصدر",
+      "type": "النوع",
+      "amount": "المبلغ",
+      "source_clinic": "العيادة",
+      "source_platform": "المنصة",
+      "type_payment": "دفعة",
+      "type_debt": "دين"
+    },
+    "subscription": {
+      "title": "الاشتراك:",
+      "monthly": "شهري ₪80",
+      "half_year": "نصف سنة ₪400",
+      "yearly": "سنة ₪800",
+      "expires": "ينتهي:",
+      "days_left": "متبقي {days} يوم",
+      "expired": "منتهي"
+    },
+    "warnings": {
+      "add_clinic_title": "⚠️ أضف عيادتك",
+      "add_clinic_desc": "لم تضف عيادة بعد. أضف عيادتك لاستقبال المرضى.",
+      "add_clinic_btn": "إضافة عيادة"
+    },
+    "medical_center_invites": {
+      "title": "دعوة للانضمام لمركز طبي",
+      "desc": "يظهر لك هنا مستحقاتك من العيادة فقط للمراجعة والتعديل قبل القبول. رسوم المريض ونوع الخدمة يحددهما المركز في الدعوة.",
+      "clinic_due_label": "مستحقاتك من العيادة (₪)",
+      "center_suggestion": "اقتراح المركز: ₪{amount} — يمكنك تعديل المبلغ قبل القبول",
+      "accept_btn": "قبول والانضمام",
+      "reject_btn": "رفض",
+      "processing": "جاري المعالجة...",
+      "toasts": {
+        "error_amount": "أدخل مستحقاتك من العيادة بشكل صحيح",
+        "fetch_error": "تعذر تحميل دعوات المراكز",
+        "conn_error": "تعذر الاتصال بالخادم",
+        "action_error": "تعذر تنفيذ الطلب",
+        "generic_error": "حدث خطأ",
+        "success": "تم بنجاح"
+      }
+    },
+    "upcoming": {
+      "title": "المواعيد القادمة",
+      "next_month": "الشهر التالي",
+      "prev_month": "الشهر السابق",
+      "no_days": "لا أيام متاحة في هذا الشهر",
+      "no_appointments": "لا توجد مواعيد في هذا اليوم",
+      "table": {
+        "type": "نوع الموعد",
+        "patient": "المريض",
+        "time": "التاريخ والوقت",
+        "source": "المصدر",
+        "actions": "الإجراءات"
+      }
+    },
+    "actions": {
+      "accept": "قبول",
+      "reject": "رفض",
+      "completed": "منجز",
+      "no_show": "غائب",
+      "toast": {
+        "completed": "تم تحديد الموعد كمنجز",
+        "no_show": "تم تحديد المريض كغائب",
+        "confirmed": "تمت الموافقة على الحجز",
+        "cancelled": "تم رفض الحجز",
+        "error": "حدث خطأ في التحديث",
+        "generic_error": "حدث خطأ"
+      }
+    },
+    "finance": {
+      "title": "نظرة مالية سريعة",
+      "desc": "مخططان: التحصيل والأرباح التقريبية، ومصروفات العيادة مقابل تدفق المستحقات",
+      "expenses_btn": "مصروفات العيادة",
+      "reports_btn": "التقارير المالية",
+      "net_approx": "صافٍ تقريبي (تحصيل − مصروفات العيادة):",
+      "receivables_approx": "مستحقات حالية تقريباً:",
+      "thousand": "ألف",
+      "million": "م",
+      "chart_earnings_title": "التحصيل والأرباح التقريبية",
+      "chart_earnings_sub": "تحصيل إلكتروني عبر المنصة (Stripe)، حصة الطبيب من الحجوزات المكتملة، وإجمالي التحصيل (يشمل الدفعات المسجّلة يدوياً)",
+      "chart_expenses_title": "مصروفات العيادة وتدفق المستحقات",
+      "chart_expenses_sub": "مصروفات مسجّلة في الدفتر، وصافي «خدمات − دفعات» خلال الشهر (تقريب لتغيّر المستحقات)",
+      "legend": {
+        "stripe": "تحصيل إلكتروني (المنصة)",
+        "share": "حصة الطبيب من حجوزات المنصة",
+        "total": "إجمالي التحصيل",
+        "expenses": "مصروفات العيادة",
+        "receivables_flow": "صافي خدمات − دفعات (تدفق)"
+      }
+    },
+    "patients": {
+      "title": "المرضى",
+      "search_placeholder": "بحث عن مريض...",
+      "add_patient": "إضافة مريض",
+      "no_results": "لا توجد نتائج",
+      "no_patients": "لا يوجد مرضى",
+      "patient_count": "{count} مريض",
+      "appointment_count": "{count} موعد",
+      "my_clinic": "عيادتي",
+      "medical_center": "المركز الطبي",
+      "ownership_local": "عيادتي",
+      "back_to_list": "العودة لقائمة المرضى",
+      "file_label": "ملف #{num}",
+      "tabs": {
+        "info": "البيانات",
+        "visits": "سجل الزيارات",
+        "transactions": "المعاملات",
+        "medical": "الملفات الطبية",
+        "report": "التقرير الطبي",
+        "careplan": "خطة العلاج",
+        "dental": "مخطط الأسنان",
+        "dental_plan": "خطة علاج الأسنان"
+      },
+      "empty_state": {
+        "select_patient": "اختر مريضاً من القائمة",
+        "add_patient_sub": "أو أضف مريضاً جديداً"
+      },
+      "sidebar_title": "القائمة",
+      "info_section": {
+        "title": "بيانات المريض",
+        "edit_btn": "تعديل",
+        "no_data": "لا توجد بيانات إضافية مسجلة",
+        "file_number": "رقم الملف",
+        "gender": "الجنس",
+        "dob": "تاريخ الميلاد",
+        "blood_type": "فصيلة الدم",
+        "address": "العنوان",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف"
+      },
+      "report_section": {
+        "title": "تقرير الطوارئ",
+        "no_report": "لا يوجد تقرير طوارئ مسجل",
+        "complaint": "الشكوى",
+        "notes": "الملاحظات",
+        "created_at": "تاريخ الإنشاء",
+        "amount": "المبلغ",
+        "payment_status": "حالة الدفع",
+        "payment_method": "طريقة الدفع"
+      },
+      "tx_section": {
+        "summary": {
+          "services": "إجمالي الخدمات",
+          "payments": "إجمالي الدفعات",
+          "balance": "الرصيد المتبقي"
+        },
+        "print_btn": "طباعة المعاملات",
+        "new_service_btn": "خدمة/إجراء",
+        "new_payment_btn": "تسجيل دفعة",
+        "no_transactions": "لا توجد معاملات مسجّلة",
+        "table": {
+          "debts": "الخدمات",
+          "payments": "الدفعات"
+        },
+        "form": {
+          "service_placeholder": "اسم الخدمة...",
+          "payment_placeholder": "وصف الدفعة...",
+          "amount_placeholder": "المبلغ..."
+        }
+      },
+      "visits_section": {
+        "title": "سجل الزيارات ({count})",
+        "new_apt_btn": "موعد جديد",
+        "no_visits": "لا توجد زيارات مسجّلة",
+        "default_title": "موعد بتاريخ {date}",
+        "fee_label": "كشفية: ₪{amount}",
+        "form": {
+          "title_placeholder": "عنوان الموعد...",
+          "notes_placeholder": "الملاحظات الطبية...",
+          "channel_center": "المركز الطبي",
+          "channel_clinic": "عيادتي الخاصة"
+        }
+      },
+      "transactions": {
+        "new_service": "خدمة جديدة",
+        "new_payment": "تسجيل دفعة",
+        "service_name_placeholder": "اسم الخدمة...",
+        "payment_desc_placeholder": "وصف الدفعة...",
+        "no_transactions": "لا توجد معاملات مسجّلة",
+        "debts": "ديون",
+        "payments": "دفعات"
+      },
+      "upcoming": {
+        "new_apt": "موعد جديد",
+        "apt_title_placeholder": "عنوان الموعد...",
+        "notes_placeholder": "الملاحظات الطبية: شكوى المريض، التشخيص، العلاج الموصوف...",
+        "no_visits": "لا توجد زيارات مسجّلة",
+        "channel_center": "المركز الطبي (يظهر في حجوزات المركز)",
+        "channel_clinic": "عيادتي الخاصة (لا يظهر في المركز)"
+      },
+      "medical": {
+        "title": "السجل الطبي والتقارير",
+        "add_report": "إضافة تقرير طبي / ملاحظات",
+        "print_pdf": "تقرير طبي PDF",
+        "allergies_label": "الحساسيات / التنبيهات",
+        "complaint_label": "الشكوى الرئيسية (Complaints)",
+        "vitals_title": "العلامات الحيوية (Vitals) والفحص السريري",
+        "bp": "الضغط (BP)",
+        "temp": "الحرارة (T)",
+        "pulse": "النبض (P)",
+        "physical_exam_placeholder": "نتائج الفحص السريري المفصل...",
+        "investigations_label": "الفحوصات (Investigations)",
+        "investigations_placeholder": "نتائج المختبر أو الأشعة...",
+        "diagnosis_label": "التشخيص (Diagnosis)",
+        "diagnosis_placeholder": "التشخيص النهائي...",
+        "treatment_label": "العلاج والتوصيات (Treatment)",
+        "treatment_placeholder": "الأدوية الموصوفة والخطوات القادمة...",
+        "sick_leave_title": "الإجازة المرضية (Sick Leave)",
+        "days_label": "الأيام:",
+        "official_report_tag": "تقرير طبي رسمي",
+        "visits_history": "سجل الزيارات الطبية",
+        "edit_report": "تعديل التقرير",
+        "save_edits": "حفظ التعديلات",
+        "complaints_full": "الشكوى الرئيسية",
+        "diagnosis_and_icd": "التشخيص والرمز",
+        "sick_leave_count": "إجازة مرضية: {count} أيام"
+      },
+      "info_card": {
+        "age": "العمر: {age} سنة",
+        "gender": "الجنس: {gender}",
+        "phone": "الهاتف: {phone}",
+        "file_number": "رقم الملف: {num}",
+        "balance": "الرصيد: {balance}",
+        "last_visit": "آخر زيارة: {date}",
+        "total_services": "إجمالي الخدمات",
+        "total_payments": "إجمالي الدفعات",
+        "balance_label": "الرصيد",
+        "last_visit_label": "آخر زيارة",
+        "file_type_label": "نوع الملف",
+        "visit_count_label": "عدد الزيارات",
+        "age_label": "العمر",
+        "years": "سنة"
+      },
+      "apt_status": {
+        "scheduled": "مجدول",
+        "draft": "مسودة",
+        "confirmed": "مؤكد",
+        "completed": "منجز",
+        "cancelled": "ملغي",
+        "no_show": "لم يحضر"
+      },
+      "table": {
+        "date": "التاريخ",
+        "status": "الحالة",
+        "type": "النوع",
+        "patient": "المريض",
+        "amount": "المبلغ",
+        "actions": "الإجراءات",
+        "description": "الوصف"
+      },
+      "modals": {
+        "add_patient_title": "إضافة مريض جديد للعيادة",
+        "add_patient_desc": "بيانات المريض في العيادة (اسم، رقم هاتف، بريد، رقم ملف، ملاحظات)",
+        "edit_patient_title": "تعديل بيانات المريض",
+        "name": "الاسم الكامل",
+        "phone": "رقم الواتساب / الهاتف",
+        "email": "البريد الإلكتروني (اختياري)",
+        "file_number": "رقم الملف",
+        "gender": "الجنس",
+        "dob": "تاريخ الميلاد",
+        "address": "العنوان",
+        "blood_type": "فصيلة الدم",
+        "allergies": "الحساسيات والتحذيرات",
+        "notes": "ملاحظات إضافية",
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "saving": "جاري الحفظ...",
+        "gender_male": "ذكر",
+        "gender_female": "أنثى"
+      },
+      "toasts": {
+        "name_required": "الاسم مطلوب",
+        "add_success": "تم إضافة المريض ✓",
+        "update_success": "تم تحديث بيانات المريض ✓",
+        "delete_success": "تم الحذف",
+        "error": "حدث خطأ",
+        "conn_error": "خطأ في الاتصال",
+        "service_added": "تم إضافة الخدمة ✓",
+        "payment_added": "تم تسجيل الدفعة ✓",
+        "apt_added": "تم إضافة الموعد ✓",
+        "desc_amount_required": "الوصف والمبلغ مطلوبان",
+        "clinic_required": "يرجى اختيار عيادة",
+        "sms_sent": "أُرسلت للمريض رسالة SMS/واتساب.",
+        "sms_not_sent": "لم تُرسل رسالة للمريض."
+      },
+      "dialogs": {
+        "imaging": {
+          "title": "إضافة صور أشعة",
+          "description": "ارفع صورة/ملف أشعة (JPG/PNG/PDF/DICOM). سيتم ربطه تلقائياً بملف المريض ويظهر ضمن “الملفات الطبية”.",
+          "title_placeholder": "مثال: أشعة أسنان — قبل/بعد",
+          "notes_placeholder": "مثل: تقرير مختصر، جهة التصوير…",
+          "dicom_note": "ملاحظة: عرض ملفات DICOM داخل المتصفح يحتاج عارض خاص — حالياً سيتم حفظها وفتحها كرابط.",
+          "upload_btn": "رفع وربط بالملف",
+          "error_no_file": "اختر ملفاً",
+          "error_no_title": "العنوان مطلوب",
+          "error_upload": "فشل رفع الملف",
+          "success_upload": "تم رفع ملف الأشعة"
+        },
+        "add": {
+          "title": "إضافة مريض جديد",
+          "name_label": "الاسم الكامل *",
+          "name_placeholder": "محمد أحمد",
+          "file_number_label": "رقم الملف",
+          "file_number_placeholder": "001",
+          "address_placeholder": "الخليل، حي البلد",
+          "submit_btn": "إضافة المريض"
+        },
+        "edit": {
+          "title": "تعديل بيانات مريض",
+          "name_label": "الاسم الكامل *",
+          "name_placeholder": "محمد أحمد",
+          "file_number_label": "رقم الملف",
+          "file_number_placeholder": "001",
+          "phone_placeholder": "0599xxxxxx (لإرسال رسائل SMS)",
+          "address_placeholder": "الخليل، حي البلد"
+        },
+        "delete": {
+          "confirm_clear_notes": "هل أنت متأكد من مسح الملاحظات الطبية العامة لهذا المريض؟",
+          "confirm_note": "هل أنت متأكد من حذف هذه الملاحظة الطبية؟",
+          "confirm_tx": "هل أنت متأكد من حذف هذه المعاملة؟ لن تتمكن من استرجاعها لاحقاً."
+        }
+      },
+      "medical_section": {
+        "title": "السجل الطبي والتقارير",
+        "imaging_new_title": "أشعة جديدة",
+        "imaging_btn_title": "إرفاق صور أشعة أو مستندات طبية (JPG, PNG, PDF, DICOM)",
+        "imaging_btn": "إضافة صور أشعة",
+        "report_btn_title": "يُنشئ تقريراً PDF من آخر ملاحظة طبية محفوظة",
+        "report_btn": "تقرير طبي PDF",
+        "add_notes_btn": "إضافة تقرير طبي / ملاحظات",
+        "official_report_tag": "تقرير طبي رسمي",
+        "form": {
+          "allergies_label": "الحساسيات / التنبيهات",
+          "allergies_placeholder": "مثل: حساسية من البنسلين...",
+          "complaints_label": "الشكوى الرئيسية (Complaints)",
+          "complaints_placeholder": "ما الذي يشتكي منه المريض حالياً؟",
+          "vitals_section": "العلامات الحيوية (Vitals) والفحص السريري",
+          "vitals": {
+            "bp": "الضغط (BP)",
+            "temp": "الحرارة (T)",
+            "pulse": "النبض (P)"
+          },
+          "physical_exam_placeholder": "نتائج الفحص السريري المفصل...",
+          "investigations_label": "الفحوصات (Investigations)",
+          "investigations_placeholder": "نتائج المختبر أو الأشعة...",
+          "diagnosis_label": "التشخيص (Diagnosis)",
+          "diagnosis_placeholder": "التشخيص النهائي...",
+          "treatment_label": "العلاج والتوصيات (Treatment)",
+          "treatment_placeholder": "الأدوية الموصوفة والخطوات القادمة...",
+          "sick_leave_title": "الإجازة المرضية (Sick Leave)",
+          "days_label": "الأيام:"
+        }
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "choose_account": "اختر نوع حسابك",
+      "patient": "مريض",
+      "patient_subtitle": "مواعيدك وحسابك",
+      "doctor": "طبيب",
+      "doctor_subtitle": "لوحة التحكم",
+      "medical_center": "مركز طبي",
+      "medical_center_subtitle": "إدارة المركز",
+      "forgot_password": "نسيت كلمة المرور؟",
+      "no_account": "ليس لديك حساب؟",
+      "create_account": "إنشاء حساب جديد",
+      "new_medical_center": "مركز طبي جديد؟",
+      "register_medical_center": "التسجيل كمركز طبي",
+      "rate_limited": "تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة مرة أخرى بعد 15 دقيقة."
+    },
+    "register": {
+      "title": "إنشاء حساب جديد",
+      "choose_account": "اختر نوع حسابك",
+      "patient": "مريض",
+      "patient_subtitle": "احجز مواعيدك بسهولة",
+      "doctor": "طبيب",
+      "doctor_subtitle": "انضم لشبكة طبيبي",
+      "medical_center": "مركز طبي",
+      "medical_center_subtitle": "لوحة إدارة المركز",
+      "has_account": "لديك حساب بالفعل؟",
+      "login": "تسجيل الدخول"
+    },
+    "doctor_login": {
+      "title": "تسجيل دخول الطبيب",
+      "desc": "ادخل بريدك الإلكتروني وكلمة المرور",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "forgot_password": "نسيت كلمة المرور؟",
+      "submit": "تسجيل الدخول",
+      "submitting": "جاري تسجيل الدخول...",
+      "no_account": "ليس لديك حساب طبيب؟",
+      "register": "إنشاء حساب طبيب",
+      "patient_login": "تسجيل دخول المريض",
+      "medical_center": "مركز طبي"
+    },
+    "patient_login": {
+      "title": "تسجيل دخول المريض",
+      "verify_title": "التحقق من رقم الهاتف",
+      "otp_desc": "أدخل رمز التحقق المرسل إلى {phone}",
+      "otp_input_desc": "ادخل رقم هاتفك لنرسل لك كود التأكيد",
+      "password_input_desc": "ادخل رقم هاتفك وكلمة المرور",
+      "phone": "رقم الهاتف",
+      "password": "كلمة المرور",
+      "forgot_password": "نسيت كلمة المرور؟",
+      "submit_otp": "إرسال رمز التحقق",
+      "submit_password": "تسجيل الدخول",
+      "submitting": "جاري الدخول...",
+      "sending": "جاري الإرسال...",
+      "or": "أو",
+      "login_password": "تسجيل الدخول بكلمة المرور",
+      "login_otp": "تسجيل الدخول بكود التأكيد (أسهل)",
+      "otp_placeholder": "0 0 0 0 0 0",
+      "otp_instruction": "أدخل الكود المكون من 6 أرقام",
+      "confirm": "تأكيد الدخول",
+      "verifying": "جاري التحقق...",
+      "change_phone": "تغيير رقم الهاتف",
+      "no_account": "ليس لديك حساب؟",
+      "register": "إنشاء حساب مريض",
+      "doctor_login": "دخول الطبيب",
+      "medical_center": "مركز طبي"
+    },
+    "medical_center_login": {
+      "title": "تسجيل دخول المركز الطبي",
+      "desc": "بريد المسؤول وكلمة المرور (نفس بيانات التسجيل)",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "forgot_password": "نسيت كلمة المرور؟",
+      "submit": "تسجيل الدخول",
+      "submitting": "جاري تسجيل الدخول...",
+      "no_account": "ليس لديك حساب مركز طبي؟",
+      "register": "التسجيل كمركز طبي",
+      "other_logins": "أنواع تسجيل الدخول الأخرى"
+    },
+    "errors": {
+      "invalid_email": "البريد الإلكتروني غير صالح",
+      "invalid_phone": "رقم الهاتف غير صالح",
+      "password_min": "كلمة المرور 6 أحرف على الأقل",
+      "invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+      "invalid_otp": "رمز التحقق غير صحيح",
+      "phone_required": "يرجى إدخال رقم هاتف صحيح",
+      "otp_failed": "فشل إرسال رمز التحقق",
+      "conn_error": "خطأ في الاتصال بالسيرفر",
+      "generic_error": "حدث خطأ، يرجى المحاولة مجدداً",
+      "network_error": "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً."
+    },
+    "success": {
+      "login_ok": "تم تسجيل الدخول بنجاح!",
+      "otp_sent": "تم إرسال رمز التحقق بنجاح ✓"
+    }
+  }
+}

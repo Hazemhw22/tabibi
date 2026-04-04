@@ -11,6 +11,7 @@ import IconUser from "@/components/icon/icon-user";
 import IconSettings from "@/components/icon/icon-settings";
 import IconLogout from "@/components/icon/icon-logout";
 import IconCaretDown from "@/components/icon/icon-caret-down";
+import { useTranslation } from "@/lib/i18n-context";
 
 type Props = {
   isDark: boolean;
@@ -20,6 +21,7 @@ type Props = {
 
 export function DashboardUserMenu({ isDark, compact = false }: Props) {
   const { data: session } = useSession();
+  const { t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const userMenuRef = useRef<DropdownHandle>(null);
 
@@ -27,20 +29,16 @@ export function DashboardUserMenu({ isDark, compact = false }: Props) {
   const email = session?.user?.email ?? "";
   const role = session?.user?.role;
 
-  const roleLabel =
-    role === "DOCTOR"
-      ? "طبيب"
-      : role === "PLATFORM_ADMIN"
-        ? "مشرف المنصة"
-        : role === "CLINIC_ADMIN"
-          ? "مشرف عيادة"
-          : role === "MEDICAL_CENTER_ADMIN"
-            ? "مركز طبي"
-            : role === "MEDICAL_CENTER_RECEPTIONIST"
-              ? "استقبال"
-              : role === "MEDICAL_CENTER_LAB_STAFF"
-                ? "مختبر / أشعة"
-                : "";
+  const roleLabel = (() => {
+    if (role === "DOCTOR") return t("roles.doctor");
+    if (role === "PLATFORM_ADMIN") return t("roles.platform_admin");
+    if (role === "CLINIC_ADMIN") return t("roles.clinic_admin");
+    if (role === "MEDICAL_CENTER_ADMIN") return t("roles.medical_center");
+    if (role === "MEDICAL_CENTER_RECEPTIONIST") return t("roles.receptionist");
+    if (role === "MEDICAL_CENTER_LAB_STAFF") return t("roles.lab_staff");
+    if (role === "DOCTOR_RECEPTION" || role === "DOCTOR_ASSISTANT") return t("roles.clinic_staff");
+    return "";
+  })();
 
   const settingsHref =
     role === "DOCTOR"
@@ -110,7 +108,7 @@ export function DashboardUserMenu({ isDark, compact = false }: Props) {
             )}
           >
             <IconUser className="h-4 w-4 shrink-0" />
-            الملف الشخصي
+            {t("user_menu.profile")}
           </Link>
           <Link
             href={settingsHref}
@@ -121,7 +119,7 @@ export function DashboardUserMenu({ isDark, compact = false }: Props) {
             )}
           >
             <IconSettings className="h-4 w-4 shrink-0" />
-            الإعدادات
+            {t("user_menu.settings")}
           </Link>
         </div>
 
@@ -138,7 +136,7 @@ export function DashboardUserMenu({ isDark, compact = false }: Props) {
             )}
           >
             <IconLogout className="h-4 w-4 shrink-0" />
-            تسجيل الخروج
+            {t("user_menu.logout")}
           </button>
         </div>
       </div>

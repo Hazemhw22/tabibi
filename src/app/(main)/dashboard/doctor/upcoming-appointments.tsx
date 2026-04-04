@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { ar, enUS, he } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import DoctorActions from "./doctor-actions";
+import { useTranslation } from "@/lib/i18n-context";
 
 export type ScheduleApt = {
   id: string;
@@ -26,10 +27,6 @@ type Props = {
   currentYear: number;
 };
 
-const MONTHS_AR = [
-  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
-];
 
 /** YYYY-MM-DD أو ISO — بدون إزاحة UTC */
 function parseLocalYmd(s: string): Date {
@@ -62,6 +59,8 @@ export default function UpcomingAppointments({
   currentMonth,
   currentYear,
 }: Props) {
+  const { t, locale } = useTranslation();
+  const dateLocale = locale === "he" ? he : locale === "en" ? enUS : ar;
   const [viewDate, setViewDate] = useState(() => new Date(currentYear, currentMonth, 1));
 
   useEffect(() => {
@@ -132,7 +131,7 @@ export default function UpcomingAppointments({
       {/* ─── العنوان + تنقّل الشهر ─── */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3 gap-3">
         <h2 className="font-heading font-bold text-slate-800 dark:text-slate-100 text-lg">
-          المواعيد القادمة
+          {t("doctor_dashboard.upcoming.title")}
         </h2>
         <div
           dir="rtl"
@@ -143,21 +142,21 @@ export default function UpcomingAppointments({
             onClick={goNextMonth}
             disabled={!canGoNext}
             className="p-1 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            title="الشهر التالي"
-            aria-label="الشهر التالي"
+            title={t("doctor_dashboard.upcoming.next_month")}
+            aria-label={t("doctor_dashboard.upcoming.next_month")}
           >
             <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" aria-hidden />
           </button>
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-200 min-w-[7.5rem] text-center tabular-nums">
-            {MONTHS_AR[viewMonth]} {viewYear}
+            {format(viewDate, "MMMM yyyy", { locale: dateLocale })}
           </span>
           <button
             type="button"
             onClick={goPrevMonth}
             disabled={!canGoPrev}
             className="p-1 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            title="الشهر السابق"
-            aria-label="الشهر السابق"
+            title={t("doctor_dashboard.upcoming.prev_month")}
+            aria-label={t("doctor_dashboard.upcoming.prev_month")}
           >
             <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" aria-hidden />
           </button>
@@ -167,7 +166,7 @@ export default function UpcomingAppointments({
       {/* ─── شريط الأيام ─── */}
       <div className="flex gap-1.5 overflow-x-auto px-5 pb-3 scrollbar-hide">
         {futureDays.length === 0 ? (
-          <p className="text-xs text-slate-400 py-2">لا أيام متاحة في هذا الشهر</p>
+          <p className="text-xs text-slate-400 py-2">{t("doctor_dashboard.upcoming.no_days")}</p>
         ) : (
           futureDays.map((day) => {
             const isSelected = day === selectedDay;
@@ -221,18 +220,18 @@ export default function UpcomingAppointments({
       <div className="border-t border-slate-100 dark:border-slate-700 px-5 pt-4 pb-5">
         {filteredApts.length === 0 ? (
           <div className="py-10 text-center text-slate-400 text-sm">
-            لا توجد مواعيد في هذا اليوم
+            {t("doctor_dashboard.upcoming.no_appointments")}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
                 <tr className="text-slate-400 dark:text-slate-500 text-xs border-b border-slate-100 dark:border-slate-700">
-                  <th className="pb-3 text-right font-medium pr-1">نوع الموعد</th>
-                  <th className="pb-3 text-right font-medium">المريض</th>
-                  <th className="pb-3 text-right font-medium">التاريخ والوقت</th>
-                  <th className="pb-3 text-right font-medium">المصدر</th>
-                  <th className="pb-3 text-right font-medium">الإجراءات</th>
+                  <th className="pb-3 text-right font-medium pr-1">{t("doctor_dashboard.upcoming.table.type")}</th>
+                  <th className="pb-3 text-right font-medium">{t("doctor_dashboard.upcoming.table.patient")}</th>
+                  <th className="pb-3 text-right font-medium">{t("doctor_dashboard.upcoming.table.time")}</th>
+                  <th className="pb-3 text-right font-medium">{t("doctor_dashboard.upcoming.table.source")}</th>
+                  <th className="pb-3 text-right font-medium">{t("doctor_dashboard.upcoming.table.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -263,7 +262,7 @@ export default function UpcomingAppointments({
                     </td>
                     <td className="py-3">
                       <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {format(parseLocalYmd(apt.date), "d MMM", { locale: ar })}،{" "}
+                        {format(parseLocalYmd(apt.date), "d MMM", { locale: dateLocale })}،{" "}
                         {apt.startTime}
                         {apt.endTime ? ` - ${apt.endTime}` : ""}
                       </span>
@@ -273,7 +272,7 @@ export default function UpcomingAppointments({
                         variant={apt.source === "platform" ? "default" : "secondary"}
                         className="text-[10px] px-2"
                       >
-                        {apt.source === "platform" ? "منصة" : "عيادة"}
+                        {apt.source === "platform" ? t("doctor_dashboard.table.source_platform") : t("doctor_dashboard.table.source_clinic")}
                       </Badge>
                     </td>
                     <td className="py-3">

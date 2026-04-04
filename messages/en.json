@@ -1,0 +1,593 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "patients": "Patients",
+    "appointments": "Appointments",
+    "reports": "Reports",
+    "settings": "Settings",
+    "logout": "Logout",
+    "email": "Email",
+    "phone": "Phone",
+    "search": "Search...",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "print": "Print",
+    "language": "Language",
+    "arabic": "Arabic",
+    "hebrew": "Hebrew",
+    "english": "English",
+    "year": "Year",
+    "minutes": "min",
+    "print_pdf": "Print / PDF",
+    "confirm_delete": "Confirm Delete",
+    "irreversible_action": "This action cannot be undone",
+    "yes_delete": "Yes, Delete",
+    "save_changes": "Save Changes",
+    "date": "Date",
+    "start": "Start",
+    "end": "End",
+    "appointment": "Appointment",
+    "gender": "Gender"
+  },
+  "sidebar": {
+    "sections": {
+      "main": "Main",
+      "messages": "Messages",
+      "clinic": "Clinic",
+      "store": "Store",
+      "admin": "Admin",
+      "services": "Services",
+      "settings": "Settings"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "patients": "Patients",
+      "appointments": "Appointments",
+      "my_appointments": "My Appointments",
+      "send": "Send",
+      "history": "History",
+      "reports": "Reports",
+      "clinics_and_schedules": "Clinics & Schedules",
+      "staff": "Clinic Staff",
+      "suppliers": "Suppliers",
+      "expenses": "Expenses",
+      "offers": "Offers",
+      "products": "Products",
+      "settings": "Settings",
+      "doctors": "Doctors",
+      "medical_centers": "Medical Centers",
+      "users": "Users",
+      "subscriptions": "Subscriptions",
+      "employees": "Employees",
+      "bookings": "Bookings",
+      "lab_imaging": "Lab & Imaging",
+      "finance": "Finance",
+      "emergency": "Emergency",
+      "center_settings": "Center Settings",
+      "reviews": "Reviews"
+    }
+  },
+  "roles": {
+    "doctor": "Doctor",
+    "patient": "Patient",
+    "medical_center": "Medical Center",
+    "receptionist": "Receptionist",
+    "lab_staff": "Lab Staff",
+    "clinic_staff": "Clinic Staff",
+    "admin": "Admin",
+    "platform_admin": "Platform Admin",
+    "clinic_admin": "Clinic Admin"
+  },
+  "dashboard": {
+    "welcome": "Welcome,",
+    "total_patients": "Total Patients",
+    "today_appointments": "Today's Appointments",
+    "total_earnings": "Total Earnings"
+  },
+  "header": {
+    "day_mode": "Day Mode",
+    "night_mode": "Night Mode",
+    "refresh": "Refresh"
+  },
+  "user_menu": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "navbar": {
+    "medical_centers": "Medical Centers",
+    "doctors": "Doctors",
+    "specialties": "Specialties",
+    "about": "About",
+    "profile": "Profile",
+    "my_page": "My Page",
+    "my_appointments": "My Appointments",
+    "my_transactions": "Transactions",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "theme_toggle": "Toggle Dark Mode",
+    "menu_open": "Open Menu",
+    "menu_close": "Close Menu"
+  },
+  "doctor_dashboard": {
+    "status": {
+      "pending_title": "Account Under Review",
+      "pending_desc": "Thank you for registering on Tabibi. Your request will be reviewed by our team and you will be notified of acceptance soon.",
+      "pending_duration": "Review period: 24-48 business hours",
+      "rejected_title": "Dashboard",
+      "rejected_desc": "Your registration request has been rejected. Please contact the administrator to inquire about the reason.",
+      "rejected_admin": "Consult administrator"
+    },
+    "stats": {
+      "patients": "Patients",
+      "total_earnings": "Total Earnings",
+      "earnings_platform": "From Platform",
+      "total_appointments": "Total Appointments",
+      "treatments": "Treatments"
+    },
+    "sections": {
+      "booking_requests": "Booking Requests",
+      "view_all": "View All",
+      "no_pending_requests": "No pending requests",
+      "financial_summary": "Last 5 Transactions",
+      "reports_link": "Reports"
+    },
+    "table": {
+      "date": "Date",
+      "patient": "Patient",
+      "source": "Source",
+      "type": "Type",
+      "amount": "Amount",
+      "source_clinic": "Clinic",
+      "source_platform": "Platform",
+      "type_payment": "Payment",
+      "type_debt": "Debt"
+    },
+    "subscription": {
+      "title": "Subscription:",
+      "monthly": "Monthly ₪80",
+      "half_year": "6 Months ₪400",
+      "yearly": "Yearly ₪800",
+      "expires": "Expires:",
+      "days_left": "{days} days left",
+      "expired": "Expired"
+    },
+    "warnings": {
+      "add_clinic_title": "⚠️ Add Your Clinic",
+      "add_clinic_desc": "You haven't added a clinic yet. Add your clinic to start receiving patients.",
+      "add_clinic_btn": "Add Clinic"
+    },
+    "medical_center_invites": {
+      "title": "Invite to Join Medical Center",
+      "desc": "Your clinic dues are shown here for review before acceptance. Patient fees and service types are determined by the center.",
+      "clinic_due_label": "Your Clinic Dues (₪)",
+      "center_suggestion": "Center suggestion: ₪{amount} — You can adjust before accepting",
+      "accept_btn": "Accept & Join",
+      "reject_btn": "Reject",
+      "processing": "Processing...",
+      "toasts": {
+        "error_amount": "Enter your clinic dues correctly",
+        "fetch_error": "Could not load center invites",
+        "conn_error": "Server connection error",
+        "action_error": "Could not execute request",
+        "generic_error": "An error occurred",
+        "success": "Success"
+      }
+    },
+    "upcoming": {
+      "title": "Upcoming Appointments",
+      "next_month": "Next Month",
+      "prev_month": "Previous Month",
+      "no_days": "No days available this month",
+      "no_appointments": "No appointments on this day",
+      "table": {
+        "type": "Appointment Type",
+        "patient": "Patient",
+        "time": "Date & Time",
+        "source": "Source",
+        "actions": "Actions"
+      }
+    },
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "completed": "Completed",
+      "no_show": "No Show",
+      "toast": {
+        "completed": "Appointment marked as completed",
+        "no_show": "Patient marked as no-show",
+        "confirmed": "Booking approved",
+        "cancelled": "Booking rejected",
+        "error": "Update error",
+        "generic_error": "An error occurred"
+      }
+    },
+    "finance": {
+      "title": "Financial Brief",
+      "desc": "Charts: Collections, approx earnings, clinic expenses vs receivables flow",
+      "expenses_btn": "Clinic Expenses",
+      "reports_btn": "Financial Reports",
+      "net_approx": "Approx Net (Coll − Exp):",
+      "receivables_approx": "Current Receivables:",
+      "thousand": "k",
+      "million": "M",
+      "chart_earnings_title": "Collections & Approx Earnings",
+      "chart_earnings_sub": "Electronic collections (Stripe), doctor share from completed bookings, and total collections (including manual payments)",
+      "chart_expenses_title": "Clinic Expenses & Receivables Flow",
+      "chart_expenses_sub": "Recorded ledger expenses, and net 'service - payment' during the month (approx change in receivables)",
+      "legend": {
+        "stripe": "Electronic (Platform)",
+        "share": "Doctor's Share",
+        "total": "Total Collections",
+        "expenses": "Clinic Expenses",
+        "receivables_flow": "Net Srv-Pay (Flow)"
+      }
+    },
+    "patients": {
+      "title": "Patients",
+      "search_placeholder": "Search for a patient...",
+      "add_patient": "Add Patient",
+      "no_results": "No results found",
+      "no_patients": "No patients found",
+      "patient_count": "{count} patients",
+      "appointment_count": "{count} appointments",
+      "my_clinic": "My Clinic",
+      "medical_center": "Medical Center",
+      "ownership_local": "My Clinic",
+      "back_to_list": "Back to List",
+      "file_label": "File #{num}",
+      "tabs": {
+        "info": "Info",
+        "visits": "Visits",
+        "transactions": "Transactions",
+        "medical": "Medical Files",
+        "report": "Medical Report",
+        "careplan": "Care Plan",
+        "dental": "Dental Chart",
+        "dental_plan": "Dental Plan"
+      },
+      "empty_state": {
+        "select_patient": "Select a patient from the list",
+        "add_patient_sub": "Or add a new patient"
+      },
+      "sidebar_title": "List",
+      "info_section": {
+        "title": "Patient Info",
+        "edit_btn": "Edit",
+        "no_data": "No additional data recorded",
+        "file_number": "File Number",
+        "gender": "Gender",
+        "dob": "Date of Birth",
+        "blood_type": "Blood Type",
+        "address": "Address",
+        "email": "Email",
+        "phone": "Phone"
+      },
+      "report_section": {
+        "title": "Emergency Report",
+        "no_report": "No emergency report recorded",
+        "complaint": "Complaint",
+        "notes": "Notes",
+        "created_at": "Created At",
+        "amount": "Amount",
+        "payment_status": "Payment Status",
+        "payment_method": "Payment Method"
+      },
+      "tx_section": {
+        "summary": {
+          "services": "Total Services",
+          "payments": "Total Payments",
+          "balance": "Remaining Balance"
+        },
+        "print_btn": "Print Transactions",
+        "new_service_btn": "New Service",
+        "new_payment_btn": "New Payment",
+        "no_transactions": "No transactions recorded",
+        "table": {
+          "debts": "Services",
+          "payments": "Payments"
+        },
+        "form": {
+          "service_placeholder": "Service name...",
+          "payment_placeholder": "Payment description...",
+          "amount_placeholder": "Amount..."
+        }
+      },
+      "visits_section": {
+        "title": "Visit History ({count})",
+        "new_apt_btn": "New Appointment",
+        "no_visits": "No visits recorded",
+        "default_title": "Appointment on {date}",
+        "fee_label": "Fee: ₪{amount}",
+        "form": {
+          "title_placeholder": "Appointment title...",
+          "notes_placeholder": "Medical notes...",
+          "channel_center": "Medical Center",
+          "channel_clinic": "Private Clinic"
+        }
+      },
+      "transactions": {
+        "new_service": "New Service",
+        "new_payment": "Record Payment",
+        "service_name_placeholder": "Service name...",
+        "payment_desc_placeholder": "Payment description...",
+        "no_transactions": "No recorded transactions",
+        "debts": "Debts",
+        "payments": "Payments"
+      },
+      "upcoming": {
+        "new_apt": "New Appointment",
+        "apt_title_placeholder": "Appointment title...",
+        "notes_placeholder": "Medical notes: complaints, diagnosis, treatment...",
+        "no_visits": "No recorded visits",
+        "channel_center": "Medical Center (shown in center bookings)",
+        "channel_clinic": "Private Clinic (not shown in center)"
+      },
+      "medical": {
+        "title": "Medical Records & Reports",
+        "add_report": "Add Medical Report / Notes",
+        "print_pdf": "Medical Report PDF",
+        "allergies_label": "Allergies / Warnings",
+        "complaint_label": "Main Complaint",
+        "vitals_title": "Vitals & Physical Exam",
+        "bp": "BP",
+        "temp": "Temp",
+        "pulse": "Pulse",
+        "physical_exam_placeholder": "Detailed physical exam results...",
+        "investigations_label": "Investigations",
+        "investigations_placeholder": "Lab or imaging results...",
+        "diagnosis_label": "Diagnosis",
+        "diagnosis_placeholder": "Final diagnosis...",
+        "treatment_label": "Treatment & Recommendations",
+        "treatment_placeholder": "Prescribed meds and next steps...",
+        "sick_leave_title": "Sick Leave",
+        "days_label": "Days:",
+        "official_report_tag": "Official Medical Report",
+        "visits_history": "Medical Visits History",
+        "edit_report": "Edit Report",
+        "save_edits": "Save Edits",
+        "complaints_full": "Common Complaints",
+        "diagnosis_and_icd": "Diagnosis & ICD Code",
+        "sick_leave_count": "Sick Leave: {count} days"
+      },
+      "info_card": {
+        "age": "Age: {age} years",
+        "gender": "Gender: {gender}",
+        "phone": "Phone: {phone}",
+        "file_number": "File: {num}",
+        "balance": "Balance: {balance}",
+        "last_visit": "Last Visit: {date}",
+        "total_services": "Total Services",
+        "total_payments": "Total Payments",
+        "balance_label": "Balance",
+        "last_visit_label": "Last Visit",
+        "file_type_label": "File Type",
+        "visit_count_label": "Visit Count",
+        "age_label": "Age",
+        "years": "years"
+      },
+      "apt_status": {
+        "scheduled": "Scheduled",
+        "draft": "Draft",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No Show"
+      },
+      "table": {
+        "date": "Date",
+        "status": "Status",
+        "type": "Type",
+        "patient": "Patient",
+        "amount": "Amount",
+        "actions": "Actions",
+        "description": "Description"
+      },
+      "modals": {
+        "add_patient_title": "Add New Patient",
+        "add_patient_desc": "Patient details in clinic (name, phone, email, file number, notes)",
+        "edit_patient_title": "Edit Patient Info",
+        "name": "Full Name",
+        "phone": "WhatsApp / Phone",
+        "email": "Email (Optional)",
+        "file_number": "File Number",
+        "gender": "Gender",
+        "dob": "Date of Birth",
+        "address": "Address",
+        "blood_type": "Blood Type",
+        "allergies": "Allergies & Warnings",
+        "notes": "Additional Notes",
+        "save": "Save",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "gender_male": "Male",
+        "gender_female": "Female"
+      },
+      "toasts": {
+        "name_required": "Name is required",
+        "add_success": "Patient added ✓",
+        "update_success": "Patient updated ✓",
+        "delete_success": "Deleted successfully",
+        "error": "An error occurred",
+        "conn_error": "Connection error",
+        "service_added": "Service added ✓",
+        "payment_added": "Payment recorded ✓",
+        "apt_added": "Appointment added ✓",
+        "desc_amount_required": "Description and Amount are required",
+        "clinic_required": "Please select a clinic",
+        "sms_sent": "SMS/WhatsApp sent to patient.",
+        "sms_not_sent": "Message could not be sent."
+      },
+      "dialogs": {
+        "imaging": {
+          "title": "Add Imaging",
+          "description": "Upload an imaging file (JPG/PNG/PDF/DICOM). It will be linked to the patient's record and appear in 'Medical Files'.",
+          "title_placeholder": "e.g., Dental X-ray — before/after",
+          "notes_placeholder": "e.g., Brief report, imaging center...",
+          "dicom_note": "Note: Viewing DICOM files in the browser requires a special viewer — currently they will be saved and opened as a link.",
+          "upload_btn": "Upload and Link to Record",
+          "error_no_file": "Select a file",
+          "error_no_title": "Title is required",
+          "error_upload": "File upload failed",
+          "success_upload": "Imaging file uploaded"
+        },
+        "add": {
+          "title": "Add New Patient",
+          "name_label": "Full Name *",
+          "name_placeholder": "Mohammad Ahmad",
+          "file_number_label": "File Number",
+          "file_number_placeholder": "001",
+          "address_placeholder": "Hebron, Old City",
+          "submit_btn": "Add Patient"
+        },
+        "edit": {
+          "title": "Edit Patient Info",
+          "name_label": "Full Name *",
+          "name_placeholder": "Mohammad Ahmad",
+          "file_number_label": "File Number",
+          "file_number_placeholder": "001",
+          "phone_placeholder": "0599xxxxxx (for SMS messages)",
+          "address_placeholder": "Hebron, Old City"
+        },
+        "delete": {
+          "confirm_clear_notes": "Are you sure you want to clear general medical notes for this patient?",
+          "confirm_note": "Are you sure you want to delete this medical note?",
+          "confirm_tx": "Are you sure you want to delete this transaction? You won't be able to retrieve it later."
+        }
+      },
+      "medical_section": {
+        "title": "Medical Records & Reports",
+        "imaging_new_title": "New Imaging",
+        "imaging_btn_title": "Attach X-rays or medical documents (JPG, PNG, PDF, DICOM)",
+        "imaging_btn": "Add Imaging",
+        "report_btn_title": "Generates a PDF report from the last saved medical note",
+        "report_btn": "Medical Report PDF",
+        "add_notes_btn": "Add Medical Report / Notes",
+        "official_report_tag": "Official Medical Report",
+        "form": {
+          "allergies_label": "Allergies / Warnings",
+          "allergies_placeholder": "e.g., Penicillin allergy...",
+          "complaints_label": "Main Complaint (Complaints)",
+          "complaints_placeholder": "What is the patient currently complaining of?",
+          "vitals_section": "Vitals & Physical Exam",
+          "vitals": {
+            "bp": "BP",
+            "temp": "Temp",
+            "pulse": "Pulse"
+          },
+          "physical_exam_placeholder": "Detailed physical exam results...",
+          "investigations_label": "Investigations",
+          "investigations_placeholder": "Lab or imaging results...",
+          "diagnosis_label": "Diagnosis",
+          "diagnosis_placeholder": "Final diagnosis...",
+          "treatment_label": "Treatment & Recommendations",
+          "treatment_placeholder": "Prescribed meds and next steps...",
+          "sick_leave_title": "Sick Leave",
+          "days_label": "Days:"
+        }
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "choose_account": "Choose your account type",
+      "patient": "Patient",
+      "patient_subtitle": "Your appointments and account",
+      "doctor": "Doctor",
+      "doctor_subtitle": "Dashboard",
+      "medical_center": "Medical Center",
+      "medical_center_subtitle": "Center Management",
+      "forgot_password": "Forgot password?",
+      "no_account": "Don't have an account?",
+      "create_account": "Create new account",
+      "new_medical_center": "New medical center?",
+      "register_medical_center": "Register as medical center",
+      "rate_limited": "Rate limit exceeded. Please try again in 15 minutes."
+    },
+    "register": {
+      "title": "Create New Account",
+      "choose_account": "Choose your account type",
+      "patient": "Patient",
+      "patient_subtitle": "Book your appointments easily",
+      "doctor": "Doctor",
+      "doctor_subtitle": "Join Tabibi Network",
+      "medical_center": "Medical Center",
+      "medical_center_subtitle": "Center Management Dashboard",
+      "has_account": "Already have an account?",
+      "login": "Login"
+    },
+    "doctor_login": {
+      "title": "Doctor Login",
+      "desc": "Enter your email and password",
+      "email": "Email",
+      "password": "Password",
+      "forgot_password": "Forgot password?",
+      "submit": "Login",
+      "submitting": "Logging in...",
+      "no_account": "Don't have a doctor account?",
+      "register": "Create doctor account",
+      "patient_login": "Patient Login",
+      "medical_center": "Medical Center"
+    },
+    "patient_login": {
+      "title": "Patient Login",
+      "verify_title": "Phone Verification",
+      "otp_desc": "Enter the verification code sent to {phone}",
+      "otp_input_desc": "Enter your phone number to receive a verification code",
+      "password_input_desc": "Enter your phone number and password",
+      "phone": "Phone Number",
+      "password": "Password",
+      "forgot_password": "Forgot password?",
+      "submit_otp": "Send Verification Code",
+      "submit_password": "Login",
+      "submitting": "Logging in...",
+      "sending": "Sending...",
+      "or": "OR",
+      "login_password": "Login with password",
+      "login_otp": "Login with verification code (easier)",
+      "otp_placeholder": "0 0 0 0 0 0",
+      "otp_instruction": "Enter the 6-digit code",
+      "confirm": "Confirm Login",
+      "verifying": "Verifying...",
+      "change_phone": "Change phone number",
+      "no_account": "Don't have an account?",
+      "register": "Create patient account",
+      "doctor_login": "Doctor Login",
+      "medical_center": "Medical Center"
+    },
+    "medical_center_login": {
+      "title": "Medical Center Login",
+      "desc": "Admin email and password (same as registration)",
+      "email": "Email",
+      "password": "Password",
+      "forgot_password": "Forgot password?",
+      "submit": "Login",
+      "submitting": "Logging in...",
+      "no_account": "Don't have a center account?",
+      "register": "Register as medical center",
+      "other_logins": "Other login types"
+    },
+    "errors": {
+      "invalid_email": "Invalid email address",
+      "invalid_phone": "Invalid phone number",
+      "password_min": "Password must be at least 6 characters",
+      "invalid_credentials": "Invalid email or password",
+      "invalid_otp": "Invalid verification code",
+      "phone_required": "Please enter a valid phone number",
+      "otp_failed": "Failed to send verification code",
+      "conn_error": "Server connection error",
+      "generic_error": "An error occurred, please try again",
+      "network_error": "Connection error. Check your internet and try again."
+    },
+    "success": {
+      "login_ok": "Logged in successfully!",
+      "otp_sent": "Verification code sent successfully ✓"
+    }
+  }
+}

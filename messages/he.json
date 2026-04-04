@@ -1,0 +1,593 @@
+{
+  "common": {
+    "dashboard": "לוח בקרה",
+    "patients": "מטופלים",
+    "appointments": "תורים",
+    "reports": "דוחות",
+    "settings": "הגדרות",
+    "logout": "התנתקות",
+    "email ":"דואל",
+    "phone": "טלפון",
+    "search": "חיפוש...",
+    "add": "הוספה",
+    "save": "שמירה",
+    "cancel": "ביטול",
+    "delete": "מחיקה",
+    "edit": "עריכה",
+    "print": "הדפסה",
+    "language": "שפה",
+    "arabic": "ערבית",
+    "hebrew": "עברית",
+    "english": "אנגלית",
+    "year": "שנה",
+    "minutes": "דק'",
+    "print_pdf": "הדפסה / PDF",
+    "confirm_delete": "אישור מחיקה",
+    "irreversible_action": "פעולה זו אינה ניתנת לביטול",
+    "yes_delete": "כן, מחק",
+    "save_changes": "שמור שינויים",
+    "date": "תאריך",
+    "start": "התחלה",
+    "end": "סיום",
+    "appointment": "תור",
+    "gender": "מין"
+  },
+  "sidebar": {
+    "sections": {
+      "main": "ראשי",
+      "messages": "הודעות",
+      "clinic": "מרפאה",
+      "store": "חנות",
+      "admin": "ניהול",
+      "services": "שירותים",
+      "settings": "הגדרות"
+    },
+    "items": {
+      "dashboard": "ראשי",
+      "patients": "מטופלים",
+      "appointments": "תורים",
+      "my_appointments": "התורים שלי",
+      "send": "שלח",
+      "history": "היסטוריה",
+      "reports": "דוחות",
+      "clinics_and_schedules": "מרפאות ולוחות זמנים",
+      "staff": "צוות המרפאה",
+      "suppliers": "ספקים",
+      "expenses": "הוצאות",
+      "offers": "מבצעים",
+      "products": "מוצרים",
+      "settings": "הגדרות",
+      "doctors": "רופאים",
+      "medical_centers": "מרכזים רפואיים",
+      "users": "משתמשים",
+      "subscriptions": "מנויים",
+      "employees": "עובדים",
+      "bookings": "הזמנות",
+      "lab_imaging": "מעבדה והדמיה",
+      "finance": "כספים",
+      "emergency": "חירום",
+      "center_settings": "הגדרות מרכז",
+      "reviews": "ביקורות"
+    }
+  },
+  "roles": {
+    "doctor": "רופא",
+    "patient": "מטופל",
+    "medical_center": "מרכז רפואי",
+    "receptionist": "פקיד קבלה",
+    "lab_staff": "צוות מעבדה",
+    "clinic_staff": "צוות מרפאה",
+    "admin": "מנהל",
+    "platform_admin": "מנהל פלטפורמה",
+    "clinic_admin": "מנהל מרפאה"
+  },
+  "dashboard": {
+    "welcome": "ברוך הבא,",
+    "total_patients": "סה\"כ מטופלים",
+    "today_appointments": "תורים היום",
+    "total_earnings": "סה\"כ רווחים"
+  },
+  "header": {
+    "day_mode": "מצב יום",
+    "night_mode": "מצב לילה",
+    "refresh": "רענון"
+  },
+  "user_menu": {
+    "profile": "פרופיל",
+    "settings": "הגדרות",
+    "logout": "התנתקות"
+  },
+  "navbar": {
+    "medical_centers": "מרכזים רפואיים",
+    "doctors": "רופאים",
+    "specialties": "התמחויות",
+    "about": "אודות",
+    "profile": "פרופיל",
+    "my_page": "העמוד שלי",
+    "my_appointments": "התורים שלי",
+    "my_transactions": "העסקאות שלי",
+    "dashboard": "לוח בקרה",
+    "logout": "התנתקות",
+    "login": "התחברות",
+    "register": "הרשמה",
+    "theme_toggle": "החלפת מצב תצוגה",
+    "menu_open": "פתח תפריט",
+    "menu_close": "סגור תפריט"
+  },
+  "doctor_dashboard": {
+    "status": {
+      "pending_title": "חשבונך בבדיקה",
+      "pending_desc": "תודה שנרשמת ל-Tabibi. בקשתך תיבדק על ידי הצוות שלנו ותקבל הודעת אישור בקרוב.",
+      "pending_duration": "זמן בדיקה: 24-48 שעות עבודה",
+      "rejected_title": "לוח בקרה",
+      "rejected_desc": "בקשת הרישום שלך נדחתה. נא פנה למנהל המערכת לבירור הסיבה.",
+      "rejected_admin": "יש לפנות למנהל המערכת"
+    },
+    "stats": {
+      "patients": "מטופלים",
+      "total_earnings": "סה\"כ רווח",
+      "earnings_platform": "מהפלטפורמה",
+      "total_appointments": "סה\"כ תורים",
+      "treatments": "טיפולים"
+    },
+    "sections": {
+      "booking_requests": "בקשות להזמנה",
+      "view_all": "הצג הכל",
+      "no_pending_requests": "אין בקשות ממתינות",
+      "financial_summary": "5 עסקאות אחרונות",
+      "reports_link": "דוחות"
+    },
+    "table": {
+      "date": "תאריך",
+      "patient": "מטופל",
+      "source": "מקור",
+      "type": "סוג",
+      "amount": "סכום",
+      "source_clinic": "מרפאה",
+      "source_platform": "פלטפורמה",
+      "type_payment": "תשלום",
+      "type_debt": "חוב"
+    },
+    "subscription": {
+      "title": "מנוי:",
+      "monthly": "חודשי ₪80",
+      "half_year": "חצי שנה ₪400",
+      "yearly": "שנה ₪800",
+      "expires": "פוגע:",
+      "days_left": "נותרו {days} ימים",
+      "expired": "פג תוקף"
+    },
+    "warnings": {
+      "add_clinic_title": "⚠️ הוסף את המרפאה שלך",
+      "add_clinic_desc": "טרם הוספת מרפאה. הוסף את המרפאה שלך כדי להתחיל לקבל מטופלים.",
+      "add_clinic_btn": "הוספת מרפאה"
+    },
+    "medical_center_invites": {
+      "title": "הזמנה להצטרף למרכז רפואי",
+      "desc": "כאן מופיעים דמי המרפאה שלך לבדיקה לפני אישור. דמי המטופל וסוגי השירות נקבעים על ידי המרכז.",
+      "clinic_due_label": "דמי המרפאה שלך (₪)",
+      "center_suggestion": "הצעת המרכז: ₪{amount} — ניתן לשנות לפני האישור",
+      "accept_btn": "אישור והצטרפות",
+      "reject_btn": "דחייה",
+      "processing": "מעבד...",
+      "toasts": {
+        "error_amount": "הזן את דמי המרפאה בצורה תקינה",
+        "fetch_error": "לא ניתן לטעון הזמנות מהמרכז",
+        "conn_error": "שגיאת חיבור לשרת",
+        "action_error": "לא ניתן לבצע את הבקשה",
+        "generic_error": "אירעה שגיאה",
+        "success": "בוצע בהצלחה"
+      }
+    },
+    "upcoming": {
+      "title": "תורים קרובים",
+      "next_month": "החודש הבא",
+      "prev_month": "החודש הקודם",
+      "no_days": "אין ימים פנויים בחודש זה",
+      "no_appointments": "אין תורים ביום זה",
+      "table": {
+        "type": "סוג תור",
+        "patient": "מטופל",
+        "time": "תאריך ושעה",
+        "source": "מקור",
+        "actions": "פעולות"
+      }
+    },
+    "actions": {
+      "accept": "אישור",
+      "reject": "דחייה",
+      "completed": "בוצע",
+      "no_show": "לא הגיע",
+      "toast": {
+        "completed": "התור סומן כבוצע",
+        "no_show": "המטופל סומן כלא הגיע",
+        "confirmed": "ההזמנה אושרה",
+        "cancelled": "ההזמנה נדחתה",
+        "error": "שגיאת עדכון",
+        "generic_error": "אירעה שגיאה"
+      }
+    },
+    "finance": {
+      "title": "מבט פיננסי מהיר",
+      "desc": "תרשימים ותקציר פיננסי",
+      "expenses_btn": "הוצאות מרפאה",
+      "reports_btn": "דוחות",
+      "net_approx": "נטו משוער (גבייה - הוצאות):",
+      "receivables_approx": "חובות נוכחיים:",
+      "thousand": "אלף",
+      "million": "מיליון",
+      "chart_earnings_title": "גבייה ורווחים משוערים",
+      "chart_earnings_sub": "גבייה אלקטרונית וחלק הרופא",
+      "chart_expenses_title": "הוצאות ותזרים חובות",
+      "chart_expenses_sub": "הוצאות רשומות ושינוי בחובות",
+      "legend": {
+        "stripe": "גבייה אלקטרונית",
+        "share": "חלק הרופא",
+        "total": "סה\"כ גבייה",
+        "expenses": "הוצאות מרפאה",
+        "receivables_flow": "תזרים חובות"
+      }
+    },
+    "patients": {
+      "title": "מטופלים",
+      "search_placeholder": "חפש מטופל...",
+      "add_patient": "הוספת מטופל",
+      "no_results": "לא נמצאו תוצאות",
+      "no_patients": "אין מטופלים",
+      "patient_count": "{count} מטופלים",
+      "appointment_count": "{count} תורים",
+      "my_clinic": "המרפאה שלי",
+      "medical_center": "מרכז רפואי",
+      "ownership_local": "המרפאה שלי",
+      "back_to_list": "חזרה לרשימה",
+      "file_label": "תיק #{num}",
+      "tabs": {
+        "info": "פרטים",
+        "visits": "ביקורים",
+        "transactions": "עסקאות",
+        "medical": "תיקים רפואיים",
+        "report": "דוח רפואי",
+        "careplan": "תוכנית טיפול",
+        "dental": "מפת שיניים",
+        "dental_plan": "תוכנית שיניים"
+      },
+      "empty_state": {
+        "select_patient": "בחר מטופל מהרשימה",
+        "add_patient_sub": "או הוסף מטופל חדש"
+      },
+      "sidebar_title": "תפריט",
+      "info_section": {
+        "title": "פרטי המטופל",
+        "edit_btn": "עריכה",
+        "no_data": "אין נתונים נוספים רשומים",
+        "file_number": "מספר תיק",
+        "gender": "מין",
+        "dob": "תאריך לידה",
+        "blood_type": "סוג דם",
+        "address": "כתובת",
+        "email": "אימייל",
+        "phone": "טלפון"
+      },
+      "report_section": {
+        "title": "דוח חירום",
+        "no_report": "אין דוח חירום רשום",
+        "complaint": "תלונה",
+        "notes": "הערות",
+        "created_at": "תאריך יצירה",
+        "amount": "סכום",
+        "payment_status": "סטטוס תשלום",
+        "payment_method": "שיטת תשלום"
+      },
+      "tx_section": {
+        "summary": {
+          "services": "סה\"כ שירותים",
+          "payments": "סה\"כ תשלומים",
+          "balance": "יתרה נותרת"
+        },
+        "print_btn": "הדפסת עסקאות",
+        "new_service_btn": "שירות חדש",
+        "new_payment_btn": "תשלום חדש",
+        "no_transactions": "אין עסקאות רשומות",
+        "table": {
+          "debts": "שירותים",
+          "payments": "תשלומים"
+        },
+        "form": {
+          "service_placeholder": "שם השירות...",
+          "payment_placeholder": "תיאור התשלום...",
+          "amount_placeholder": "סכום..."
+        }
+      },
+      "medical": {
+        "title": "רישומים רפואיים ודוחות",
+        "add_report": "הוספת דוח רפואי / הערות",
+        "print_pdf": "דוח רפואי PDF",
+        "allergies_label": "אלרגיות / אזהרות",
+        "complaint_label": "תלונה מרכזית",
+        "vitals_title": "מדדים ובדיקה גופנית",
+        "bp": "ל\"ד",
+        "temp": "חום",
+        "pulse": "דופק",
+        "physical_exam_placeholder": "תוצאות בדיקה גופנית מפורטת...",
+        "investigations_label": "בדיקות",
+        "investigations_placeholder": "תוצאות מעבדה או דימות...",
+        "diagnosis_label": "אבחנה",
+        "diagnosis_placeholder": "אבחנה סופית...",
+        "treatment_label": "טיפול והמלצות",
+        "treatment_placeholder": "תרופות שנרשמו וצעדים הבאים...",
+        "sick_leave_title": "חופשת מחלה",
+        "days_label": "ימים:",
+        "official_report_tag": "דוח רפואי רשמי",
+        "visits_history": "היסטוריית ביקורים רפואיים",
+        "edit_report": "עריכת דוח",
+        "save_edits": "שמור שינויים",
+        "complaints_full": "תלונות מרכזיות",
+        "diagnosis_and_icd": "אבחנה וקוד ICD",
+        "sick_leave_count": "חופשת מחלה: {count} ימים"
+      },
+      "visits_section": {
+        "title": "היסטוריית ביקורים ({count})",
+        "new_apt_btn": "תור חדש",
+        "no_visits": "אין ביקורים רשומים",
+        "default_title": "תור בתאריך {date}",
+        "fee_label": "בדיקה: ₪{amount}",
+        "form": {
+          "title_placeholder": "כותרת התור...",
+          "notes_placeholder": "הערות רפואיות...",
+          "channel_center": "מרכז רפואי",
+          "channel_clinic": "מרפאה פרטית"
+        }
+      },
+      "transactions": {
+        "new_service": "שירות חדש",
+        "new_payment": "רישום תשלום",
+        "service_name_placeholder": "שם השירות...",
+        "payment_desc_placeholder": "תיאור התשלום...",
+        "no_transactions": "אין עסקאות רשומות",
+        "debts": "חובות",
+        "payments": "תשלומים"
+      },
+      "upcoming": {
+        "new_apt": "תור חדש",
+        "apt_title_placeholder": "כותרת התור...",
+        "notes_placeholder": "הערות רפואיות: תלונות, אבחנה, טיפול מומלץ...",
+        "no_visits": "אין ביקורים רשומים",
+        "channel_center": "מרכז רפואי (מופיע בהזמנות המרכז)",
+        "channel_clinic": "מרפאה פרטית (לא מופיע במרכז)"
+      },
+      "info_card": {
+        "age": "גיל: {age} שנים",
+        "gender": "מין: {gender}",
+        "phone": "טלפון: {phone}",
+        "file_number": "תיק: {num}",
+        "balance": "יתרה: {balance}",
+        "last_visit": "ביקור אחרון: {date}",
+        "total_services": "סה\"כ שירותים",
+        "total_payments": "סה\"כ תשלומים",
+        "balance_label": "יתרה",
+        "last_visit_label": "ביקור אחרון",
+        "file_type_label": "סוג תיק",
+        "visit_count_label": "מספר ביקורים",
+        "age_label": "גיל",
+        "years": "שנים"
+      },
+      "apt_status": {
+        "scheduled": "מוזמן",
+        "draft": "טיוטה",
+        "confirmed": "מאושר",
+        "completed": "בוצע",
+        "cancelled": "בוטל",
+        "no_show": "לא הגיע"
+      },
+      "table": {
+        "date": "תאריך",
+        "status": "סטטוס",
+        "type": "סוג",
+        "patient": "מטופל",
+        "amount": "סכום",
+        "actions": "פעולות",
+        "description": "תיאור"
+      },
+      "modals": {
+        "add_patient_title": "הוספת מטופל חדש",
+        "add_patient_desc": "פרטי מטופל במרפאה (שם, טלפון, אימייל, מספר תיק, הערות)",
+        "edit_patient_title": "עריכת פרטי מטופל",
+        "name": "שם מלא",
+        "phone": "וואטסאפ / טלפון",
+        "email": "אימייל (אופציונלי)",
+        "file_number": "מספר תיק",
+        "gender": "מין",
+        "dob": "תאריך לידה",
+        "address": "כתובת",
+        "blood_type": "סוג דם",
+        "allergies": "אלרגיות ואזהרות",
+        "notes": "הערות נוספות",
+        "save": "שמירה",
+        "cancel": "ביטול",
+        "saving": "שומר...",
+        "gender_male": "זכר",
+        "gender_female": "נקבה"
+      },
+      "toasts": {
+        "name_required": "חובה להזין שם",
+        "add_success": "מטופל נוסף בהצלחה ✓",
+        "update_success": "פרטי המטופل עודכנו ✓",
+        "delete_success": "נמחק בהצלחה",
+        "error": "אירעה שגיאה",
+        "conn_error": "שגיאת חיבור",
+        "service_added": "שירות נוסף ✓",
+        "payment_added": "תשלום נרשם ✓",
+        "apt_added": "תור נוסף ✓",
+        "desc_amount_required": "חובה להזין תיאור וסכوم",
+        "clinic_required": "נא לבחור מרפאה",
+        "sms_sent": "נשלחה הודעת SMS/וואטסאפ למטופל.",
+        "sms_not_sent": "לא ניתן היה לשלוח הודעה."
+      },
+      "dialogs": {
+        "imaging": {
+          "title": "הוספת צילומי רנטגן",
+          "description": "העלה תמונה/קובץ רנטגן (JPG/PNG/PDF/DICOM). הוא יקושר אוטומטית לתיק המטופל ויופיע תחת \"תיקים רפואיים\".",
+          "title_placeholder": "דוגמה: צילום שיניים — לפני/אחרי",
+          "notes_placeholder": "כמו: דוח קצר, מקום הצילום...",
+          "dicom_note": "הערה: הצגת קבצי DICOM בדפדפן דורשת צופה מיוחד — כרגע הם יישמרו וייפתחו כקישור.",
+          "upload_btn": "העלאה וקישור לתיק",
+          "error_no_file": "בחר קובץ",
+          "error_no_title": "כותרת נדרשת",
+          "error_upload": "העלאת הקובץ נכשלה",
+          "success_upload": "קובץ הרנטגן הועלה"
+        },
+        "add": {
+          "title": "הוספת מטופל חדש",
+          "name_label": "שם מלא *",
+          "name_placeholder": "משה כהן",
+          "file_number_label": "מספר תיק",
+          "file_number_placeholder": "001",
+          "address_placeholder": "ירושלים, רחוב העיר",
+          "submit_btn": "הוספת המטופל"
+        },
+        "edit": {
+          "title": "עריכת פרטי מטופל",
+          "name_label": "שם מלא *",
+          "name_placeholder": "משה כהן",
+          "file_number_label": "מספר תיק",
+          "file_number_placeholder": "001",
+          "phone_placeholder": "05xxxxxxxx (למשלוח הודעות)",
+          "address_placeholder": "ירושלים, רחוב העיר"
+        },
+        "delete": {
+          "confirm_clear_notes": "האם אתה בטוח שברצונך למחוק את ההערות הרפואיות הכלליות של מטופל זה?",
+          "confirm_note": "האם אתה בטוח שברצונך למחוק הערה רפואית זו?",
+          "confirm_tx": "האם אתה בטוח שברצונך למחוק עסקה זו? לא ניתן יהיה לשחזר אותה לאחר מכן."
+        }
+      },
+      "medical_section": {
+        "title": "תיקים רפואיים ודוחות",
+        "imaging_new_title": "צילום חדש",
+        "imaging_btn_title": "צרף צילומי רנטגן או מסמכים רפואיים (JPG, PNG, PDF, DICOM)",
+        "imaging_btn": "הוספת צילומי רנטגן",
+        "report_btn_title": "יוצר דוח PDF מהערה הרפואית האחרונה שנשמרה",
+        "report_btn": "דוח רפואי PDF",
+        "add_notes_btn": "הוספת דוח רפואי / הערות",
+        "official_report_tag": "דוח רפואי רשמי",
+        "form": {
+          "allergies_label": "אלرגיות / אזהרות",
+          "allergies_placeholder": "כמו: אלרגיה לפניצילין...",
+          "complaints_label": "תלונה מרכזית (Complaints)",
+          "complaints_placeholder": "ממה סובל המטופל כרגע?",
+          "vitals_section": "מדדים (Vitals) ובדיקה גופנית",
+          "vitals": {
+            "bp": "ל\"ד (BP)",
+            "temp": "חום (T)",
+            "pulse": "דופק (P)"
+          },
+          "physical_exam_placeholder": "תוצאות בדיקה גופנית מפורטת...",
+          "investigations_label": "בדיקות (Investigations)",
+          "investigations_placeholder": "תוצאות מעבדה או דימות...",
+          "diagnosis_label": "אבחנה (Diagnosis)",
+          "diagnosis_placeholder": "אבחנה סופית...",
+          "treatment_label": "טיפול והמלצות (Treatment)",
+          "treatment_placeholder": "תרופות שנרשמו וצעדים הבאים...",
+          "sick_leave_title": "חופשת מחלה (Sick Leave)",
+          "days_label": "ימים:"
+        }
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "התחברות",
+      "choose_account": "בחר סוג חשבון",
+      "patient": "מטופל",
+      "patient_subtitle": "התורות והחשבון שלך",
+      "doctor": "רופא",
+      "doctor_subtitle": "לוח בקרה",
+      "medical_center": "מרכז רפואי",
+      "medical_center_subtitle": "ניהול המרכז",
+      "forgot_password": "שכחת סיסמה?",
+      "no_account": "אין לך חשבון?",
+      "create_account": "צור חשבון חדש",
+      "new_medical_center": "מרכז רפואי חדש?",
+      "register_medical_center": "הרשמה כמרכז רפואי",
+      "rate_limited": "חרגת ממספר הנסיונות המותר. אנא נסה שוב בעוד 15 דקות."
+    },
+    "register": {
+      "title": "יצירת חשבון חדש",
+      "choose_account": "בחר סוג חשבون",
+      "patient": "מטופל",
+      "patient_subtitle": "הזמן תורים בקלות",
+      "doctor": "רופא",
+      "doctor_subtitle": "הצטרף לרשת Tabibi",
+      "medical_center": "מרכז רפואי",
+      "medical_center_subtitle": "לוח ניהול המרכז",
+      "has_account": "כבר יש לך חשבון?",
+      "login": "התחברות"
+    },
+    "doctor_login": {
+      "title": "התחברות רופא",
+      "desc": "הזן אימייל וסיסמה",
+      "email": "אימייל",
+      "password": "סיסמה",
+      "forgot_password": "שכחת סיסמה?",
+      "submit": "התחברות",
+      "submitting": "מתחבר...",
+      "no_account": "אין לך חשבון רופא?",
+      "register": "צור חשבון רופא",
+      "patient_login": "התחברות מטופל",
+      "medical_center": "מרכז רפואי"
+    },
+    "patient_login": {
+      "title": "התחברות מטופל",
+      "verify_title": "אימות מספר טלפון",
+      "otp_desc": "הזן את קוד האימות שנשלח ל-{phone}",
+      "otp_input_desc": "הזן מספר טלפון לקבלת קוד אימות",
+      "password_input_desc": "הזן מספר טלפון וסיסמה",
+      "phone": "מספר טלפון",
+      "password": "סיסמה",
+      "forgot_password": "שכחת סיסמה?",
+      "submit_otp": "שלח קוד אימות",
+      "submit_password": "התחברות",
+      "submitting": "מתחבר...",
+      "sending": "שולח...",
+      "or": "או",
+      "login_password": "התחברות עם סיסמה",
+      "login_otp": "התחברות עם קוד (קל יותר)",
+      "otp_placeholder": "0 0 0 0 0 0",
+      "otp_instruction": "הזן את הקוד בן 6 הספרות",
+      "confirm": "אישור",
+      "verifying": "מאמת...",
+      "change_phone": "שינוי מספר טלפון",
+      "no_account": "אין לך חשבון?",
+      "register": "צור חשבון מטופל",
+      "doctor_login": "התחברות רופא",
+      "medical_center": "מרכז רפואי"
+    },
+    "medical_center_login": {
+      "title": "התחברות מרכז רפואי",
+      "desc": "אימייל מנהל וסיסמה",
+      "email": "אימייל",
+      "password": "סיסמה",
+      "forgot_password": "שכחת סיסמה?",
+      "submit": "התחברות",
+      "submitting": "מתחבר...",
+      "no_account": "אין למרכז חשבון?",
+      "register": "הרשמה כמרכז רפואי",
+      "other_logins": "אפשרויות התחברות אחרות"
+    },
+    "errors": {
+      "invalid_email": "אימייל לא תקין",
+      "invalid_phone": "מספר טלפון לא תקין",
+      "password_min": "סיסמה חייבת להכיל לפחות 6 תווים",
+      "invalid_credentials": "אימייל או סיסמה לא נכונים",
+      "invalid_otp": "קוד אימות לא תקין",
+      "phone_required": "נא להזין מספר טלפון תקין",
+      "otp_failed": "שליחת קוד אימות נכשלה",
+      "conn_error": "שגיאת חיבור לשרת",
+      "generic_error": "אירעה שגיאה, נא לנסות שוב",
+      "network_error": "לא ניתן להתחבר לשרת. בדוק את החיבור ונסה שוב."
+    },
+    "success": {
+      "login_ok": "התחברת בהצלחה!",
+      "otp_sent": "קוד אימות נשלח בהצלחה ✓"
+    }
+  }
+}

@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { isDoctorStaffRole } from "@/lib/doctor-team-roles";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { ar, enUS, he } from "date-fns/locale";
+import { getI18nServer } from "@/lib/i18n-server";
 import Link from "next/link";
 import IconUsers from "@/components/icon/icon-users";
 import IconDollarSign from "@/components/icon/icon-dollar-sign";
@@ -31,6 +32,9 @@ export const dynamic = "force-dynamic";
 export default async function DoctorDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
+  const { t, locale } = await getI18nServer();
+  const dateLocale = locale === "he" ? he : locale === "en" ? enUS : ar;
+  
   if (isDoctorStaffRole(session.user.role)) {
     redirect("/dashboard/doctor/appointments");
   }
@@ -48,13 +52,13 @@ export default async function DoctorDashboard() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <div className="text-6xl mb-6">⏳</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">حسابك قيد المراجعة</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-3">{t("doctor_dashboard.status.pending_title")}</h1>
         <p className="text-gray-500 leading-relaxed">
-          شكراً لتسجيلك في منصة Tabibi. سيتم مراجعة طلبك من قِبل فريقنا وإشعارك بالقبول قريباً.
+          {t("doctor_dashboard.status.pending_desc")}
         </p>
         <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl inline-flex items-center gap-3">
           <IconExclamationTriangle className="h-5 w-5 text-yellow-600" />
-          <p className="text-sm text-yellow-800 font-medium">مدة المراجعة: 24-48 ساعة عمل</p>
+          <p className="text-sm text-yellow-800 font-medium">{t("doctor_dashboard.status.pending_duration")}</p>
         </div>
       </div>
     );
@@ -64,13 +68,13 @@ export default async function DoctorDashboard() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <div className="text-6xl mb-6">🚫</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">لوحة التحكم</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-3">{t("doctor_dashboard.status.rejected_title")}</h1>
         <p className="text-gray-500 leading-relaxed">
-          تم رفض طلب تسجيلك كطبيب. يرجى مراجعة مسؤول النظام للاستفسار عن السبب.
+          {t("doctor_dashboard.status.rejected_desc")}
         </p>
         <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl inline-flex items-center gap-3">
           <IconExclamationTriangle className="h-5 w-5 text-red-600" />
-          <p className="text-sm text-red-800 font-medium">يجب مراجعة مسؤول النظام</p>
+          <p className="text-sm text-red-800 font-medium">{t("doctor_dashboard.status.rejected_admin")}</p>
         </div>
       </div>
     );
@@ -292,8 +296,8 @@ export default async function DoctorDashboard() {
   const clinicTxList = (clinicTxListRes.data ?? []) as Array<{ id: string; type: string; description: string; amount: number; date: string; clinicPatient?: { name?: string } }>;
   const platformTxList = (platformTxListRes.data ?? []) as Array<{ id: string; type: string; description: string; amount: number; date: string; patient?: { name?: string } }>;
   const last5Tx: TxRow[] = [
-    ...clinicTxList.map((t) => ({ id: t.id, type: t.type, description: t.description, amount: t.amount, date: t.date, patientName: (t.clinicPatient as { name?: string })?.name ?? "—", source: "عيادة" })),
-    ...platformTxList.map((t) => ({ id: t.id, type: t.type, description: t.description, amount: t.amount, date: t.date, patientName: (t.patient as { name?: string })?.name ?? "—", source: "منصة" })),
+    ...clinicTxList.map((tRow) => ({ id: tRow.id, type: tRow.type, description: tRow.description, amount: tRow.amount, date: tRow.date, patientName: (tRow.clinicPatient as { name?: string })?.name ?? "—", source: t("doctor_dashboard.table.source_clinic") })),
+    ...platformTxList.map((tRow) => ({ id: tRow.id, type: tRow.type, description: tRow.description, amount: tRow.amount, date: tRow.date, patientName: (tRow.patient as { name?: string })?.name ?? "—", source: t("doctor_dashboard.table.source_platform") })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
@@ -341,7 +345,7 @@ export default async function DoctorDashboard() {
   );
 
   /* ─────────────── Schedule (upcoming 30 days) ─────────────── */
-  const specialtyName = doctor.specialty?.nameAr ?? "طبيب";
+  const specialtyName = doctor.specialty?.nameAr ?? t("roles.doctor");
 
   type UpPlatformRow = { id: string; appointmentDate: string; startTime: string; endTime?: string; status: string; fee?: number; patient?: { name?: string } };
   type UpClinicRow = { id: string; date: string; time: string; status: string; clinicPatient?: { name?: string } };
@@ -405,11 +409,11 @@ export default async function DoctorDashboard() {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-slate-800">لوحة التحكم</h1>
-          <p className="text-xs text-slate-400 mt-0.5">مرحباً بك، د. {session.user.name}</p>
+          <h1 className="font-heading text-2xl font-bold text-slate-800">{t("sidebar.items.dashboard")}</h1>
+          <p className="text-xs text-slate-400 mt-0.5">{t("dashboard.welcome")} {t("roles.doctor")} {session.user.name}</p>
         </div>
         <Link href="/dashboard/doctor/settings">
-          <Button variant="outline" size="sm">الإعدادات</Button>
+          <Button variant="outline" size="sm">{t("sidebar.items.settings")}</Button>
         </Link>
       </div>
 
@@ -419,7 +423,7 @@ export default async function DoctorDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: "المرضى",
+            label: t("doctor_dashboard.stats.patients"),
             value: totalPatientsCount,
             icon: IconUsers,
             bg: "bg-violet-50",
@@ -427,25 +431,27 @@ export default async function DoctorDashboard() {
             valueFmt: (v: number | string) => String(v),
           },
           {
-            label: "اجمالي الربح",
+            label: t("doctor_dashboard.stats.total_earnings"),
             value: totalEarningsWithPayments,
             icon: IconDollarSign,
             bg: "bg-blue-50",
             iconColor: "text-blue-500",
             valueFmt: (v: number | string) => `₪${Number(v).toFixed(0)}`,
-            subtitle: `من المنصة ₪${earningsFromPlatform.toFixed(0)}`,
+            subtitle: `${t("doctor_dashboard.stats.earnings_platform")} ₪${earningsFromPlatform.toFixed(0)}`,
           },
           {
-            label: "إجمالي المواعيد",
+            label: t("doctor_dashboard.stats.total_appointments"),
             value: totalAllAppointments,
+
             icon: IconCalendar,
             bg: "bg-teal-50",
             iconColor: "text-teal-500",
             valueFmt: (v: number | string) => String(v),
           },
           {
-            label: "المعالجات",
+            label: t("doctor_dashboard.stats.treatments"),
             value: completedCount,
+
             icon: IconHeart,
             bg: "bg-pink-50",
             iconColor: "text-pink-500",
@@ -499,19 +505,19 @@ export default async function DoctorDashboard() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm h-full">
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <h2 className="font-heading font-bold text-slate-800 text-lg">طلبات الحجز</h2>
+              <h2 className="font-heading font-bold text-slate-800 text-lg">{t("doctor_dashboard.sections.booking_requests")}</h2>
               <Link
                 href="/dashboard/doctor/appointments"
                 className="text-xs text-blue-600 font-medium"
               >
-                عرض الكل
+                {t("doctor_dashboard.sections.view_all")}
               </Link>
             </div>
 
             <div className="px-5 pb-5 space-y-3">
               {pendingApprovals.length === 0 ? (
                 <div className="py-10 text-center text-slate-400 text-sm">
-                  لا توجد طلبات حجز معلقة
+                  {t("doctor_dashboard.sections.no_pending_requests")}
                 </div>
               ) : (
                 pendingApprovals.slice(0, 6).map((apt) => (
@@ -528,7 +534,7 @@ export default async function DoctorDashboard() {
                           {apt.patientName}
                         </p>
                         <p className="text-[11px] text-slate-400 leading-tight">
-                          {format(new Date(apt.date), "d MMM", { locale: ar })}،{" "}
+                          {format(new Date(apt.date), "d MMM", { locale: dateLocale })}،{" "}
                           {apt.startTime}
                           {apt.endTime ? ` - ${apt.endTime}` : ""}
                         </p>
@@ -553,11 +559,11 @@ export default async function DoctorDashboard() {
             <CardTitle className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-2">
                 <IconReceipt className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                آخر 5 معاملات مالية
+                {t("doctor_dashboard.sections.financial_summary")}
               </span>
               <div className="flex items-center gap-4 text-xs font-normal text-slate-500 dark:text-slate-400">
                 <Link href="/dashboard/doctor/reports" className="text-blue-600 dark:text-blue-400">
-                  التقارير
+                  {t("doctor_dashboard.sections.reports_link")}
                 </Link>
               </div>
             </CardTitle>
@@ -566,11 +572,11 @@ export default async function DoctorDashboard() {
             <table className="w-full min-w-[400px] text-xs">
               <thead>
                 <tr className="border-b border-gray-100 text-right text-gray-400 dark:border-slate-700 dark:text-slate-500">
-                  <th className="px-2 py-2 font-medium">التاريخ</th>
-                  <th className="px-2 py-2 font-medium">المريض</th>
-                  <th className="px-2 py-2 font-medium">المصدر</th>
-                  <th className="px-2 py-2 font-medium">النوع</th>
-                  <th className="px-2 py-2 font-medium">المبلغ</th>
+                  <th className="px-2 py-2 font-medium">{t("doctor_dashboard.table.date")}</th>
+                  <th className="px-2 py-2 font-medium">{t("doctor_dashboard.table.patient")}</th>
+                  <th className="px-2 py-2 font-medium">{t("doctor_dashboard.table.source")}</th>
+                  <th className="px-2 py-2 font-medium">{t("doctor_dashboard.table.type")}</th>
+                  <th className="px-2 py-2 font-medium">{t("doctor_dashboard.table.amount")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-slate-700/80">
@@ -585,12 +591,14 @@ export default async function DoctorDashboard() {
                       className="text-right transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/60"
                     >
                       <td className="px-2 py-2 text-gray-500 dark:text-slate-400">
-                        {format(new Date(row.date), "d/M", { locale: ar })}
+                        {format(new Date(row.date), "d/M", { locale: dateLocale })}
                       </td>
                       <td className="max-w-[80px] truncate px-2 py-2 font-medium text-gray-800 dark:text-slate-200">
                         {row.patientName}
                       </td>
-                      <td className="px-2 py-2 text-gray-500 dark:text-slate-400">{row.source}</td>
+                      <td className="px-2 py-2 text-gray-500 dark:text-slate-400">
+                        {row.source === "CLINIC" ? t("doctor_dashboard.table.source_clinic") : t("doctor_dashboard.table.source_platform")}
+                      </td>
                       <td className="px-2 py-2">
                         <Badge
                           variant="outline"
@@ -601,7 +609,7 @@ export default async function DoctorDashboard() {
                               : "border-red-200 bg-red-50 text-red-800 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-300",
                           )}
                         >
-                          {row.type === "PAYMENT" ? "دفعة" : "دين"}
+                          {row.type === "PAYMENT" ? t("doctor_dashboard.table.type_payment") : t("doctor_dashboard.table.type_debt")}
                         </Badge>
                       </td>
                       <td className={cn("px-2 py-2 font-semibold tabular-nums", amountSignedColorClass(signed))}>
@@ -626,15 +634,15 @@ export default async function DoctorDashboard() {
           <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm">
               <span className="font-semibold text-slate-700">
-                الاشتراك:{" "}
+                {t("doctor_dashboard.subscription.title")}{" "}
                 {doctor.subscriptionPeriod === "monthly"
-                  ? "شهري ₪80"
+                  ? t("doctor_dashboard.subscription.monthly")
                   : doctor.subscriptionPeriod === "half_year"
-                    ? "نصف سنة ₪400"
-                    : "سنة ₪800"}
+                    ? t("doctor_dashboard.subscription.half_year")
+                    : t("doctor_dashboard.subscription.yearly")}
               </span>
               <span className="text-slate-500 mr-3">
-                ينتهي: {format(new Date(doctor.subscriptionEndDate), "dd/MM/yyyy", { locale: ar })}
+                {t("doctor_dashboard.subscription.expires")} {format(new Date(doctor.subscriptionEndDate), "dd/MM/yyyy", { locale: dateLocale })}
               </span>
             </div>
             <span
@@ -642,7 +650,7 @@ export default async function DoctorDashboard() {
                 subDaysLeft <= 7 ? "text-amber-600" : "text-green-600"
               }`}
             >
-              {subDaysLeft > 0 ? `متبقي ${subDaysLeft} يوم` : "منتهي"}
+              {subDaysLeft > 0 ? t("doctor_dashboard.subscription.days_left", { days: subDaysLeft }) : t("doctor_dashboard.subscription.expired")}
             </span>
           </CardContent>
         </Card>
@@ -652,13 +660,13 @@ export default async function DoctorDashboard() {
       {doctor.clinics?.length === 0 && (
         <Card className="border-orange-200 bg-orange-50 border-0 shadow-sm">
           <CardContent className="p-4">
-            <h4 className="font-semibold text-orange-800 text-sm mb-1">⚠️ أضف عيادتك</h4>
+            <h4 className="font-semibold text-orange-800 text-sm mb-1">{t("doctor_dashboard.warnings.add_clinic_title")}</h4>
             <p className="text-xs text-orange-700 mb-3">
-              لم تضف عيادة بعد. أضف عيادتك لاستقبال المرضى.
+              {t("doctor_dashboard.warnings.add_clinic_desc")}
             </p>
             <Link href="/dashboard/doctor/settings">
               <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
-                إضافة عيادة
+                {t("doctor_dashboard.warnings.add_clinic_btn")}
               </Button>
             </Link>
           </CardContent>

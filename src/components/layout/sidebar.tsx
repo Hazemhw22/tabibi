@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "@/lib/i18n-context";
 import { useTabibiTheme } from "@/lib/tabibi-theme";
 import { cn } from "@/lib/utils";
 import IconMenuDashboard from "@/components/icon/menu/icon-menu-dashboard";
@@ -38,200 +39,6 @@ interface NavItem {
 
 type NavSection = { title: string; items: NavItem[] };
 
-const doctorMarketplaceOfferItem: NavItem = { label: "العروضات", href: "/dashboard/doctor/offers", icon: IconFire };
-const doctorMarketplaceProductItem: NavItem = { label: "المنتجات", href: "/dashboard/doctor/products", icon: IconShoppingBag };
-
-/** يخفي قسم المتجر بالكامل إن لم يكن أي رابط مسموحاً؛ طبيب أسنان: عروض فقط بدون منتجات */
-function filterDoctorSectionsForMarketplace(sections: NavSection[], specialtyNameAr: string | null): NavSection[] {
-  const { offers, products } = doctorMarketplaceNavVisibility(specialtyNameAr);
-  return sections
-    .map((section) => {
-      if (section.title !== "المتجر") return section;
-      const items: NavItem[] = [];
-      if (offers) items.push(doctorMarketplaceOfferItem);
-      if (products) items.push(doctorMarketplaceProductItem);
-      return { title: "المتجر", items };
-    })
-    .filter((section) => section.title !== "المتجر" || section.items.length > 0);
-}
-
-const doctorSectionsFull: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "الرئيسية", href: "/dashboard/doctor", icon: IconMenuDashboard },
-      { label: "المرضى", href: "/dashboard/doctor/patients", icon: IconUsersGroup },
-      { label: "المواعيد", href: "/dashboard/doctor/appointments", icon: IconCalendar },
-    ],
-  },
-  {
-    title: "الرسائل",
-    items: [
-      { label: "إرسال", href: "/dashboard/doctor/messages/send", icon: IconSend },
-      { label: "سجل", href: "/dashboard/doctor/messages/history", icon: IconArchive },
-    ],
-  },
-  {
-    title: "العيادة",
-    items: [
-      { label: "التقارير", href: "/dashboard/doctor/reports", icon: IconBarChart },
-      { label: "العيادات والمواعيد", href: "/dashboard/doctor/clinics", icon: IconClipboardText },
-      { label: "موظفين العيادة", href: "/dashboard/doctor/staff", icon: IconMenuUsers },
-      { label: "مزوّدون المستلزمات", href: "/dashboard/doctor/suppliers", icon: IconShoppingBag },
-      { label: "مصروفات العيادة", href: "/dashboard/doctor/expenses", icon: IconDollarSignCircle },
-    ],
-  },
-  {
-    title: "المتجر",
-    items: [doctorMarketplaceOfferItem, doctorMarketplaceProductItem],
-  },
-  {
-    title: "الإعدادات",
-    items: [{ label: "الإعدادات", href: "/dashboard/doctor/settings", icon: IconSettings }],
-  },
-];
-
-const doctorSectionsLimited: NavSection[] = [
-  { title: "الرئيسية", items: [{ label: "الرئيسية", href: "/dashboard/doctor", icon: IconMenuDashboard }] },
-];
-
-/** موظفين الطبيب: مواعيد + مرضى فقط */
-const doctorSectionsStaff: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "المواعيد", href: "/dashboard/doctor/appointments", icon: IconCalendar },
-      { label: "المرضى", href: "/dashboard/doctor/patients", icon: IconUsersGroup },
-    ],
-  },
-];
-
-const adminSections: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "لوحة تحكم", href: "/dashboard/admin", icon: IconMenuDashboard },
-      { label: "الأطباء", href: "/dashboard/admin/doctors", icon: IconMenuUsers },
-      { label: "المراكز الطبية", href: "/dashboard/admin/medical-centers", icon: IconBuilding },
-      { label: "المستخدمون", href: "/dashboard/admin/users", icon: IconUsersGroup },
-    ],
-  },
-  {
-    title: "الرسائل",
-    items: [
-      { label: "إرسال", href: "/dashboard/admin/messages/send", icon: IconSend },
-      { label: "السجل", href: "/dashboard/admin/messages/history", icon: IconArchive },
-      { label: "الإعدادات", href: "/dashboard/admin/messages/settings", icon: IconSettings },
-    ],
-  },
-  {
-    title: "الإدارة",
-    items: [{ label: "الاشتراكات", href: "/dashboard/admin/subscriptions", icon: IconBarChart }],
-  },
-  {
-    title: "الإعدادات",
-    items: [{ label: "الإعدادات", href: "/dashboard/admin/settings", icon: IconSettings }],
-  },
-];
-
-const medicalCenterSectionsAdmin: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
-      { label: "الأطباء", href: "/dashboard/medical-center/doctors", icon: IconMenuUsers },
-      { label: "الموظفون", href: "/dashboard/medical-center/staff", icon: IconMenuUsers },
-      { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
-      { label: "الحجوزات", href: "/dashboard/medical-center/appointments", icon: IconCalendar },
-      { label: "التحاليل والأشعة", href: "/dashboard/medical-center/lab-results", icon: IconClipboardText },
-      { label: "الحسابات", href: "/dashboard/medical-center/finance", icon: IconDollarSignCircle },
-    ],
-  },
-  {
-    title: "الرسائل",
-    items: [
-      { label: "إرسال", href: "/dashboard/medical-center/messages/send", icon: IconSend },
-      { label: "السجل", href: "/dashboard/medical-center/messages/history", icon: IconArchive },
-    ],
-  },
-  {
-    title: "الخدمات",
-    items: [{ label: "الطوارئ", href: "/dashboard/medical-center/emergency", icon: IconFire }],
-  },
-  {
-    title: "الإعدادات",
-    items: [{ label: "إعدادات المركز", href: "/dashboard/medical-center/settings", icon: IconSettings }],
-  },
-];
-
-const medicalCenterSectionsReception: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
-      { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
-      { label: "الحجوزات", href: "/dashboard/medical-center/appointments", icon: IconCalendar },
-    ],
-  },
-  {
-    title: "الرسائل",
-    items: [
-      { label: "إرسال", href: "/dashboard/medical-center/messages/send", icon: IconSend },
-      { label: "السجل", href: "/dashboard/medical-center/messages/history", icon: IconArchive },
-    ],
-  },
-  {
-    title: "الخدمات",
-    items: [{ label: "الطوارئ", href: "/dashboard/medical-center/emergency", icon: IconFire }],
-  },
-];
-
-const medicalCenterSectionsLab: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "الرئيسية", href: "/dashboard/medical-center", icon: IconMenuDashboard },
-      { label: "المرضى", href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
-      { label: "التحاليل والأشعة", href: "/dashboard/medical-center/lab-results", icon: IconClipboardText },
-    ],
-  },
-  {
-    title: "الرسائل",
-    items: [
-      { label: "إرسال", href: "/dashboard/medical-center/messages/send", icon: IconSend },
-      { label: "السجل", href: "/dashboard/medical-center/messages/history", icon: IconArchive },
-    ],
-  },
-];
-
-function medicalCenterNavForRole(role: string | undefined): NavSection[] {
-  switch (role) {
-    case "MEDICAL_CENTER_ADMIN":
-      return medicalCenterSectionsAdmin;
-    case "MEDICAL_CENTER_RECEPTIONIST":
-      return medicalCenterSectionsReception;
-    case "MEDICAL_CENTER_LAB_STAFF":
-      return medicalCenterSectionsLab;
-    default:
-      return medicalCenterSectionsAdmin;
-  }
-}
-
-const patientSections: NavSection[] = [
-  {
-    title: "الرئيسية",
-    items: [
-      { label: "الرئيسية", href: "/dashboard/patient", icon: IconMenuDashboard },
-      { label: "مواعيدي", href: "/dashboard/patient/appointments", icon: IconCalendar },
-      { label: "التقييمات", href: "/dashboard/patient/reviews", icon: IconStar },
-    ],
-  },
-  {
-    title: "الإعدادات",
-    items: [{ label: "الإعدادات", href: "/dashboard/patient/settings", icon: IconSettings }],
-  },
-];
-
 interface SidebarContentProps {
   sections: NavSection[];
   roleLabel: string;
@@ -251,7 +58,6 @@ interface SidebarContentProps {
 
 function SidebarContent({
   sections,
-  roleLabel,
   pathname,
   onLinkClick,
   isDark,
@@ -264,6 +70,8 @@ function SidebarContent({
   centerImage,
   centerName,
 }: SidebarContentProps) {
+  const { t } = useTranslation();
+
   const linkClass = (item: NavItem, isActive: boolean) => {
     const Icon = item.icon;
     return (
@@ -284,16 +92,6 @@ function SidebarContent({
       >
         <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : isDark ? "text-gray-400" : "text-gray-500")} />
         <span className={cn(desktopRail && "hidden xl:inline")}>{item.label}</span>
-        {item.badge && (
-          <span
-            className={cn(
-              "flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white",
-              desktopRail ? "hidden xl:mr-auto xl:flex" : "mr-auto"
-            )}
-          >
-            {item.badge}
-          </span>
-        )}
       </Link>
     );
   };
@@ -315,62 +113,36 @@ function SidebarContent({
     }
     return getPatientAvatar(userImage, userGender);
   })();
-  const profileName =
-    userRole === "MEDICAL_CENTER_ADMIN" ? (centerName || userName) : userName;
-  const profileSubtitle =
-    userRole === "DOCTOR" ? (doctorSpecialty ?? "طبيب") :
-    userRole === "MEDICAL_CENTER_ADMIN" ? "مركز طبي" :
-    userRole === "MEDICAL_CENTER_RECEPTIONIST" ? "استقبال" :
-    userRole === "MEDICAL_CENTER_LAB_STAFF" ? "مختبر / أشعة" :
-    userRole === "DOCTOR_RECEPTION" || userRole === "DOCTOR_ASSISTANT"
-      ? (DOCTOR_STAFF_ROLE_LABELS[userRole] ?? "موظف عيادة") :
-    userRole === "PLATFORM_ADMIN" || userRole === "CLINIC_ADMIN" ? "مشرف" :
-    "مريض";
+
+  const profileName = userRole === "MEDICAL_CENTER_ADMIN" ? (centerName || userName) : userName;
+
+  const profileSubtitle = (() => {
+    if (userRole === "DOCTOR") return doctorSpecialty ?? t("roles.doctor");
+    if (userRole === "MEDICAL_CENTER_ADMIN") return t("roles.medical_center");
+    if (userRole === "MEDICAL_CENTER_RECEPTIONIST") return t("roles.receptionist");
+    if (userRole === "MEDICAL_CENTER_LAB_STAFF") return t("roles.lab_staff");
+    if (userRole === "DOCTOR_RECEPTION" || userRole === "DOCTOR_ASSISTANT") return t("roles.clinic_staff");
+    if (userRole === "PLATFORM_ADMIN") return t("roles.platform_admin");
+    if (userRole === "CLINIC_ADMIN") return t("roles.clinic_admin");
+    return t("roles.patient");
+  })();
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header: Profile card for all roles */}
-      <div
-        className={cn(
-          "border-b pt-5 pb-4",
-          desktopRail ? "px-2 pt-4 xl:px-4" : "px-4",
-          isDark ? "border-gray-800" : "border-gray-200"
-        )}
-      >
-        {/* Avatar + name */}
+      <div className={cn("border-b pt-5 pb-4", desktopRail ? "px-2 pt-4 xl:px-4" : "px-4", isDark ? "border-gray-800" : "border-gray-200")}>
         <div className={cn("flex items-center gap-3", desktopRail && "flex-col xl:flex-row")}>
           <div className="shrink-0 h-12 w-12 rounded-xl overflow-hidden border-2 border-blue-500/40 bg-blue-900 flex items-center justify-center">
             {profileImage ? (
-              <Image
-                src={profileImage}
-                alt={profileName ?? "مستخدم"}
-                width={48}
-                height={48}
-                className="object-cover object-top w-full h-full"
-                unoptimized
-              />
+              <Image src={profileImage} alt={profileName ?? "User"} width={48} height={48} className="object-cover object-top w-full h-full" unoptimized />
             ) : (
               <span className="text-xl">
-                {userRole === "DOCTOR"
-                  ? "👨‍⚕️"
-                  : userRole === "MEDICAL_CENTER_ADMIN"
-                    ? "🏥"
-                    : userRole === "MEDICAL_CENTER_RECEPTIONIST" || userRole === "DOCTOR_RECEPTION" || userRole === "DOCTOR_ASSISTANT"
-                      ? "📋"
-                      : userRole === "MEDICAL_CENTER_LAB_STAFF"
-                        ? "🔬"
-                        : "👤"}
+                {userRole === "DOCTOR" ? "👨‍⚕️" : userRole === "MEDICAL_CENTER_ADMIN" ? "🏥" : "👤"}
               </span>
             )}
           </div>
-          <div
-            className={cn(
-              "min-w-0",
-              desktopRail ? "hidden text-center xl:block xl:flex-1 xl:text-right" : "flex-1"
-            )}
-          >
+          <div className={cn("min-w-0", desktopRail ? "hidden text-center xl:block xl:flex-1 xl:text-right" : "flex-1")}>
             <p className={cn("text-sm font-bold truncate leading-tight", isDark ? "text-white" : "text-gray-900")}>
-              {userRole === "DOCTOR" ? `د. ${profileName}` : profileName}
+              {userRole === "DOCTOR" ? `${t("roles.doctor")} ${profileName}` : profileName}
             </p>
             <p className={cn("mt-0.5 truncate text-xs", isDark ? "text-blue-400" : "text-blue-600")}>
               {profileSubtitle}
@@ -382,13 +154,7 @@ function SidebarContent({
       <nav className={cn("flex-1 space-y-6 overflow-y-auto py-4", desktopRail ? "px-1.5 xl:px-3" : "px-3")}>
         {sections.map((section) => (
           <div key={section.title}>
-            <p
-              className={cn(
-                "mb-2 px-3 text-[10px] font-bold uppercase tracking-wider",
-                desktopRail && "hidden xl:block",
-                isDark ? "text-gray-500" : "text-gray-400"
-              )}
-            >
+            <p className={cn("mb-2 px-3 text-[10px] font-bold uppercase tracking-wider", desktopRail && "hidden xl:block", isDark ? "text-gray-500" : "text-gray-400")}>
               {section.title}
             </p>
             <div className="space-y-1">
@@ -398,17 +164,9 @@ function SidebarContent({
         ))}
       </nav>
 
-      
-
-      <div
-        className={cn(
-          "shrink-0 border-t px-5 py-3 text-center",
-          desktopRail && "hidden xl:block",
-          isDark ? "border-gray-800" : "border-gray-200"
-        )}
-      >
+      <div className={cn("shrink-0 border-t px-5 py-3 text-center", desktopRail && "hidden xl:block", isDark ? "border-gray-800" : "border-gray-200")}>
         <p className={cn("text-[11px]", isDark ? "text-gray-300" : "text-gray-400")}>
-          © {new Date().getFullYear()} طبيبي. جميع الحقوق محفوظة.
+          © {new Date().getFullYear()} Tabibi.
         </p>
       </div>
     </div>
@@ -418,6 +176,7 @@ function SidebarContent({
 export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [doctorInfo, setDoctorInfo] = useState<{ status: string | null; specialty: string | null; image: string | null; gender: string | null }>({ status: null, specialty: null, image: null, gender: null });
   const [doctorProfileResolved, setDoctorProfileResolved] = useState(false);
@@ -467,43 +226,142 @@ export default function Sidebar() {
   }, [role]);
 
   const sections = useMemo(() => {
-    if (role === "DOCTOR") {
-      if (doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING") {
-        return doctorSectionsLimited;
-      }
-      if (!doctorProfileResolved) {
-        return doctorSectionsFull;
-      }
-      return filterDoctorSectionsForMarketplace(doctorSectionsFull, doctorInfo.specialty);
-    }
-    if (isDoctorStaffRole(role)) return doctorSectionsStaff;
-    if (
-      role === "MEDICAL_CENTER_ADMIN" ||
-      role === "MEDICAL_CENTER_RECEPTIONIST" ||
-      role === "MEDICAL_CENTER_LAB_STAFF"
-    ) {
-      return medicalCenterNavForRole(role);
-    }
-    if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") return adminSections;
-    return patientSections;
-  }, [role, doctorInfo.status, doctorInfo.specialty, doctorProfileResolved]);
+    const s = {
+      main: t("sidebar.sections.main"),
+      messages: t("sidebar.sections.messages"),
+      clinic: t("sidebar.sections.clinic"),
+      store: t("sidebar.sections.store"),
+      admin: t("sidebar.sections.admin"),
+      services: t("sidebar.sections.services"),
+      settings: t("sidebar.sections.settings"),
+    };
 
-  const roleLabel =
-    role === "DOCTOR"
-      ? "طبيب"
-      : role === "DOCTOR_RECEPTION" || role === "DOCTOR_ASSISTANT"
-        ? (DOCTOR_STAFF_ROLE_LABELS[role ?? ""] ?? "موظف عيادة")
-      : role === "PLATFORM_ADMIN"
-        ? "مشرف المنصة"
-        : role === "CLINIC_ADMIN"
-          ? "مشرف عيادة"
-          : role === "MEDICAL_CENTER_ADMIN"
-            ? "مركز طبي"
-            : role === "MEDICAL_CENTER_RECEPTIONIST"
-              ? "استقبال"
-              : role === "MEDICAL_CENTER_LAB_STAFF"
-                ? "مختبر / أشعة"
-                : "مريض";
+    const i = {
+      dashboard: t("sidebar.items.dashboard"),
+      patients: t("sidebar.items.patients"),
+      appointments: t("sidebar.items.appointments"),
+      my_appointments: t("sidebar.items.my_appointments"),
+      send: t("sidebar.items.send"),
+      history: t("sidebar.items.history"),
+      reports: t("sidebar.items.reports"),
+      clinics: t("sidebar.items.clinics_and_schedules"),
+      staff: t("sidebar.items.staff"),
+      suppliers: t("sidebar.items.suppliers"),
+      expenses: t("sidebar.items.expenses"),
+      offers: t("sidebar.items.offers"),
+      products: t("sidebar.items.products"),
+      settings: t("sidebar.items.settings"),
+      admin_dashboard: t("sidebar.items.dashboard"),
+      doctors: t("sidebar.items.doctors"),
+      medical_centers: t("sidebar.items.medical_centers"),
+      users: t("sidebar.items.users"),
+      subscriptions: t("sidebar.items.subscriptions"),
+      mc_employees: t("sidebar.items.employees"),
+      bookings: t("sidebar.items.bookings"),
+      lab: t("sidebar.items.lab_imaging"),
+      finance: t("sidebar.items.finance"),
+      emergency: t("sidebar.items.emergency"),
+      reviews: t("sidebar.items.reviews"),
+    };
+
+    if (role === "DOCTOR") {
+      const full: NavSection[] = [
+        { title: s.main, items: [
+          { label: i.dashboard, href: "/dashboard/doctor", icon: IconMenuDashboard },
+          { label: i.patients, href: "/dashboard/doctor/patients", icon: IconUsersGroup },
+          { label: i.appointments, href: "/dashboard/doctor/appointments", icon: IconCalendar },
+        ]},
+        { title: s.messages, items: [
+          { label: i.send, href: "/dashboard/doctor/messages/send", icon: IconSend },
+          { label: i.history, href: "/dashboard/doctor/messages/history", icon: IconArchive },
+        ]},
+        { title: s.clinic, items: [
+          { label: i.reports, href: "/dashboard/doctor/reports", icon: IconBarChart },
+          { label: i.clinics, href: "/dashboard/doctor/clinics", icon: IconClipboardText },
+          { label: i.staff, href: "/dashboard/doctor/staff", icon: IconMenuUsers },
+          { label: i.suppliers, href: "/dashboard/doctor/suppliers", icon: IconShoppingBag },
+          { label: i.expenses, href: "/dashboard/doctor/expenses", icon: IconDollarSignCircle },
+        ]},
+        { title: s.store, items: [
+          { label: i.offers, href: "/dashboard/doctor/offers", icon: IconFire },
+          { label: i.products, href: "/dashboard/doctor/products", icon: IconShoppingBag },
+        ]},
+        { title: s.settings, items: [{ label: i.settings, href: "/dashboard/doctor/settings", icon: IconSettings }]},
+      ];
+      if (doctorInfo.status === "REJECTED" || doctorInfo.status === "PENDING") {
+        return [{ title: s.main, items: [{ label: i.dashboard, href: "/dashboard/doctor", icon: IconMenuDashboard }] }];
+      }
+      return full;
+    }
+
+    if (isDoctorStaffRole(role)) {
+      return [{ title: s.main, items: [
+        { label: i.appointments, href: "/dashboard/doctor/appointments", icon: IconCalendar },
+        { label: i.patients, href: "/dashboard/doctor/patients", icon: IconUsersGroup },
+      ]}];
+    }
+
+    if (role === "PLATFORM_ADMIN" || role === "CLINIC_ADMIN") {
+      return [
+        { title: s.main, items: [
+          { label: i.admin_dashboard, href: "/dashboard/admin", icon: IconMenuDashboard },
+          { label: i.doctors, href: "/dashboard/admin/doctors", icon: IconMenuUsers },
+          { label: i.medical_centers, href: "/dashboard/admin/medical-centers", icon: IconBuilding },
+          { label: i.users, href: "/dashboard/admin/users", icon: IconUsersGroup },
+        ]},
+        { title: s.messages, items: [
+          { label: i.send, href: "/dashboard/admin/messages/send", icon: IconSend },
+          { label: i.history, href: "/dashboard/admin/messages/history", icon: IconArchive },
+        ]},
+        { title: s.admin, items: [{ label: i.subscriptions, href: "/dashboard/admin/subscriptions", icon: IconBarChart }]},
+        { title: s.settings, items: [{ label: i.settings, href: "/dashboard/admin/settings", icon: IconSettings }]},
+      ];
+    }
+
+    if (role?.startsWith("MEDICAL_CENTER")) {
+      return [
+        { title: s.main, items: [
+          { label: i.dashboard, href: "/dashboard/medical-center", icon: IconMenuDashboard },
+          { label: i.doctors, href: "/dashboard/medical-center/doctors", icon: IconMenuUsers },
+          { label: i.mc_employees, href: "/dashboard/medical-center/staff", icon: IconMenuUsers },
+          { label: i.patients, href: "/dashboard/medical-center/patients", icon: IconUsersGroup },
+          { label: i.bookings, href: "/dashboard/medical-center/appointments", icon: IconCalendar },
+          { label: i.lab, href: "/dashboard/medical-center/lab-results", icon: IconClipboardText },
+          { label: i.finance, href: "/dashboard/medical-center/finance", icon: IconDollarSignCircle },
+        ]},
+        { title: s.messages, items: [
+          { label: i.send, href: "/dashboard/medical-center/messages/send", icon: IconSend },
+          { label: i.history, href: "/dashboard/medical-center/messages/history", icon: IconArchive },
+        ]},
+        { title: s.services, items: [{ label: i.emergency, href: "/dashboard/medical-center/emergency", icon: IconFire }]},
+        { title: s.settings, items: [{ label: t("sidebar.items.center_settings"), href: "/dashboard/medical-center/settings", icon: IconSettings }]},
+      ];
+    }
+
+    if (role === "PATIENT") {
+      return [
+        { title: s.main, items: [
+          { label: i.dashboard, href: "/dashboard/patient", icon: IconMenuDashboard },
+          { label: i.my_appointments, href: "/dashboard/patient/appointments", icon: IconCalendar },
+          { label: i.reviews, href: "/dashboard/patient/reviews", icon: IconStar },
+        ]},
+        { title: s.settings, items: [{ label: i.settings, href: "/dashboard/patient/settings", icon: IconSettings }]},
+      ];
+    }
+
+    return [];
+  }, [role, t, doctorInfo.status]);
+
+  const roleLabel = (() => {
+    if (role === "DOCTOR") return t("roles.doctor");
+    if (role === "PLATFORM_ADMIN") return t("roles.platform_admin");
+    if (role === "CLINIC_ADMIN") return t("roles.clinic_admin");
+    if (role === "MEDICAL_CENTER_ADMIN") return t("roles.medical_center");
+    if (role === "MEDICAL_CENTER_RECEPTIONIST") return t("roles.receptionist");
+    if (role === "MEDICAL_CENTER_LAB_STAFF") return t("roles.lab_staff");
+    if (role === "DOCTOR_RECEPTION" || role === "DOCTOR_ASSISTANT") return t("roles.clinic_staff");
+    return t("roles.patient");
+  })();
 
   return (
     <>

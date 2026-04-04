@@ -1,61 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import IconGlobe from "@/components/icon/icon-globe";
+import { useTranslation } from "@/lib/i18n-context";
+import Dropdown from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import {
-  applyDocumentLang,
-  dispatchLangChange,
-  subscribeLangChange,
-  type TabibiLang,
-} from "@/components/layout/language-init";
+import IconGlobe from "@/components/icon/icon-globe";
 
-type Props = { isDark: boolean };
+type Props = { isDark?: boolean };
 
 export function LanguageToggle({ isDark }: Props) {
-  const [lang, setLang] = useState<TabibiLang>("ar");
+  const { locale, setLocale, t } = useTranslation();
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("tabibi-lang");
-      setLang(stored === "en" ? "en" : "ar");
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const languages = [
+    { code: "ar", label: "العربية", short: "AR" },
+    { code: "he", label: "עברית", short: "HE" },
+    { code: "en", label: "English", short: "EN" },
+  ] as const;
 
-  useEffect(() => {
-    return subscribeLangChange((l) => setLang(l));
-  }, []);
-
-  const toggle = () => {
-    const next: TabibiLang = lang === "ar" ? "en" : "ar";
-    try {
-      window.localStorage.setItem("tabibi-lang", next);
-      applyDocumentLang(next);
-      dispatchLangChange(next);
-      setLang(next);
-      toast.success(next === "ar" ? "تم التبديل إلى العربية" : "Switched to English");
-    } catch {
-      toast.error("تعذّر حفظ اختيار اللغة");
-    }
-  };
+  const current = languages.find((l) => l.code === locale) || languages[0];
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      className={cn(
-        "rounded-lg p-2.5 transition-colors",
-        isDark
-          ? "text-gray-400 hover:bg-gray-800 hover:text-white"
-          : "text-gray-500 hover:bg-gray-100 hover:text-gray-900",
+    <Dropdown
+      placement="bottom-end"
+      btnClassName={cn(
+        "flex items-center gap-2 rounded-xl px-3 py-2 transition-all duration-200",
+        isDark 
+          ? "text-gray-400 hover:bg-gray-800 hover:text-white" 
+          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       )}
-      title={lang === "ar" ? "التبديل إلى الإنجليزية (واجهة عربية حالياً)" : "Switch to Arabic"}
-      aria-label={lang === "ar" ? "Toggle interface language" : "التبديل إلى العربية"}
+      button={
+        <>
+          <IconGlobe className="h-4.5 w-4.5" />
+          <span className="text-xs font-bold uppercase tracking-wider">{current.short}</span>
+        </>
+      }
     >
-      <IconGlobe className="h-[18px] w-[18px]" />
-    </button>
+      <div className={cn(
+        "flex min-w-[140px] flex-col overflow-hidden rounded-2xl border p-1 shadow-xl",
+        isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-white"
+      )}>
+        {languages.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => setLocale(l.code)}
+            className={cn(
+              "flex items-center justify-between rounded-xl px-3 py-2.5 text-right text-sm transition-colors",
+              locale === l.code
+                ? isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600 font-bold"
+                : isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            <span>{l.label}</span>
+            <span className="text-[10px] font-black opacity-40 uppercase">{l.short}</span>
+          </button>
+        ))}
+      </div>
+    </Dropdown>
   );
 }

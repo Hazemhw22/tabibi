@@ -4,10 +4,9 @@ export default function ForgotPasswordDoctorPage() {
   return (
     <ForgotPasswordClient
       title="استعادة كلمة مرور الطبيب"
-      description="أدخل البريد الإلكتروني المسجّل في حسابك. سنرسل رابطاً لتعيين كلمة مرور جديدة."
-      loginLabel="البريد الإلكتروني"
-      loginPlaceholder="doctor@example.com"
-      preferEmail
+      description="أدخل رقم الهاتف المسجّل في حسابك. سنرسل رمز تأكيد عبر SMS لتغيير كلمة المرور."
+      loginLabel="رقم الهاتف"
+      loginPlaceholder="0599123456"
     />
   );
 }

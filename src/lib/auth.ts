@@ -2,10 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { z } from "zod";
+import { linkClinicPatientToUser } from "@/lib/link-clinic-patient";
 
 const loginSchema = z.object({
   login: z.string().min(1, "أدخل رقم الهاتف أو البريد الإلكتروني"),
-  password: z.string().min(6),
+  password: z.string().optional(),
+  token: z.string().optional(),
 });
 
 // AUTH_SECRET مطلوب في الإنتاج — بدونه سيعيد /api/auth/session 500 (راجع docs/auth-session-500.md)
@@ -24,10 +26,84 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const { login, password } = parsed.data;
+        const { login, password, token } = parsed.data;
         const isEmail = login.includes("@");
 
         try {
+          // --- OTP LOGIN CASE ---
+          if (token) {
+            const phone = login.trim();
+            // 1. Verify token
+            const { data: vToken, error: vError } = await supabaseAdmin
+              .from("VerificationToken")
+              .select("*")
+              .eq("identifier", phone)
+              .eq("token", token)
+              .single();
+
+            if (vError || !vToken || new Date(vToken.expires) < new Date()) {
+              console.warn("[auth/otp] invalid or expired token for:", phone);
+              return null;
+            }
+
+            // 2. Consume token
+            await supabaseAdmin
+              .from("VerificationToken")
+              .delete()
+              .eq("identifier", phone)
+              .eq("token", token);
+
+            // 3. Find or Create User
+            const clean = phone.replace(/\D/g, "");
+            const last9 = clean.slice(-9);
+            const variations = [phone, clean, `+${clean}`, last9, `0${last9}`, `972${last9}`];
+            
+            let { data: userRow } = await supabaseAdmin
+              .from("User")
+              .select("id, email, name, image, role, phone, employerDoctorId, doctorStaffRole")
+              .or(`phone.in.(${variations.join(",")}),email.eq.${phone}`)
+              .limit(1)
+              .maybeSingle();
+
+            if (!userRow) {
+              // Create new patient user
+              const { data: newUser, error: createError } = await supabaseAdmin
+                .from("User")
+                .insert({
+                  phone: phone,
+                  role: "PATIENT",
+                  name: "مريض جديد",
+                  email: `${clean}@tabibi.app`, // placeholder email for Supabase Auth if needed
+                })
+                .select()
+                .single();
+              
+              if (createError) {
+                console.error("[auth/otp] failed to create user:", createError);
+                return null;
+              }
+              userRow = newUser;
+            }
+
+            if (userRow) {
+              // --- BRIDGING LOGIC ---
+              await linkClinicPatientToUser(userRow.id, userRow.phone || phone);
+            }
+
+            return {
+              id: userRow!.id,
+              email: userRow!.email || "",
+              name: userRow!.name || "",
+              image: userRow!.image || null,
+              role: userRow!.role || "PATIENT",
+              phone: userRow!.phone || phone,
+              employerDoctorId: userRow!.employerDoctorId || null,
+              doctorStaffRole: userRow!.doctorStaffRole || null,
+            };
+          }
+
+          // --- PASSWORD LOGIN CASE ---
+          if (!password) return null;
           let emailToUse: string;
 
           if (isEmail) {
@@ -81,6 +157,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           /** جدول User هو مصدر الحقيقة للدور؛ user_metadata قد يكون قديماً أو غير متزامن مع Prisma */
           const role = u?.role ?? meta?.role ?? "PATIENT";
+
+          if (u) {
+            // Also run syncing for password login just in case
+            await linkClinicPatientToUser(u.id, u.phone || "");
+          }
 
           return {
             id: data.user.id,

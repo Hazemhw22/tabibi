@@ -8,6 +8,7 @@ import IconLoader from "@/components/icon/icon-loader";
 import IconUsers from "@/components/icon/icon-users";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n-context";
 
 export default function DoctorActions({
   appointmentId,
@@ -17,6 +18,7 @@ export default function DoctorActions({
   mode?: "visit" | "approval";
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<string | null>(null);
 
   const updateStatus = async (status: string) => {
@@ -31,19 +33,19 @@ export default function DoctorActions({
       if (res.ok) {
         toast.success(
           status === "COMPLETED"
-            ? "تم تحديد الموعد كمنجز"
+            ? t("doctor_dashboard.actions.toast.completed")
             : status === "NO_SHOW"
-              ? "تم تحديد المريض كغائب"
+              ? t("doctor_dashboard.actions.toast.no_show")
               : status === "CONFIRMED"
-                ? "تمت الموافقة على الحجز"
-                : "تم رفض الحجز"
+                ? t("doctor_dashboard.actions.toast.confirmed")
+                : t("doctor_dashboard.actions.toast.cancelled")
         );
         router.refresh();
       } else {
-        toast.error("حدث خطأ في التحديث");
+        toast.error(t("doctor_dashboard.actions.toast.error"));
       }
     } catch {
-      toast.error("حدث خطأ");
+      toast.error(t("doctor_dashboard.actions.toast.generic_error"));
     } finally {
       setLoading(null);
     }
@@ -65,7 +67,7 @@ export default function DoctorActions({
             ) : (
               <IconCircleCheck className="h-3 w-3" />
             )}
-            قبول
+            {t("doctor_dashboard.actions.accept")}
           </Button>
           <Button
             size="sm"
@@ -79,7 +81,7 @@ export default function DoctorActions({
             ) : (
               <IconXCircle className="h-3 w-3" />
             )}
-            رفض
+            {t("doctor_dashboard.actions.reject")}
           </Button>
         </>
       )}
@@ -97,7 +99,7 @@ export default function DoctorActions({
         ) : (
           <IconCircleCheck className="h-3 w-3" />
         )}
-        منجز
+        {t("doctor_dashboard.actions.completed")}
       </Button>
       <Button
         size="sm"
@@ -111,7 +113,7 @@ export default function DoctorActions({
         ) : (
           <IconUsers className="h-3 w-3" />
         )}
-        غائب
+        {t("doctor_dashboard.actions.no_show")}
       </Button>
         </>
       )}

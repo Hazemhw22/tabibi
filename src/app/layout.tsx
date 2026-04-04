@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { ThemeInit } from "@/components/theme-init";
-import { LanguageInit } from "@/components/layout/language-init";
+import { I18nProvider, Locale } from "@/lib/i18n-context";
 
 export const metadata: Metadata = {
   title: "Tabibi - حجز مواعيد الأطباء في فلسطين",
@@ -21,20 +22,24 @@ export const viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const initialLocale = (cookieStore.get("tabibi_locale")?.value as Locale) || "ar";
+
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={initialLocale} dir={initialLocale === "en" ? "ltr" : "rtl"}>
       <body className="font-sans antialiased bg-gray-50 dark:bg-slate-950">
         <ThemeInit />
-        <LanguageInit />
-        <SessionProvider>
-          {children}
-          <Toaster position="top-center" richColors dir="rtl" />
-        </SessionProvider>
+        <I18nProvider initialLocale={initialLocale}>
+          <SessionProvider>
+            {children}
+            <Toaster position="top-center" richColors />
+          </SessionProvider>
+        </I18nProvider>
       </body>
     </html>
   );

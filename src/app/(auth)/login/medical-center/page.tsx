@@ -19,13 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { authLabelClass, authPasswordInputClass, authPasswordToggleClass } from "@/lib/auth-ui-classes";
-
-const schema = z.object({
-  email: z.string().email("البريد الإلكتروني غير صالح"),
-  password: z.string().min(6, "كلمة المرور 6 أحرف على الأقل"),
-});
-
-type FormData = z.infer<typeof schema>;
+import { useTranslation } from "@/lib/i18n-context";
 
 function LoginMedicalCenterForm() {
   const router = useRouter();
@@ -34,6 +28,14 @@ function LoginMedicalCenterForm() {
   const rateLimited = searchParams.get("error") === "rate_limited";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+
+  const schema = z.object({
+    email: z.string().email(t("auth.errors.invalid_email")),
+    password: z.string().min(6, t("auth.errors.password_min")),
+  });
+
+  type FormData = z.infer<typeof schema>;
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -48,14 +50,14 @@ function LoginMedicalCenterForm() {
         redirect: false,
       });
       if (result?.error) {
-        toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        toast.error(t("auth.errors.invalid_credentials"));
       } else {
-        toast.success("تم تسجيل الدخول بنجاح!");
+        toast.success(t("auth.success.login_ok"));
         router.push(callbackUrl);
         router.refresh();
       }
     } catch {
-      toast.error("حدث خطأ، يرجى المحاولة مجدداً");
+      toast.error(t("auth.errors.generic_error"));
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ function LoginMedicalCenterForm() {
       {rateLimited && (
         <div className="mx-4 mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
           <IconInfoCircle className="h-4 w-4 shrink-0" />
-          <span>تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة مرة أخرى بعد 15 دقيقة.</span>
+          <span>{t("auth.login.rate_limited")}</span>
         </div>
       )}
       <CardHeader className="text-center pb-2">
@@ -75,15 +77,15 @@ function LoginMedicalCenterForm() {
             <IconBuilding className="h-8 w-8 text-sky-600 dark:text-sky-400" />
           </div>
         </div>
-        <CardTitle className="text-2xl">تسجيل دخول المركز الطبي</CardTitle>
+        <CardTitle className="text-2xl">{t("auth.medical_center_login.title")}</CardTitle>
         <CardDescription className="text-base mt-1">
-          بريد المسؤول وكلمة المرور (نفس بيانات التسجيل)
+          {t("auth.medical_center_login.desc")}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-2">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label="البريد الإلكتروني"
+            label={t("auth.medical_center_login.email")}
             type="email"
             placeholder="email@example.com"
             icon={<IconMail className="h-4 w-4" />}
@@ -93,7 +95,7 @@ function LoginMedicalCenterForm() {
             dir="ltr"
           />
           <div className="w-full">
-            <label className={authLabelClass}>كلمة المرور</label>
+            <label className={authLabelClass}>{t("auth.medical_center_login.password")}</label>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 dark:text-slate-500">
                 <IconLock className="h-4 w-4" />
@@ -117,24 +119,24 @@ function LoginMedicalCenterForm() {
             {errors.password && <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>}
             <div className="text-left">
               <Link href="/forgot-password/medical-center" className="text-sm text-blue-600 dark:text-blue-400">
-                نسيت كلمة المرور؟
+                {t("auth.medical_center_login.forgot_password")}
               </Link>
             </div>
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? <><IconLoader className="h-4 w-4 animate-spin" /> جاري تسجيل الدخول...</> : "تسجيل الدخول"}
+            {loading ? <><IconLoader className="h-4 w-4 animate-spin" /> {t("auth.medical_center_login.submitting")}</> : t("auth.medical_center_login.submit")}
           </Button>
         </form>
         <div className="mt-6 space-y-2 text-center">
           <p className="text-base text-gray-600 dark:text-slate-400">
-            ليس لديك حساب مركز طبي؟{" "}
+            {t("auth.medical_center_login.no_account")}{" "}
             <Link href="/register/medical-center" className="font-semibold text-sky-600 dark:text-sky-400">
-              التسجيل كمركز طبي
+              {t("auth.medical_center_login.register")}
             </Link>
           </p>
           <p className="text-sm text-gray-500 dark:text-slate-500">
             <Link href="/login" className="dark:hover:text-slate-300">
-              أنواع تسجيل الدخول الأخرى
+              {t("auth.medical_center_login.other_logins")}
             </Link>
           </p>
         </div>

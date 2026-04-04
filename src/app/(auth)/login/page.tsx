@@ -9,22 +9,24 @@ import IconInfoCircle from "@/components/icon/icon-info-circle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { useTranslation } from "@/lib/i18n-context";
 
 function LoginCard() {
   const searchParams = useSearchParams();
   const rateLimited = searchParams.get("error") === "rate_limited";
+  const { t } = useTranslation();
 
   return (
     <Card className="w-full max-w-4xl shadow-xl border-0 overflow-hidden">
       {rateLimited && (
         <div className="mx-4 mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
           <IconInfoCircle className="h-4 w-4 shrink-0" />
-          <span>تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة مرة أخرى بعد 15 دقيقة.</span>
+          <span>{t("auth.login.rate_limited")}</span>
         </div>
       )}
       <CardHeader className="text-center pb-1">
-        <CardTitle className="text-2xl font-bold text-gray-900">تسجيل الدخول</CardTitle>
-        <CardDescription className="text-sm text-gray-500">اختر نوع حسابك</CardDescription>
+        <CardTitle className="text-2xl font-bold text-gray-900">{t("auth.login.title")}</CardTitle>
+        <CardDescription className="text-sm text-gray-500">{t("auth.login.choose_account")}</CardDescription>
       </CardHeader>
       <CardContent className="pt-4 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -40,8 +42,8 @@ function LoginCard() {
             <div className="relative rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-sm transition-transform group-hover:scale-105 dark:border-emerald-800 dark:bg-slate-800/90">
               <IconHeart className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">مريض</span>
-            <span className="relative text-center text-xs text-emerald-700/80 dark:text-emerald-300/90">مواعيدك وحسابك</span>
+            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">{t("auth.login.patient")}</span>
+            <span className="relative text-center text-xs text-emerald-700/80 dark:text-emerald-300/90">{t("auth.login.patient_subtitle")}</span>
           </Link>
           <Link
             href="/login/doctor"
@@ -55,8 +57,8 @@ function LoginCard() {
             <div className="relative rounded-2xl border border-violet-100 bg-white/80 p-4 shadow-sm transition-transform group-hover:scale-105 dark:border-violet-800 dark:bg-slate-800/90">
               <IconClipboardText className="h-10 w-10 text-violet-600 dark:text-violet-400" />
             </div>
-            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">طبيب</span>
-            <span className="relative text-center text-xs text-violet-700/80 dark:text-violet-300/90">لوحة التحكم</span>
+            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">{t("auth.login.doctor")}</span>
+            <span className="relative text-center text-xs text-violet-700/80 dark:text-violet-300/90">{t("auth.login.doctor_subtitle")}</span>
           </Link>
           <Link
             href="/login/medical-center"
@@ -69,26 +71,26 @@ function LoginCard() {
             <div className="relative rounded-2xl border border-sky-100 bg-white/80 p-4 shadow-sm transition-transform group-hover:scale-105 dark:border-sky-800 dark:bg-slate-800/90">
               <IconBuilding className="h-10 w-10 text-sky-600 dark:text-sky-400" />
             </div>
-            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">مركز طبي</span>
-            <span className="relative text-center text-xs text-sky-700/80 dark:text-sky-300/90">إدارة المركز</span>
+            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">{t("auth.login.medical_center")}</span>
+            <span className="relative text-center text-xs text-sky-700/80 dark:text-sky-300/90">{t("auth.login.medical_center_subtitle")}</span>
           </Link>
         </div>
         <div className="mt-6 space-y-2 border-t border-gray-100 pt-4 text-center dark:border-slate-700">
           <p className="text-sm text-gray-500 dark:text-slate-400">
             <Link href="/forgot-password" className="font-medium text-blue-600 dark:text-blue-400">
-              نسيت كلمة المرور؟
+              {t("auth.login.forgot_password")}
             </Link>
           </p>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            ليس لديك حساب؟{" "}
+            {t("auth.login.no_account")}{" "}
             <Link href="/register" className="font-semibold text-emerald-600 dark:text-emerald-400">
-              إنشاء حساب جديد
+              {t("auth.login.create_account")}
             </Link>
           </p>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            مركز طبي جديد؟{" "}
+            {t("auth.login.new_medical_center")}{" "}
             <Link href="/register/medical-center" className="font-semibold text-sky-600 dark:text-sky-400">
-              التسجيل كمركز طبي
+              {t("auth.login.register_medical_center")}
             </Link>
           </p>
         </div>

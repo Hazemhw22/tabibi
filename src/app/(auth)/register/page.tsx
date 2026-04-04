@@ -5,13 +5,16 @@ import IconHeart from "@/components/icon/icon-heart";
 import IconBuilding from "@/components/icon/icon-building";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n-context";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
+
   return (
     <Card className="w-full max-w-4xl shadow-xl border-0 overflow-hidden">
       <CardHeader className="text-center pb-1">
-        <CardTitle className="text-2xl font-bold text-gray-900">إنشاء حساب جديد</CardTitle>
-        <CardDescription className="text-sm text-gray-500">اختر نوع حسابك</CardDescription>
+        <CardTitle className="text-2xl font-bold text-gray-900">{t("auth.register.title")}</CardTitle>
+        <CardDescription className="text-sm text-gray-500">{t("auth.register.choose_account")}</CardDescription>
       </CardHeader>
       <CardContent className="pt-4 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -27,8 +30,8 @@ export default function RegisterPage() {
             <div className="relative rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-sm transition-transform group-hover:scale-105 dark:border-emerald-800 dark:bg-slate-800/90">
               <IconHeart className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">مريض</span>
-            <span className="relative text-center text-xs text-emerald-700/80 dark:text-emerald-300/90">احجز مواعيدك بسهولة</span>
+            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">{t("auth.register.patient")}</span>
+            <span className="relative text-center text-xs text-emerald-700/80 dark:text-emerald-300/90">{t("auth.register.patient_subtitle")}</span>
           </Link>
           <Link
             href="/register/doctor"
@@ -42,8 +45,8 @@ export default function RegisterPage() {
             <div className="relative rounded-2xl border border-violet-100 bg-white/80 p-4 shadow-sm transition-transform group-hover:scale-105 dark:border-violet-800 dark:bg-slate-800/90">
               <IconHeart className="h-10 w-10 text-violet-600 dark:text-violet-400" />
             </div>
-            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">طبيب</span>
-            <span className="relative text-center text-xs text-violet-700/80 dark:text-violet-300/90">انضم لشبكة طبيبي</span>
+            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">{t("auth.register.doctor")}</span>
+            <span className="relative text-center text-xs text-violet-700/80 dark:text-violet-300/90">{t("auth.register.doctor_subtitle")}</span>
           </Link>
           <Link
             href="/register/medical-center"
@@ -56,15 +59,15 @@ export default function RegisterPage() {
             <div className="relative rounded-2xl border border-sky-100 bg-white/80 p-4 shadow-sm transition-transform group-hover:scale-105 dark:border-sky-800 dark:bg-slate-800/90">
               <IconBuilding className="h-10 w-10 text-sky-600 dark:text-sky-400" />
             </div>
-            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">مركز طبي</span>
-            <span className="relative text-center text-xs text-sky-700/80 dark:text-sky-300/90">لوحة إدارة المركز</span>
+            <span className="relative text-lg font-bold text-gray-800 dark:text-slate-100">{t("auth.register.medical_center")}</span>
+            <span className="relative text-center text-xs text-sky-700/80 dark:text-sky-300/90">{t("auth.register.medical_center_subtitle")}</span>
           </Link>
         </div>
         <div className="mt-6 border-t border-gray-100 pt-4 text-center dark:border-slate-700">
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            لديك حساب بالفعل؟{" "}
+            {t("auth.register.has_account")}{" "}
             <Link href="/login" className="font-semibold text-emerald-600 dark:text-emerald-400">
-              تسجيل الدخول
+              {t("auth.register.login")}
             </Link>
           </p>
         </div>

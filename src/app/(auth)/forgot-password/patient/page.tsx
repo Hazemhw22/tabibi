@@ -4,9 +4,9 @@ export default function ForgotPasswordPatientPage() {
   return (
     <ForgotPasswordClient
       title="استعادة كلمة مرور المريض"
-      description="أدخل رقم الهاتف المسجّل عند إنشاء الحساب. سنرسل لك رسالة نصية برابط لتعيين كلمة مرور جديدة وتأكيدها."
+      description="أدخل رقم الهاتف المسجّل في حسابك. سنرسل لك رمز تأكيد عبر SMS لتغيير كلمة المرور."
       loginLabel="رقم الهاتف"
-      loginPlaceholder="05991234567"
+      loginPlaceholder="0599123456"
     />
   );
 }

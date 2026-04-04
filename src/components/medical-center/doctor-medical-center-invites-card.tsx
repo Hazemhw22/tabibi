@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import IconBuilding from "@/components/icon/icon-building";
 import { formatNumber } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n-context";
 
 type Invite = {
   id: string;
@@ -38,6 +39,7 @@ function InviteRow({
   onAccept: (id: string, doctorClinicFee: number) => void;
   onReject: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [clinicDue, setClinicDue] = useState(() => safeNumString(inv.doctorClinicFee));
 
   useEffect(() => {
@@ -47,7 +49,7 @@ function InviteRow({
   const handleAccept = () => {
     const df = parseAmount(clinicDue);
     if (!Number.isFinite(df) || df < 0) {
-      toast.error("أدخل مستحقاتك من العيادة بشكل صحيح");
+      toast.error(t("doctor_dashboard.medical_center_invites.toasts.error_amount"));
       return;
     }
     onAccept(inv.id, df);
@@ -58,7 +60,6 @@ function InviteRow({
 
   return (
     <div
-      dir="rtl"
       className="rounded-xl border-2 border-amber-300/90 bg-white p-4 shadow-sm dark:border-amber-800 dark:bg-slate-900"
     >
       <div className="mb-4">
@@ -70,7 +71,7 @@ function InviteRow({
 
       <div className="space-y-2">
         <label htmlFor={`invite-clinic-${inv.id}`} className="block text-sm font-bold text-slate-900 dark:text-slate-100">
-          مستحقاتك من العيادة (₪)
+          {t("doctor_dashboard.medical_center_invites.clinic_due_label")}
         </label>
         <input
           id={`invite-clinic-${inv.id}`}
@@ -84,22 +85,22 @@ function InviteRow({
           onChange={(e) => setClinicDue(e.target.value)}
         />
         <p className="text-xs text-slate-600 dark:text-slate-400">
-          اقتراح المركز: ₪{formatNumber(inv.doctorClinicFee, { maximumFractionDigits: 0 })} — يمكنك تعديل المبلغ قبل القبول
+          {t("doctor_dashboard.medical_center_invites.center_suggestion", { amount: formatNumber(inv.doctorClinicFee, { maximumFractionDigits: 0 }) })}
         </p>
       </div>
 
       <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row">
         <Button type="button" size="lg" variant="outline" className="flex-1 min-h-11" disabled={acting} onClick={() => onReject(inv.id)}>
-          رفض
+          {t("doctor_dashboard.medical_center_invites.reject_btn")}
         </Button>
         <Button
           type="button"
           size="lg"
-          className="flex-1 min-h-11 bg-emerald-600 hover:bg-emerald-700"
+          className="flex-1 min-h-11 bg-emerald-600 hover:bg-emerald-700 font-bold"
           disabled={acting}
           onClick={handleAccept}
         >
-          {acting ? "جاري المعالجة..." : "قبول والانضمام"}
+          {acting ? t("doctor_dashboard.medical_center_invites.processing") : t("doctor_dashboard.medical_center_invites.accept_btn")}
         </Button>
       </div>
     </div>
@@ -107,6 +108,7 @@ function InviteRow({
 }
 
 export default function DoctorMedicalCenterInvitesCard() {
+  const { t } = useTranslation();
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export default function DoctorMedicalCenterInvitesCard() {
         const j = await r.json().catch(() => ({}));
         if (!r.ok) {
           if (r.status !== 404) {
-            toast.error(typeof j.error === "string" ? j.error : "تعذر تحميل دعوات المراكز");
+            toast.error(typeof j.error === "string" ? j.error : t("doctor_dashboard.medical_center_invites.toasts.fetch_error"));
           }
           setInvites([]);
           return;
@@ -128,10 +130,10 @@ export default function DoctorMedicalCenterInvitesCard() {
       })
       .catch(() => {
         setInvites([]);
-        toast.error("تعذر الاتصال بالخادم");
+        toast.error(t("doctor_dashboard.medical_center_invites.toasts.conn_error"));
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -147,13 +149,13 @@ export default function DoctorMedicalCenterInvitesCard() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "تعذر تنفيذ الطلب");
+        toast.error(data.error || t("doctor_dashboard.medical_center_invites.toasts.action_error"));
         return;
       }
-      toast.success(data.message || "تم");
+      toast.success(data.message || t("doctor_dashboard.medical_center_invites.toasts.success"));
       setInvites((prev) => prev.filter((i) => i.id !== inviteId));
     } catch {
-      toast.error("حدث خطأ");
+      toast.error(t("doctor_dashboard.medical_center_invites.toasts.generic_error"));
     } finally {
       setActing(null);
     }
@@ -173,14 +175,14 @@ export default function DoctorMedicalCenterInvitesCard() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "تعذر تنفيذ الطلب");
+        toast.error(data.error || t("doctor_dashboard.medical_center_invites.toasts.action_error"));
         return;
       }
-      toast.success(data.message || "تم");
+      toast.success(data.message || t("doctor_dashboard.medical_center_invites.toasts.success"));
       setInvites((prev) => prev.filter((i) => i.id !== inviteId));
       window.location.reload();
     } catch {
-      toast.error("حدث خطأ");
+      toast.error(t("doctor_dashboard.medical_center_invites.toasts.generic_error"));
     } finally {
       setActing(null);
     }
@@ -193,10 +195,10 @@ export default function DoctorMedicalCenterInvitesCard() {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base text-amber-950 dark:text-amber-100">
           <IconBuilding className="h-5 w-5 text-amber-700 shrink-0" />
-          دعوة للانضمام لمركز طبي
+          {t("doctor_dashboard.medical_center_invites.title")}
         </CardTitle>
         <p className="text-xs text-amber-900/80 dark:text-amber-200/80 leading-relaxed">
-          يظهر لك هنا <strong>مستحقاتك من العيادة</strong> فقط للمراجعة والتعديل قبل القبول. رسوم المريض ونوع الخدمة يحددهما المركز في الدعوة.
+          {t("doctor_dashboard.medical_center_invites.desc")}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 overflow-visible">
